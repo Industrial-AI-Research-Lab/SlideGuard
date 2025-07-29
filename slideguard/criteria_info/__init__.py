@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from .base import CriterionInfo
 from .slide_helper_description import slide_helper_description
-from .slide_visual_consistency import slide_visual_consistency
+from .slide_visual_arrangement import slide_visual_arrangement
 from .deck_structure_analysis import deck_structure_analysis
 
 # Separate registries for different criterion types
@@ -23,7 +23,7 @@ def _register_criterion(criterion: CriterionInfo) -> None:
 
 # Register existing criteria
 _register_criterion(slide_helper_description)
-_register_criterion(slide_visual_consistency)
+_register_criterion(slide_visual_arrangement)
 _register_criterion(deck_structure_analysis)
 
 def get_criterion(criterion_name: str) -> Optional[CriterionInfo]:
@@ -152,4 +152,5 @@ def unregister_criterion(criterion_name: str) -> bool:
 
 # Convenience access to commonly used criteria
 slide_description = slide_helper_description
+slide_visual_arrangement = slide_visual_arrangement
 deck_structure = deck_structure_analysis

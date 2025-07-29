@@ -23,7 +23,7 @@ import requests
 import tiktoken
 from PIL import Image
 
-from slideguard.token_manager import TokenManager
+from slideguard.utils.token_manager import TokenManager
 
 # Add parent directory to Python path to enable imports
 root_dir = str(Path(__file__).resolve().parents[2])

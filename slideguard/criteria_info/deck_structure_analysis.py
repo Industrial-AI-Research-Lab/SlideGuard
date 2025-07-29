@@ -2,28 +2,25 @@ from pydantic import BaseModel, Field
 from slideguard.criteria_info.base import CriterionInfo
 
 prompt = """
-You are an expert in presentation structure analysis. You are provided with a complete slide deck.
-Analyze the overall structure, flow, and organization of the presentation.
+You are an expert in evaluating the completeness of presentation structure.
+You will be provided with information about all slides in the presentation.
+Your task is to check whether the presentation contains key elements:
+- First slide of the slide deck should contain 1) title of the presentation, 2) name and group number of the presenter, 3) name and place of work of scientific advisor, 4) date and place of presentation.
+- The following elements should be present in the slide deck: 1) Motivation, 2) Goals, 3) Tasks, 4) Current State, 5) Proposed Solution, 6) Experiment Settings, 7) Experimental Results, 8) Conclusion.
 
-Evaluate the following aspects:
-1. **Narrative Flow**: How well the story progresses from slide to slide
-2. **Logical Structure**: Organization and hierarchy of information
-3. **Content Balance**: Distribution of content across slides
-4. **Transitions**: How well slides connect to each other
-5. **Audience Journey**: How the presentation guides the audience
+If something of above is missing it is a strict violation of the slide deck structure and should be reported.
 
-Provide a comprehensive analysis of the deck's structural quality and coherence.
+Write the result in the following JSON format:
+{schema_format}
 """
 
+class DeckStructureAnalysisResult(BaseModel):
+    evaluation_element: str = Field(description="Evaluation element")
+    evaluation_suggestion: str = Field(description="Evaluation suggestion")
+
 class DeckStructureAnalysis(BaseModel):
-    narrative_flow_score: int = Field(description="Score from 1-10 for narrative flow", ge=1, le=10)
-    logical_structure_score: int = Field(description="Score from 1-10 for logical structure", ge=1, le=10)
-    content_balance_score: int = Field(description="Score from 1-10 for content balance", ge=1, le=10)
-    transitions_score: int = Field(description="Score from 1-10 for slide transitions", ge=1, le=10)
-    audience_journey_score: int = Field(description="Score from 1-10 for audience journey", ge=1, le=10)
-    overall_structure_score: int = Field(description="Overall structure score from 1-10", ge=1, le=10)
-    structure_analysis: str = Field(description="Detailed analysis of deck structure and flow")
-    improvement_suggestions: str = Field(description="Specific suggestions for improving deck structure")
+    evaluation_results: list[DeckStructureAnalysisResult] = Field(description="List of evaluation results with specific elements and suggestions")
+    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
 deck_structure_analysis = CriterionInfo(
     criterion_name="Deck Structure Analysis",

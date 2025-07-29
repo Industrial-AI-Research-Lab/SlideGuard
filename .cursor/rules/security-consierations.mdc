@@ -1,0 +1,9 @@
+---
+description: Security best practices for API key management, version control safety, and input validation
+globs:
+alwaysApply: false
+---
+
+- Use .env files for sensitive configuration
+- Never commit API keys to version control
+- Validate all inputs and outputs for tools

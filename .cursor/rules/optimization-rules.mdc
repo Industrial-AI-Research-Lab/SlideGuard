@@ -1,0 +1,9 @@
+---
+description: Performance optimization guidelines for LLM applications focusing on caching, memory management, and resource efficiency
+globs:
+alwaysApply: false
+---
+
+- Cache LLM outputs to prevent redundant API calls
+- Monitor memory usage in long-running processes
+- Implement periodic cleanup for memory optimization
