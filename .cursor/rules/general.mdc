@@ -1,0 +1,7 @@
+---
+description: Structured LLM responses control
+globs:
+alwaysApply: false
+---
+
+- Make structured responses from LLM calls using Pydantic BaseModel to validate output correctness
