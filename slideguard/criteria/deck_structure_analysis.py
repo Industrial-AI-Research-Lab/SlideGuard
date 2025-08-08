@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria_info.base import CriterionInfo
+from slideguard.criteria.base import CriterionInfo
 
 prompt = """
 You are an expert in evaluating the completeness of presentation structure.
@@ -27,5 +27,9 @@ deck_structure_analysis = CriterionInfo(
     criterion_type="deck",
     criterion_description=prompt,
     criterion_prompt=prompt,
-    criterion_schema=DeckStructureAnalysis
+    criterion_schema=DeckStructureAnalysis,
+    applicable_slide_types=None,  # Applies to entire deck
+    priority=1,
+    requires_slide_type=True,  # Needs slide types to evaluate structure
+    category="structure"
 ) 

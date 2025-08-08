@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria_info.base import CriterionInfo
+from slideguard.criteria.base import CriterionInfo
 
 prompt = """
 You are an expert in slide readability analysis.
@@ -33,5 +33,9 @@ slide_visual_arrangement = CriterionInfo(
     criterion_type="slide",
     criterion_description=prompt,
     criterion_prompt=prompt,
-    criterion_schema=SlideVisualArrangementAnalysis
+    criterion_schema=SlideVisualArrangementAnalysis,
+    applicable_slide_types=None,  # Applies to all slide types
+    priority=2,
+    requires_slide_type=False,
+    category="visual"
 )
