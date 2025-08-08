@@ -1,0 +1,7 @@
+---
+description: General coding rules
+globs:
+alwaysApply: false
+---
+- Write all the tests that you run to tests folder of the project
+- Avoid optional imports, if some libraries are missing add them to poetry.toml

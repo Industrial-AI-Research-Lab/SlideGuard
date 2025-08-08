@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria_info.base import CriterionInfo
+from slideguard.criteria.base import CriterionInfo
 
 prompt = """
 You are an expert in detailed presentation analysis. You are provided with ONLY ONE single slide.
@@ -27,5 +27,9 @@ slide_helper_description = CriterionInfo(
     criterion_type="slide",
     criterion_description=prompt,
     criterion_prompt=prompt,
-    criterion_schema=SlideDescription
+    criterion_schema=SlideDescription,
+    applicable_slide_types=None,  # Applies to all slide types
+    priority=1,  # Highest priority - needed by other criteria
+    requires_slide_type=False,
+    category="content"
 )

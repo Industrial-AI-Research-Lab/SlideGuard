@@ -1,0 +1,29 @@
+from pydantic import BaseModel, Field
+from slideguard.criteria.base import CriterionInfo
+
+prompt = """
+You are an expert in visual presentation design.
+You will be provided with a screenshot of a presentation.
+Your task is to check whether the color scheme and fonts correspond to the general style (one group of fonts, no more than 5 colors).
+
+**IMPORTANT!** Do not comment on the slide content or business recommendations. Avoid your own comments.
+
+Write the result in the following JSON format:
+{schema_format}
+"""
+
+class SlideColorAndFontsAnalysisResult(BaseModel):
+    evaluation_element: str = Field(description="Comment on the slide ")
+    evaluation_suggestion: str = Field(description="Suggestion for the slide")
+
+class SlideColorAndFontsAnalysis(BaseModel):
+    evaluation_results: list[SlideColorAndFontsAnalysisResult] = Field(description="List of evaluation results with specific elements and suggestions")
+    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
+
+slide_color_and_fonts = CriterionInfo(
+    criterion_name="Slide Color and Fonts",
+    criterion_type="slide",
+    criterion_description="Checking the color scheme and fonts of the slide",
+    criterion_prompt=prompt,
+    criterion_schema=SlideColorAndFontsAnalysis
+)
