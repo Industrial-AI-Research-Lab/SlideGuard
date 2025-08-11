@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """
 You are an expert in slide visual design and readability analysis.
@@ -29,8 +30,7 @@ Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall visual assessment of the slide, identification of the slide title and its visual treatment, and analysis of layout structure and information hierarchy.
 In the Answer section, provide the final evaluation in JSON format with specific visual issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 
-The answer in the 'Answer' section should be in JSON format:
-{schema_format}
+The answer in the 'Answer' section should be in JSON format.
 """
 
 class SlideVisualArrangementResult(BaseModel):
@@ -42,12 +42,13 @@ class SlideVisualArrangement(BaseModel):
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
 
-slide_visual_arrangement = CriterionInfo(
-    criterion_name="Slide Visual Arrangement",
-    criterion_type="slide",
-    criterion_description="You are an expert in slide visual design and readability analysis. You will be provided with a screenshot of one slide from a presentation. Your task is to evaluate the visual arrangement, layout, and readability of elements on the slide. Focus specifically on how the visual design affects information perception and audience comprehension.",
-    criterion_prompt=prompt,
-    criterion_schema=SlideVisualArrangement,
+SLIDE_VISUAL_ARRANGEMENT = CriterionInfo(
+    criteria=Criteria.slide_visual_arrangement,
+    type="slide",
+    criterion_description="Visual arrangement of the slide",
+    agent_prompt=prompt,
+    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    pydantic=SlideVisualArrangement,
     applicable_slide_types=None,  # Applies to all slide types
     priority=2,
     requires_slide_type=False,

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """
 You are an expert in evaluating the completeness of presentation structure.
@@ -10,7 +11,6 @@ Your task is to check whether the presentation contains key elements:
 If something of above is missing it is a strict violation of the slide deck structure and should be reported.
 
 Write the result in the following JSON format:
-{schema_format}
 """
 
 class DeckStructureAnalysisResult(BaseModel):
@@ -19,14 +19,15 @@ class DeckStructureAnalysisResult(BaseModel):
 
 class DeckStructureAnalysis(BaseModel):
     evaluation_results: list[DeckStructureAnalysisResult] = Field(description="List of evaluation results with specific elements and suggestions")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
+    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5")
 
-deck_structure_analysis = CriterionInfo(
-    criterion_name="Deck Structure Analysis",
-    criterion_type="deck",
+DECK_STRUCTURE_ANALYSIS = CriterionInfo(
+    criteria=Criteria.deck_structure_analysis,
+    type="deck",
     criterion_description=prompt,
-    criterion_prompt=prompt,
-    criterion_schema=DeckStructureAnalysis,
+    agent_prompt=prompt,
+    task_prompt=BASE_DECK_TASK_PROMPT,
+    pydantic=DeckStructureAnalysis,
     applicable_slide_types=None,  # Applies to entire deck
     priority=1,
     requires_slide_type=True,  # Needs slide types to evaluate structure

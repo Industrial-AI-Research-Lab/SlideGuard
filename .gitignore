@@ -222,3 +222,6 @@ resources/slidedecks/**
 
 # Env files
 .env
+
+# Meld files
+**/*.orig

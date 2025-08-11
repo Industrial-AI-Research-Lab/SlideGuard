@@ -3,7 +3,7 @@ Configuration module for SlideGuard
 """
 
 import os
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from pathlib import Path
 
 class SlideGuardConfig:
@@ -14,7 +14,8 @@ class SlideGuardConfig:
         self.api_base = os.getenv('SLIDEGUARD_LLM_API_BASE')
         self.model = os.getenv('SLIDEGUARD_LLM_MODEL', '/model')
         self.cache_dir = os.getenv('SLIDEGUARD_CACHE_DIR', '.slideguard_cache')
-        self.file_cache_dir = os.getenv('SLIDEGUARD_FILE_CACHE_DIR', '.file_cache')
+        self.evaluations_cache_dir = os.getenv('SLIDEGUARD_EVALUATIONS_DIR', os.path.join(self.cache_dir, 'evaluations'))
+        self.file_cache_dir = os.getenv('SLIDEGUARD_FILE_CACHE_DIR', os.path.join(self.cache_dir, 'file_cache'))
     
     def is_configured(self) -> bool:
         """Check if required environment variables are set"""

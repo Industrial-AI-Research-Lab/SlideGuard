@@ -1,23 +1,22 @@
 from pydantic import BaseModel
 from dataclasses import dataclass
-from typing import Literal, List, Optional
-from .slide_types import SlideType, slide_type_manager, get_slide_types, add_slide_type, validate_slide_type
+from typing import Literal, List, Optional, Type
+from textwrap import dedent
 
-@dataclass
-class CriterionInfo:
-    criterion_name: str
-    criterion_type: Literal["slide", "deck"]
+from slideguard.schemes import Criteria
+
+class CriterionInfo(BaseModel):
+    criteria: Criteria
+    type: Literal["slide", "deck"]
     criterion_description: str
-    criterion_prompt: str
-    criterion_schema: BaseModel
+    agent_prompt: str
+    task_prompt: str
+    pydantic: Type[BaseModel]
     # New fields for enhanced functionality
     applicable_slide_types: Optional[List[str]] = None  # If None, applies to all slide types
     priority: int = 1  # Priority for evaluation order (lower = higher priority)
     requires_slide_type: bool = False  # Whether this criterion requires slide type classification first
     category: str = "general"  # Category for grouping criteria (e.g., "visual", "content", "structure")
-
-# Define standard slide types (backward compatibility)
-SLIDE_TYPES = get_slide_types()
 
 # Define criterion categories
 CRITERION_CATEGORIES = [
@@ -25,3 +24,17 @@ CRITERION_CATEGORIES = [
     "content",     # Content quality and clarity
     "structure",   # Structural organization
 ]
+
+BASE_SLIDE_TASK_PROMPT = dedent(
+    """
+    Analyze this slide image.                
+    ```image {slide_image_path} ```
+    """
+)
+
+BASE_DECK_TASK_PROMPT = dedent(
+    """
+    Analyze this deck.                
+    {deck_description} 
+    """
+)

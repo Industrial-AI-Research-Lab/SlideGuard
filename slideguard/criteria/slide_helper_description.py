@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria, SlideDescription
 
 prompt = """
 You are an expert in detailed presentation analysis. You are provided with ONLY ONE single slide.
@@ -17,17 +17,13 @@ Describe the slide according to the following plan:
 - Structure the answer clearly and completely.
 """
 
-class SlideDescription(BaseModel):
-    title: str = Field(description="Exact explicit slide title. If there is no clear title at the top of the slide, output 'No title' here")
-    description: str = Field(description="Detailed description of the slide, including description of all charts, tables and illustrations and how they are arranged")
-    summary: str = Field(description="Brief but comprehensive description of this individual slide")
-
-slide_helper_description = CriterionInfo(
-    criterion_name="Slide Description",
-    criterion_type="slide",
-    criterion_description="You are an expert in detailed presentation analysis. You are provided with ONLY ONE single slide. You need to describe it in maximum detail so that the information can be used to evaluate the structure of the entire presentation. DO NOT make assumptions and DO NOT invent anything regarding what might be on other slides. You always work with only one slide.",
-    criterion_prompt=prompt,
-    criterion_schema=SlideDescription,
+SLIDE_HELPER_DESCRIPTION = CriterionInfo(
+    criteria=Criteria.slide_description,
+    criterion_description="Detailed description of the slide, including description of all charts, tables and illustrations and how they are arranged",
+    type="slide",
+    agent_prompt=prompt,
+    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    pydantic=SlideDescription,
     applicable_slide_types=None,  # Applies to all slide types
     priority=1,  # Highest priority - needed by other criteria
     requires_slide_type=False,

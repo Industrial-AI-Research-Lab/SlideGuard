@@ -1,0 +1,99 @@
+from abc import ABC
+from enum import Enum
+import json
+from typing import Any, Dict, Generic, List, Optional, TypeVar
+from pydantic import BaseModel, Field
+
+T = TypeVar('T', bound=BaseModel)
+
+class Slideable(BaseModel):
+    # None means deck-level criteria input
+    slide_id: Optional[int] = None
+
+
+class SlideImage(Slideable):
+    slide_image_path: str
+
+    class Config:
+        frozen = True
+
+class Criteria(str, Enum):
+    slide_type = "slide_type"
+    slide_description = "slide_description"
+    slide_visual_arrangement = "slide_visual_arrangement"
+    slide_color = "slide_color"
+    slide_color_and_fonts = "slide_color_and_fonts"
+    slide_content = "slide_content"
+    deck_storytelling = "deck_storytelling"
+    deck_structure_analysis = "deck_structure_analysis"
+
+    def is_service_criteria(self) -> bool:
+        return self in [self.slide_type, self.slide_description]
+
+
+class SlideDescription(BaseModel):
+    title: str = Field(description="Exact explicit slide title. If there is no clear title at the top of the slide, output 'No title' here")
+    description: str = Field(description="Detailed description of the slide, including description of all charts, tables and illustrations and how they are arranged")
+    summary: str = Field(description="Brief but comprehensive description of this individual slide")
+
+
+class SlideType(BaseModel):
+    slide_type: list[str] = Field(description="List of slide types that are most suitable for the slide")
+
+class SlideDescriptionWithType(SlideDescription):
+    slide_type: list[str] = Field(description="List of slide types that are most suitable for the slide")
+
+
+# we inherit from Slideable to make it compatible with cache manager
+class DeckDescription(Slideable):
+    deck_description: str
+
+    @staticmethod
+    def from_slide_descriptions(slide_descriptions: List[SlideDescriptionWithType]) -> "DeckDescription":
+        descriptions = json.dumps([slide.model_dump() for slide in slide_descriptions], indent=4)
+        return DeckDescription(deck_description=descriptions)
+
+    class Config:
+        frozen = True
+
+
+class EvaluationResult(BaseModel):
+    """Result of a single criterion evaluation"""
+    criterion_name: str
+    criterion_type: str
+    slide_id: Optional[str] = None
+    result: Dict[str, Any]
+    score: Optional[int] = None
+    suggestions: List[str] = []
+
+
+class SlideEvaluationResult(BaseModel):
+    """Result of slide-level evaluation"""
+    slide_deck_path: str
+    slide_id: int
+    slide_type: SlideType
+    slide_description: SlideDescription
+    evaluations: List[EvaluationResult]
+
+
+class DeckEvaluationResult(BaseModel):
+    """Result of deck-level evaluation"""
+    deck_name: str
+    slide_evaluations: List[SlideEvaluationResult]
+    deck_evaluations: List[EvaluationResult]
+    overall_score: float
+    summary: str
+
+
+class AbstractSlideDeck(ABC, BaseModel, Generic[T]):
+    slide_deck_path: str
+    slides: List[T]
+
+
+class SlideDeckImages(AbstractSlideDeck[SlideImage]):
+    png_dir: str
+
+
+class SlideDeckDescriptions(AbstractSlideDeck[DeckDescription]):
+    pass
+
