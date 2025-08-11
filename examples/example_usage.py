@@ -97,7 +97,7 @@ async def example_category_based_evaluation():
         print(f"Structure criteria: {[c.criterion_name for c in structure_criteria]}")
         
         # Check if sample file exists before evaluation
-        sample_pdf = "data/30_EN_Matveeva_Thesis.pdf"
+        sample_pdf = "resources/slidedecks/30_EN_Matveeva_Thesis.pdf"
         if not os.path.exists(sample_pdf):
             print(f"Sample PDF file not found: {sample_pdf}")
             print("To test with a real file, place a PDF in the data/ directory")

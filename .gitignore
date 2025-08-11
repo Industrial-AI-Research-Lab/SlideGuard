@@ -209,7 +209,16 @@ __marimo__/
 # Folders
 /data
 
+# Cursor
+.cursor
+
 # Resources
 resources/slidedecks/**
 !resources/slidedecks/.gitkeep
 
+# Cache folders
+.slideguard_cache
+.file_cache
+
+# Env files
+.env
