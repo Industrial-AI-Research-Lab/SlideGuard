@@ -31,8 +31,8 @@ if root_dir not in sys.path:
     sys.path.append(root_dir)
 
 
-# Constants for OCR processing
-OCR_TEXT_BOXES_SEPARATOR_STRING = "\n\n"  # Can be changed to "\n\n" or any other separator
+# Constants for text processing
+TEXT_SEPARATOR_STRING = "\n\n"  # Separator for joining text content
 
 def get_images_from_pdf(file: bytes, target_width: int = 1024, target_height: int = 768):
     pdf = pdfium.PdfDocument(file)
@@ -66,7 +66,7 @@ class FileManager:
         
         Args:
             cache_dir: Directory to store cache files
-            llm: GigaChat instance for API calls
+            llm: Language model instance for API calls (e.g., vLLM server)
             auto_populate: If True and cache doesn't exist, automatically populate from server
         """
         self.cache_dir = cache_dir
@@ -77,9 +77,7 @@ class FileManager:
         self.token_manager = TokenManager(cache_dir)
         self.encoder = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
 
-        # Auto-populate if enabled and cache is empty
-        if auto_populate and not self.file_mappings and llm is not None:
-            self.populate_cache_from_server()
+        # Note: auto_populate not supported for vLLM (no remote file storage)
 
     def _ensure_cache_dir(self):
         """Ensure cache directory exists."""
@@ -120,53 +118,7 @@ class FileManager:
         """Get a valid access token, either from cache or by requesting a new one."""
         return self.token_manager.get_access_token()
 
-    def get_file_content(self, file_id: str) -> bytes:
-        """Download file content from GigaChat storage."""
-        url = f"https://gigachat.devices.sberbank.ru/api/v1/files/{file_id}/content"
-        headers = {
-            'Accept': 'image/jpg',
-            'Authorization': f'Bearer {self.token_manager.get_access_token()}'
-        }
-        response = requests.get(url, headers=headers, verify=False)
-        if response.status_code == 200:
-            return response.content
-        else:
-            raise Exception(f"Failed to download file content: {response.text}")
 
-    def get_files(self) -> List[dict]:
-        """Get list of all available files in GigaChat storage."""
-        url = "https://gigachat.devices.sberbank.ru/api/v1/files"
-        headers = {
-            'Accept': 'application/json',
-            'Authorization': f'Bearer {self.token_manager.get_access_token()}'
-        }
-        response = requests.get(url, headers=headers, verify=False)
-        if response.status_code == 200:
-            return response.json()['data']
-        else:
-            raise Exception(f"Failed to get files list: {response.text}")
-
-    def populate_cache_from_server(self) -> None:
-        """
-        Fetch all files from the server, download them, and populate the cache with their hashes.
-        This is useful when cache file is lost or when running on a new machine.
-        """
-        # Get list of all files from server
-        files = self.get_files()
-        
-        # Process each file
-        for file_info in files:
-            # Download file content
-            file_content = self.get_file_content(file_info['id'])
-            
-            # Calculate hash
-            file_hash = self._calculate_file_hash(file_content)
-            
-            # Add to cache
-            self.file_mappings[file_hash] = file_info
-        
-        # Save updated cache
-        self._save_cache()
 
     def _save_cache(self):
         """Save file mappings to cache."""
@@ -228,58 +180,10 @@ class FileManager:
         image_cache_dir = os.path.join(base_dir, "image_cache")
         os.makedirs(image_cache_dir, exist_ok=True)
 
-        # Process slides and create a combined PDF with OCR where needed
+        # Create placeholder content for slides since OCR is not needed
         extracted_content = {}
-        with tempfile.TemporaryDirectory() as temp_ocr_dir:
-            pdf_path = self.ocr_processor.process_slides_to_pdf(
-                png_dir=png_dir,
-                png_files=png_files,
-                output_dir=temp_ocr_dir,
-                base_idx=starting_slide
-            )
-
-            # Extract content from the OCR'd PDF for all slides
-            all_extracted_content = {}
-            if pdf_path and os.path.exists(pdf_path):
-                try:
-                    all_extracted_content = self.ocr_processor.extract_pdf_content(pdf_path, temp_ocr_dir)
-                except Exception as e:
-                    print(f"Error extracting content from OCR'd PDF: {str(e)}")
-
-            # Process per slide: if a slide has insufficient OCR content, run individual OCR
-            for slide_idx in range(starting_slide, zero_based_end + 1):
-                # Map from user slide number to sequential OCR number (1-based)
-                ocr_idx = slide_idx - starting_slide + 1
-                content = all_extracted_content.get(ocr_idx, "")
-                if not content or len(content.strip()) < 3:
-                    print(f"Slide {slide_idx}: insufficient OCR content, processing individually.")
-                    try:
-                        # Get the corresponding PNG file for this slide
-                        png_file = png_files[slide_idx - starting_slide]
-                        # Process individual slide
-                        single_slide_pdf = self.ocr_processor.process_slides_to_pdf(
-                            png_dir=png_dir,
-                            png_files=[png_file],
-                            output_dir=temp_ocr_dir,
-                            base_idx=1  # Single slide, so base index is 1
-                        )
-                        if single_slide_pdf and os.path.exists(single_slide_pdf):
-                            try:
-                                temp_content = self.ocr_processor.extract_pdf_content(single_slide_pdf, temp_ocr_dir)
-                                # Get the JSON content from the first page
-                                json_file = os.path.join(temp_ocr_dir, "json", "page_1.json")
-                                if os.path.exists(json_file):
-                                    with open(json_file, 'r', encoding='utf-8') as f:
-                                        slide_ocr = json.load(f)
-                                else:
-                                    slide_ocr = {"raw_text": temp_content.get("page_1", "")}
-                            except Exception as e:
-                                print(f"Error extracting OCR content for slide {slide_idx}: {str(e)}")
-                                slide_ocr = {}
-                    except Exception as e:
-                        print(f"Error extracting OCR content for slide {slide_idx}: {str(e)}")
-                        slide_ocr = ""
-                extracted_content[slide_idx] = content
+        for slide_idx in range(starting_slide, zero_based_end + 1):
+            extracted_content[slide_idx] = f"Image data for slide {slide_idx}"
 
         uploaded_files = []
         print(f"Processing and uploading {len(png_files)} slides...")
@@ -326,67 +230,47 @@ class FileManager:
                     # Move image to hash directory
                     shutil.move(temp_output_path, final_image_path)
                     
-                    # Get OCR data from extracted content or process with OCR
-                    slide_ocr = extracted_content.get(int(slide_num), "")
-                    if not slide_ocr:
-                        print(f"Processing OCR for slide {slide_num}...")
-                        # Create temporary PDF with OCR
-                        with tempfile.TemporaryDirectory() as temp_ocr_dir:
-                            temp_pdf = os.path.join(temp_ocr_dir, f"temp_slide_{slide_num}.pdf")
-                            if self.ocr_processor.process_image_slide(final_image_path, temp_pdf):
-                                try:
-                                    temp_content = self.ocr_processor.extract_pdf_content(temp_pdf, temp_ocr_dir)
-                                    # Get the JSON content from the first page
-                                    json_file = os.path.join(temp_ocr_dir, "json", "page_1.json")
-                                    if os.path.exists(json_file):
-                                        with open(json_file, 'r', encoding='utf-8') as f:
-                                            slide_ocr = json.load(f)
-                                    else:
-                                        slide_ocr = {"raw_text": temp_content.get("page_1", "")}
-                                except Exception as e:
-                                    print(f"Error extracting OCR content: {str(e)}")
-                                    slide_ocr = {}
+                    # Create simple slide data without OCR processing
+                    slide_content = extracted_content.get(int(slide_num), f"Image data for slide {slide_num}")
+                    slide_ocr = {"raw_text": slide_content}
                     
-                    # Validate and process slide_ocr
-                    if not isinstance(slide_ocr, dict):
-                        # If slide_ocr is not a dict (not JSON), wrap it in a dict with raw_text
-                        slide_ocr = {"raw_text": str(slide_ocr)}
-                    
-                    # Save OCR data in hash directory
+                    # Save slide data in hash directory
                     with open(ocr_path, 'w', encoding='utf-8') as f:
                         json.dump(slide_ocr, f, ensure_ascii=False, indent=2)
                     
                     # Save plain text version
-                    text_path = os.path.join(hash_dir, "ocr_data_text.txt")
+                    text_path = os.path.join(hash_dir, "slide_data_text.txt")
                     with open(text_path, 'w', encoding='utf-8') as f:
                         if 'text_boxes' in slide_ocr:
                             # Extract text from each text box and join with the separator
                             texts = [box['text'] for box in slide_ocr['text_boxes']]
-                            f.write(OCR_TEXT_BOXES_SEPARATOR_STRING.join(texts))
+                            f.write(TEXT_SEPARATOR_STRING.join(texts))
                         elif 'raw_text' in slide_ocr:
                             f.write(slide_ocr['raw_text'])
                         else:
                             # If no recognized format, write empty string
                             f.write("")
                 
-                # Check if already uploaded to GigaChat
+                # Check if already processed
                 if image_hash in self.file_mappings:
-                    print(f"Image already uploaded with ID: {self.file_mappings[image_hash]['id']}")
+                    print(f"Image already processed: {self.file_mappings[image_hash]['filename']}")
                     file_dict = self.file_mappings[image_hash]
                     file_dict['ocr_file'] = ocr_path
                     file_dict['image_file'] = final_image_path
                     uploaded_files.append(file_dict)
                     continue
 
-                # Upload new image
-                with open(final_image_path, "rb") as f:
-                    print(f"Uploading slide {slide_num} to GigaChat...")
-                    uploaded_file = llm.upload_file(f)
+                # Process new image for local vLLM (no upload needed)
+                print(f"Processing slide {slide_num} for Qwen...")
                 
-                # Convert UploadedFile to dictionary and add OCR path
-                file_dict = self._uploaded_file_to_dict(uploaded_file)
-                file_dict['ocr_file'] = ocr_path
-                file_dict['image_file'] = final_image_path
+                # Create file dictionary with local paths (no upload needed for vLLM)
+                file_dict = {
+                    'id': image_hash,  # Use hash as ID
+                    'filename': f"slide_{slide_num}.{extension}",
+                    'image_file': final_image_path,
+                    'ocr_file': ocr_path,
+                    'slide_number': slide_num
+                }
                 
                 # Store mapping
                 self.file_mappings[image_hash] = file_dict
@@ -417,56 +301,7 @@ class FileManager:
 
         return file_ids
 
-    def upload_file(self, file_or_path, llm=None) -> dict:
-        """
-        Upload a single file if it hasn't been uploaded before.
-        
-        Args:
-            file_or_path: Either a file-like object or a path to file
-            llm: Optional GigaChat instance. If not provided, uses the one from initialization.
-            
-        Returns:
-            Uploaded file dictionary
-        """
-        llm = llm or self.llm
-        if llm is None:
-            raise ValueError("LLM instance must be provided either during initialization or when calling this method")
 
-        # If string path provided, open the file
-        if isinstance(file_or_path, str):
-            with open(file_or_path, 'rb') as f:
-                content = f.read()
-        else:
-            # Read content from file-like object
-            content = file_or_path.read()
-            # Reset file pointer if possible
-            if hasattr(file_or_path, 'seek'):
-                file_or_path.seek(0)
-
-        # Calculate hash of content
-        file_hash = self._calculate_file_hash(content)
-        
-        # Check if we already have this file
-        if file_hash in self.file_mappings:
-            print(f"Found cached file with ID: {self.file_mappings[file_hash]['id']}")
-            return self.file_mappings[file_hash]
-            
-        # Upload new file
-        if isinstance(file_or_path, str): 
-            with open(file_or_path, 'rb') as f:
-                uploaded_file = llm.upload_file(f)
-        else:
-            uploaded_file = llm.upload_file(file_or_path)
-            
-        # Store in cache
-        self.file_mappings[file_hash] = {
-            'id': uploaded_file.id_,
-            'ocr_file': None,
-            'image_file': None
-        }
-        self._save_cache()
-        
-        return self.file_mappings[file_hash]
 
     def _calculate_presentation_hash(self, presentation_path: str) -> str:
         """Calculate hash of presentation file for caching"""
