@@ -37,14 +37,24 @@ class SlideGuardConfig:
         print(f"  Cache Dir: {self.cache_dir}")
         print(f"  File Cache Dir: {self.file_cache_dir}")
         
+        # Check .env file status
+        env_file = Path('.env')
+        if env_file.exists():
+            print(f"  .env file: ✓ Found at {env_file}")
+        else:
+            print("  .env file: ✗ Not found")
+        
         if self.is_configured():
             print("  Status: ✓ Ready for evaluation")
         else:
             print("  Status: ✗ Not configured")
-            print("\nTo configure, set these environment variables:")
-            print("  export SLIDEGUARD_LLM_API_KEY='your-api-key'")
-            print("  export SLIDEGUARD_LLM_API_BASE='http://localhost:8000/v1'")
-            print("  export SLIDEGUARD_LLM_MODEL='/model'  # Optional, defaults to '/model'")
+            print("\nTo configure, you can:")
+            print("  1. Create a .env file:")
+            print("     python -m slideguard.config create_env_file")
+            print("  2. Set environment variables:")
+            print("     export SLIDEGUARD_LLM_API_KEY='your-api-key'")
+            print("     export SLIDEGUARD_LLM_API_BASE='http://localhost:8000/v1'")
+            print("     export SLIDEGUARD_LLM_MODEL='/model'  # Optional, defaults to '/model'")
 
 def create_env_file():
     """Create a .env file template"""
@@ -89,13 +99,30 @@ def load_dotenv_if_available():
     """Load .env file if python-dotenv is available"""
     try:
         from dotenv import load_dotenv
-        load_dotenv()
-        return True
+        env_file = Path('.env')
+        if env_file.exists():
+            load_dotenv()
+            print(f"✓ Loaded environment variables from {env_file}")
+            return True
+        else:
+            # .env file doesn't exist, but that's okay
+            return False
     except ImportError:
+        env_file = Path('.env')
+        if env_file.exists():
+            print(f"Warning: Found {env_file} but python-dotenv is not installed")
+            print("Install with: pip install python-dotenv")
         return False
 
-# Global config instance
+# Auto-load .env file if available FIRST
+load_dotenv_if_available()
+
+# Then create global config instance
 config = SlideGuardConfig()
 
-# Auto-load .env file if available
-load_dotenv_if_available() 
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "create_env_file":
+        create_env_file()
+    else:
+        config.print_config_status() 

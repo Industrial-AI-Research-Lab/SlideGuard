@@ -22,11 +22,11 @@ import asyncio
 
 # Optional import for search tools
 try:
-    from langchain_community.tools.tavily_search import TavilySearchResults
-    TAVILY_AVAILABLE = True
+    from duckduckgo_search import DDGS
+    DUCKDUCKGO_AVAILABLE = True
 except ImportError:
-    TAVILY_AVAILABLE = False
-    TavilySearchResults = None
+    DUCKDUCKGO_AVAILABLE = False
+    DDGS = None
 
 class EvaluationResult(BaseModel):
     """Result of a single criterion evaluation"""
@@ -64,18 +64,65 @@ class SlideGuardAgents:
         self.llm = llm
         self.tools = self._setup_tools()
 
+    def _create_duckduckgo_search_tool(self):
+        """Create a DuckDuckGo search tool for CrewAI"""
+        if not DUCKDUCKGO_AVAILABLE:
+            return None
+            
+        # Create a tool dictionary that CrewAI can understand
+        tool_dict = {
+            "name": "duckduckgo_search",
+            "description": "Search DuckDuckGo for information related to a query",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query string"
+                    }
+                },
+                "required": ["query"]
+            },
+            "function": self._duckduckgo_search_function
+        }
+        
+        return tool_dict
+        
+    def _duckduckgo_search_function(self, query: str) -> str:
+        """
+        Internal function to perform DuckDuckGo search.
+        
+        Args:
+            query: The search query string
+            
+        Returns:
+            String containing search results
+        """
+        try:
+            with DDGS() as ddgs:
+                results = list(ddgs.text(query, max_results=5))
+                
+            if not results:
+                return "No search results found."
+            
+            formatted_results = []
+            for i, result in enumerate(results, 1):
+                title = result.get('title', 'No title')
+                body = result.get('body', 'No description')
+                url = result.get('href', 'No URL')
+                formatted_results.append(f"{i}. {title}\n   {body}\n   URL: {url}\n")
+            
+            return "\n".join(formatted_results)
+            
+        except Exception as e:
+            return f"Search failed: {str(e)}"
+
     def _setup_tools(self) -> List:
         """Setup tools for agents"""
         tools = []
-        # Add search tool for additional context if needed
-        if TAVILY_AVAILABLE:
-            try:
-                search_tool = TavilySearchResults()
-                tools.append(search_tool)
-            except Exception as e:
-                print(f"Warning: Could not initialize search tool: {e}")
-        else:
-            print("Info: Tavily search tool not available (langchain_community not installed)")
+        # Note: Search tools temporarily disabled for vLLM compatibility
+        # The core evaluation functionality works without external search
+        print("Info: Using core evaluation tools only (search tools disabled for vLLM compatibility)")
         
         return tools
 

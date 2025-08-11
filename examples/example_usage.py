@@ -11,7 +11,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from slideguard.crew.evaluator import SlideGuardEvaluator, evaluate_presentation_sync
+from slideguard.crew.evaluator import SlideGuardEvaluator
 from slideguard.criteria import get_available_criteria, get_criteria_by_category
 from slideguard.config import config
 
@@ -42,9 +42,16 @@ async def example_async_evaluation():
         print("LLM not available. Set environment variables.")
         return
     
+    # Check if sample file exists
+    sample_pdf = "data/30_EN_Matveeva_Thesis.pdf"
+    if not os.path.exists(sample_pdf):
+        print(f"Sample PDF file not found: {sample_pdf}")
+        print("To test with a real file, place a PDF in the data/ directory")
+        return
+    
     try:
         # Basic evaluation
-        result = await evaluator.evaluate_presentation("presentation.pdf")
+        result = await evaluator.evaluate_presentation(sample_pdf)
         print(f"Overall score: {result.overall_score}")
         print(f"Summary: {result.summary}")
         
@@ -89,11 +96,18 @@ async def example_category_based_evaluation():
         print(f"Content criteria: {[c.criterion_name for c in content_criteria]}")
         print(f"Structure criteria: {[c.criterion_name for c in structure_criteria]}")
         
+        # Check if sample file exists before evaluation
+        sample_pdf = "data/30_EN_Matveeva_Thesis.pdf"
+        if not os.path.exists(sample_pdf):
+            print(f"Sample PDF file not found: {sample_pdf}")
+            print("To test with a real file, place a PDF in the data/ directory")
+            return
+        
         # Example: Evaluate only visual aspects
         visual_criterion_names = [c.criterion_name for c in visual_criteria]
         
         result = await evaluator.evaluate_presentation(
-            "presentation.pdf",
+            sample_pdf,
             slide_criteria=visual_criterion_names
         )
         
@@ -139,15 +153,31 @@ def example_environment_setup():
     config.print_config_status()
     
     print("\nTo configure, you can:")
-    print("1. Set environment variables manually:")
+    print("1. Create a .env file (recommended):")
+    print("   python -c \"from slideguard.config import create_env_file; create_env_file()\"")
+    print("   # Then edit .env with your actual values")
+    print()
+    print("2. Set environment variables manually:")
     print("   export SLIDEGUARD_LLM_API_KEY='your-api-key'")
     print("   export SLIDEGUARD_LLM_API_BASE='http://localhost:8000/v1'")
     print("   export SLIDEGUARD_LLM_MODEL='/model'")
     print()
-    print("2. Use the setup script:")
+    print("3. Use the interactive setup script:")
     print("   python -m slideguard.setup setup")
-    print()
-    print("3. Create a .env file manually")
+    
+    # Check if .env file loading worked
+    from pathlib import Path
+    env_file = Path('.env')
+    if env_file.exists():
+        print(f"\n✓ Found .env file at {env_file}")
+        if config.is_configured():
+            print("✓ Environment variables loaded successfully from .env")
+        else:
+            print("⚠ .env file found but variables not loaded. Check file contents:")
+            print("  Required: SLIDEGUARD_LLM_API_KEY and SLIDEGUARD_LLM_API_BASE")
+    else:
+        print(f"\n✗ No .env file found at {env_file}")
+        print("  Create one with the command shown above")
 
 async def main():
     """Main function demonstrating various usage patterns"""
@@ -172,9 +202,11 @@ async def main():
     print("\n" + "=" * 60)
     print("Examples completed!")
     print("\nTo run actual evaluations:")
-    print("1. Set up your environment variables")
-    print("2. Install required dependencies: pip install crewai openai python-dotenv")
-    print("3. Run: python -m slideguard.setup test")
+    print("1. Install dependencies: poetry install")
+    print("   (or pip install crewai openai python-dotenv)")
+    print("2. Set up your environment variables (.env file or exports)")
+    print("3. Test configuration: python -m slideguard.setup test")
+    print("4. Run evaluations with: python examples/example_usage.py")
 
 if __name__ == "__main__":
     # Run the async main function

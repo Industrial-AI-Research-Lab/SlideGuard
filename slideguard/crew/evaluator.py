@@ -20,7 +20,7 @@ from slideguard.config import config
 
 def create_llm_from_env():
     """
-    Create LLM instance from environment variables.
+    Create LLM instance from environment variables for CrewAI.
     
     Environment variables:
     - SLIDEGUARD_LLM_API_KEY: API key for the LLM service
@@ -28,7 +28,7 @@ def create_llm_from_env():
     - SLIDEGUARD_LLM_MODEL: Model name (defaults to '/model')
     
     Returns:
-        LLM instance or None if environment variables are not set
+        LLM instance compatible with CrewAI or None if environment variables are not set
     """
     if not config.is_configured():
         print("Warning: LLM environment variables not set")
@@ -36,21 +36,23 @@ def create_llm_from_env():
         return None
     
     try:
-        # Try to import OpenAI client for vLLM compatibility
-        from openai import OpenAI
+        # Import required modules for CrewAI LLM integration
+        from crewai.llm import LLM
         
-        # Create OpenAI client configured for vLLM
-        client = OpenAI(
+        # For vLLM, configure CrewAI to use LiteLLM with explicit provider
+        # This tells LiteLLM that /model is an OpenAI-compatible model
+        llm = LLM(
+            model=f"openai/{config.model}",  # Tell LiteLLM this is an OpenAI-compatible model
             api_key=config.api_key,
-            base_url=config.api_base
+            base_url=config.api_base,
+            temperature=0.1,
+            max_tokens=4000
         )
         
-        # For CrewAI, we need to create a compatible LLM wrapper
-        # This is a simplified approach - you might need to adjust based on your specific setup
-        return client
+        return llm
         
     except ImportError:
-        print("Warning: openai package not installed. Install with: pip install openai")
+        print("Warning: langchain-openai package not installed. Install with: pip install langchain-openai")
         return None
     except Exception as e:
         print(f"Error creating LLM instance: {e}")
@@ -74,7 +76,7 @@ class SlideGuardEvaluator:
         Initialize the SlideGuard evaluator.
         
         Args:
-            llm: Language model instance (e.g., OpenAI client, GigaChat)
+            llm: Language model instance (e.g., OpenAI client for vLLM, Qwen)
             cache_dir: Directory for caching evaluation results (uses config if None)
             file_cache_dir: Directory for caching file processing results (uses config if None)
             auto_init_llm: If True and no LLM provided, try to initialize from environment variables

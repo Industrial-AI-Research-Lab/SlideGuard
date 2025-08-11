@@ -10,7 +10,11 @@ class CacheManager:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     async def _get_path(self, hash_id: str, deck_name: str, criteria_id: str, slide_id: Optional[str] = None) -> Path:
-        return os.path.join(self.cache_dir, os.path.basename(deck_name), criteria_id, slide_id, f"{hash_id}.pickle")
+        # Handle case where slide_id is None (deck-level criteria)
+        if slide_id is None:
+            return os.path.join(self.cache_dir, os.path.basename(deck_name), criteria_id, f"{hash_id}.pickle")
+        else:
+            return os.path.join(self.cache_dir, os.path.basename(deck_name), criteria_id, slide_id, f"{hash_id}.pickle")
 
     async def get(self, hash_id: str, deck_name: str, criteria_id: str, slide_id: Optional[str] = None) -> Optional[Any]:
         """Retrieve cached item if exists"""

@@ -73,27 +73,9 @@ class TokenManager:
         return token
 
     def get_token_balance(self) -> dict:
-        """Get the current token balance from GigaChat API."""
-        # First get a valid access token
-        access_token = self.get_access_token()
-        
-        # Get token balance
-        url = "https://gigachat.devices.sberbank.ru/api/v1/balance"
-        
-        headers = {
-            'Accept': 'application/json',
-            'Authorization': f'Bearer {access_token}'
-        }
-        
-        try:
-            response = requests.get(url, headers=headers, verify=False)
-            response.raise_for_status()
-            
-            data = response.json()
-            return data
-            
-        except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to check token balance: {str(e)}")
+        """Get the current token balance from Qwen API."""
+        # Note: Token balance checking not supported for local vLLM servers
+        return {"message": "Token balance checking not supported for local vLLM servers"}
 
     @staticmethod
     def log_token_usage(response):
@@ -105,7 +87,7 @@ class TokenManager:
 
     @staticmethod
     def estimate_tokens(model, text):
-        """Estimate token count for a message using GigaChat's method"""
+        """Estimate token count for a message using Qwen's method"""
         try:
             token_count = model.get_num_tokens_from_messages([(None, text)])
             logger.info(f"Estimated token count for message: {token_count}")
