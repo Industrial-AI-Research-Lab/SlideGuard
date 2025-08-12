@@ -30,8 +30,8 @@ def test_criteria_system():
     print(f"✓ Structure criteria: {len(structure_criteria)}")
     
     # Test slide type filtering
-    goals_criteria = get_criteria_for_slide_types(["goals"])
-    experimental_criteria = get_criteria_for_slide_types(["experimental_results"])
+    goals_criteria = get_criteria_for_slide_types(["Goal"])
+    experimental_criteria = get_criteria_for_slide_types(["Experimental Results"])
     
     print(f"✓ Criteria for goals slides: {len(goals_criteria)}")
     print(f"✓ Criteria for experimental results slides: {len(experimental_criteria)}")
@@ -85,7 +85,7 @@ def test_criteria_registration():
         criterion_description="Test criterion for testing",
         criterion_prompt="Test prompt",
         criterion_schema=TestResult,
-        applicable_slide_types=["goals"],
+        applicable_slide_types=["Goal"],
         priority=10,
         requires_slide_type=True,
         category="test"
@@ -126,9 +126,9 @@ def test_slide_type_system():
     print(f"✓ Slide types: {SLIDE_TYPES}")
     
     # Test criteria filtering for different slide types
-    title_criteria = get_criteria_for_slide_types(["title"])
-    conclusion_criteria = get_criteria_for_slide_types(["conclusion"])
-    experimental_criteria = get_criteria_for_slide_types(["experimental_results"])
+    title_criteria = get_criteria_for_slide_types(["Title slide"])
+    conclusion_criteria = get_criteria_for_slide_types(["Conclusion"])
+    experimental_criteria = get_criteria_for_slide_types(["Experimental Results"])
     
     print(f"✓ Criteria for title slides: {len(title_criteria)}")
     print(f"✓ Criteria for conclusion slides: {len(conclusion_criteria)}")

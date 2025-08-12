@@ -5,6 +5,7 @@ from .slide_visual_arrangement import slide_visual_arrangement
 from .deck_structure_analysis import deck_structure_analysis
 from .slide_helper_type import slide_helper_type
 from .slide_color_analysis import slide_color_analysis
+from .slide_color_and_fonts import slide_color_and_fonts
 from .slide_content_quality import slide_content_quality
 from .deck_storytelling import deck_storytelling
 
@@ -40,6 +41,7 @@ _register_criterion(slide_visual_arrangement)
 _register_criterion(deck_structure_analysis)
 _register_criterion(slide_helper_type)
 _register_criterion(slide_color_analysis)
+_register_criterion(slide_color_and_fonts)
 _register_criterion(slide_content_quality)
 _register_criterion(deck_storytelling)
 
@@ -283,4 +285,5 @@ slide_visual_arrangement = slide_visual_arrangement
 deck_structure = deck_structure_analysis
 slide_type = slide_helper_type
 slide_color = slide_color_analysis
+slide_color_and_fonts = slide_color_and_fonts
 slide_content = slide_content_quality

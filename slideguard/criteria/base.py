@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from dataclasses import dataclass
 from typing import Literal, List, Optional
+from .slide_types import SlideType, slide_type_manager, get_slide_types, add_slide_type, validate_slide_type
 
 @dataclass
 class CriterionInfo:
@@ -15,26 +16,12 @@ class CriterionInfo:
     requires_slide_type: bool = False  # Whether this criterion requires slide type classification first
     category: str = "general"  # Category for grouping criteria (e.g., "visual", "content", "structure")
 
-# Define standard slide types
-SLIDE_TYPES = [
-    "title",
-    "separator", 
-    "motivation",
-    "goals",
-    "tasks",
-    "current_state",
-    "proposed_solution",
-    "experiment_settings",
-    "experimental_results",
-    "conclusion"
-]
+# Define standard slide types (backward compatibility)
+SLIDE_TYPES = get_slide_types()
 
 # Define criterion categories
 CRITERION_CATEGORIES = [
     "visual",      # Visual design and layout
     "content",     # Content quality and clarity
     "structure",   # Structural organization
-    "technical",   # Technical aspects
-    "accessibility", # Accessibility and usability
-    "general"      # General evaluation
 ]
