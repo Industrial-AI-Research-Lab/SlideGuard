@@ -45,7 +45,7 @@ slide_content_quality = CriterionInfo(
     criterion_prompt=prompt,
     criterion_schema=SlideContentQuality,
     # This criterion is most relevant for content-heavy slides
-    applicable_slide_types=["goals", "tasks", "current_state", "proposed_solution", "experiment_settings", "experimental_results", "conclusion"],
+    applicable_slide_types=["Goal", "Tasks", "Current State", "Proposed Solution", "Experiment Settings", "Experimental Results", "Conclusion"],
     priority=2,
     requires_slide_type=True,  # Needs to know slide type to provide context-appropriate advice
     category="content"

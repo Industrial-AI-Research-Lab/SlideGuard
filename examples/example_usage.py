@@ -67,7 +67,7 @@ def example_filtered_evaluation():
     deck_criteria = ["Deck Structure Analysis"]
     
     # Example with slide type filtering
-    slide_types_filter = ["goals", "experimental_results"]
+    slide_types_filter = ["Goal", "Experimental Results"]
     
     print(f"Slide criteria: {slide_criteria}")
     print(f"Deck criteria: {deck_criteria}")
@@ -136,7 +136,7 @@ def example_custom_criteria():
         criterion_description="Custom analysis for specific needs",
         criterion_prompt="Analyze the slide according to custom requirements...",
         criterion_schema=CustomAnalysisResult,
-        applicable_slide_types=["goals", "conclusion"],  # Only for specific slide types
+        applicable_slide_types=["Goal", "Conclusion"],  # Only for specific slide types
         priority=5,
         requires_slide_type=True,
         category="custom"

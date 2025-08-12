@@ -44,7 +44,7 @@ slide_color_analysis = CriterionInfo(
     criterion_prompt=prompt,
     criterion_schema=SlideColorAnalysis,
     # This criterion is most relevant for slides with visual content
-    applicable_slide_types=["motivation", "goals", "current_state", "proposed_solution", "experimental_results"],
+    applicable_slide_types=["Motivation", "Goal", "Current State", "Proposed Solution", "Experimental Results"],
     priority=3,
     requires_slide_type=True,  # Needs to know slide type to provide context-appropriate advice
     category="visual"

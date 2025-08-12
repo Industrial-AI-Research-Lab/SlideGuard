@@ -59,7 +59,7 @@ async def example_filtered_evaluation():
             "presentation.pdf",
             slide_criteria=["Slide Visual Arrangement", "Slide Color Analysis"],
             deck_criteria=["Deck Structure Analysis"],
-            slide_types_filter=["goals", "experimental_results"]
+            slide_types_filter=["Goal", "Experimental Results"]
         )
         
         print(f"Filtered evaluation score: {result.overall_score}")

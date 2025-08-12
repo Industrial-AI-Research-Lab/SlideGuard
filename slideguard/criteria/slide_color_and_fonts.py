@@ -25,5 +25,10 @@ slide_color_and_fonts = CriterionInfo(
     criterion_type="slide",
     criterion_description="Checking the color scheme and fonts of the slide",
     criterion_prompt=prompt,
-    criterion_schema=SlideColorAndFontsAnalysis
+    criterion_schema=SlideColorAndFontsAnalysis,
+    # This criterion is most relevant for slides with visual content
+    applicable_slide_types=["Title slide", "Motivation", "Goal", "Current State", "Proposed Solution", "Experimental Results", "Conclusion"],
+    priority=4,
+    requires_slide_type=False,  # Can evaluate without knowing slide type
+    category="visual"
 )

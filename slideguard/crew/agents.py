@@ -8,10 +8,10 @@ from slideguard.utils.cache_manager import CacheManager
 from slideguard.criteria import (
     get_slide_criteria, 
     get_deck_criteria, 
-    get_criterion,
     get_criteria_for_slide_types,
     get_criteria_sorted_by_priority,
-    CriterionInfo
+    CriterionInfo,
+    slide_helper_type
 )
 
 from textwrap import dedent
@@ -259,8 +259,11 @@ class SlideGuardAgents:
         type_task = Task(
             description=dedent(f"""
                 Analyze the slide image at {slide_image_path} and determine its type(s).
-                Use the slide_helper_type criterion to classify this slide.
-                Return the result in JSON format with the slide_type field.
+                
+                {slide_helper_type.criterion_prompt.format(
+                    schema_format=slide_helper_type.criterion_schema.model_json_schema(),
+                    description="Analyze the provided slide image"
+                )}
             """),
             agent=type_agent,
             expected_output="JSON with slide_type field containing list of applicable slide types"

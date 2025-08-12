@@ -14,14 +14,14 @@ You need to remember that slides can contain information of the following types 
 
 3) Motivation - this is a slide that contains information about the motivation for the project.
 
-4) Goals - slide that contain information about goals that need to be achieved to implement the project or product, which is the subject of the entire presentation.
+4) Current State - this is a slide that contains information about the current state of the field and existing products / methods / solutions.
+
+5) Goal - slide that contain information about goals that need to be achieved to implement the project or product, which is the subject of the entire presentation.
 Goals must be EXPLICITLY FORMULATED. Remember that goals can only be statements (including those transmitted through infographic) ALWAYS directed into the future.
 Information about past results, achievements, experience, about what has already been done, CANNOT be a goal.
 
-5) Tasks - slide that contain information about tasks that need to be performed to implement the project or product, which is the subject of the entire presentation.
+6) Tasks - slide that contain information about tasks that need to be performed to implement the project or product, which is the subject of the entire presentation.
 Differ from goals in that they describe actions, not the final state to which you need to go.
-
-6) Current State - this is a slide that contains information about the current state of the field and existing products / methods / solutions.
 
 7) Proposed Solution - this is a slide that contains information about the proposed solution to the problem. Can be shown as a workflow or a diagram with description.
 
