@@ -23,19 +23,13 @@ Your response should be in JSON format:
 {schema_format}
 """
 
-class ColorIssue(BaseModel):
-    issue_type: str = Field(description="Type of color issue (contrast, harmony, accessibility, etc.)")
-    description: str = Field(description="Detailed description of the issue")
-    impact: str = Field(description="Impact on audience understanding or engagement")
-    suggestion: str = Field(description="Specific suggestion for improvement")
-    alternative_colors: list[str] = Field(description="Alternative color recommendations")
+class SlideColorAnalysisResult(BaseModel):
+    evaluation_element: str = Field(description="Evaluation element")
+    evaluation_suggestion: str = Field(description="Evaluation suggestion")
 
 class SlideColorAnalysis(BaseModel):
-    color_issues: list[ColorIssue] = Field(description="List of identified color issues")
-    overall_color_score: int = Field(description="Overall color score from 1 to 5", ge=1, le=5)
-    color_harmony_score: int = Field(description="Color harmony score from 1 to 5", ge=1, le=5)
-    accessibility_score: int = Field(description="Accessibility score from 1 to 5", ge=1, le=5)
-    recommendations: list[str] = Field(description="List of specific recommendations")
+    evaluation_results: list[SlideColorAnalysisResult] = Field(description="List of evaluation results with specific elements and suggestions")
+    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
 slide_color_analysis = CriterionInfo(
     criterion_name="Slide Color Analysis",
@@ -44,7 +38,7 @@ slide_color_analysis = CriterionInfo(
     criterion_prompt=prompt,
     criterion_schema=SlideColorAnalysis,
     # This criterion is most relevant for slides with visual content
-    applicable_slide_types=["Motivation", "Goal", "Current State", "Proposed Solution", "Experimental Results"],
+    applicable_slide_types=None,
     priority=3,
     requires_slide_type=True,  # Needs to know slide type to provide context-appropriate advice
     category="visual"

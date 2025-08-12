@@ -24,24 +24,18 @@ Your response should be in JSON format:
 {schema_format}
 """
 
-class ContentIssue(BaseModel):
-    issue_type: str = Field(description="Type of content issue (clarity, density, flow, etc.)")
-    description: str = Field(description="Detailed description of the issue")
-    impact: str = Field(description="Impact on audience understanding")
-    suggestion: str = Field(description="Specific suggestion for improvement")
-    best_practice: str = Field(description="Relevant best practice recommendation")
+class SlideContentQualityResult(BaseModel):
+    evaluation_element: str = Field(description="Comment on the slide ")
+    evaluation_suggestion: str = Field(description="Suggestion for the slide")
 
 class SlideContentQuality(BaseModel):
-    content_issues: list[ContentIssue] = Field(description="List of identified content issues")
-    clarity_score: int = Field(description="Content clarity score from 1 to 5", ge=1, le=5)
-    organization_score: int = Field(description="Content organization score from 1 to 5", ge=1, le=5)
-    effectiveness_score: int = Field(description="Overall effectiveness score from 1 to 5", ge=1, le=5)
-    recommendations: list[str] = Field(description="List of specific recommendations")
+    evaluation_results: list[SlideContentQualityResult] = Field(description="List of identified content issues")
+    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
 slide_content_quality = CriterionInfo(
     criterion_name="Slide Content Quality",
     criterion_type="slide",
-    criterion_description=prompt,
+    criterion_description="You are an expert in content quality assessment for presentations. You will be provided with a screenshot of one slide from a presentation. Your task is to evaluate the content quality, clarity, and effectiveness of the slide.",
     criterion_prompt=prompt,
     criterion_schema=SlideContentQuality,
     # This criterion is most relevant for content-heavy slides
