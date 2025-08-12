@@ -6,6 +6,7 @@ from .deck_structure_analysis import deck_structure_analysis
 from .slide_helper_type import slide_helper_type
 from .slide_color_analysis import slide_color_analysis
 from .slide_content_quality import slide_content_quality
+from .deck_storytelling import deck_storytelling
 
 # Separate registries for different criterion types
 _SLIDE_CRITERIA_REGISTRY: Dict[str, CriterionInfo] = {}
@@ -40,6 +41,7 @@ _register_criterion(deck_structure_analysis)
 _register_criterion(slide_helper_type)
 _register_criterion(slide_color_analysis)
 _register_criterion(slide_content_quality)
+_register_criterion(deck_storytelling)
 
 def get_criterion(criterion_name: str) -> Optional[CriterionInfo]:
     """
