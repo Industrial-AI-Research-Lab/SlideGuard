@@ -208,3 +208,8 @@ __marimo__/
 
 # Folders
 /data
+
+# Resources
+resources/slidedecks/**
+!resources/slidedecks/.gitkeep
+
