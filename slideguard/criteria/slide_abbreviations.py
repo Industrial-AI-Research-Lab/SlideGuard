@@ -24,8 +24,8 @@ First, in the 'Thought' section, write down your reasoning on the task STRICTLY 
 Then, in the 'Answer' section, form the final answer in the following JSON format:"""
 
 class SlideAbbreviationsResult(BaseModel):
-    evaluation_element: str = Field(description="Comment on the slide ")
-    evaluation_suggestion: str = Field(description="Suggestion for the slide")
+    evaluation_element: str = Field(description="Found abbreviation (write here ONLY the abbreviation exactly as it appeared in the text, and nothing else)")
+    evaluation_suggestion: str = Field(description="<Specify that it needs to be explained>")
 
 class SlideAbbreviations(BaseModel):
     evaluation_results: list[SlideAbbreviationsResult] = Field(description="List of identified abbreviations")
