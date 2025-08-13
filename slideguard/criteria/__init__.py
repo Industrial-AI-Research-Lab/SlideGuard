@@ -10,6 +10,8 @@ from .deck_storytelling import deck_storytelling
 from .slide_abbreviations import slide_abbreviations
 from .slide_graphic_content_match import slide_graphic_content_match
 from .slide_fact_link_availability import slide_fact_link_availability
+from .slide_orphography_correctness import slide_orphography_correctness
+from .slide_title_slide_quality import slide_title_slide_quality
 
 # Separate registries for different criterion types
 _SLIDE_CRITERIA_REGISTRY: Dict[str, CriterionInfo] = {}
@@ -48,6 +50,8 @@ _register_criterion(deck_storytelling)
 _register_criterion(deck_structure_analysis)
 _register_criterion(slide_graphic_content_match)
 _register_criterion(slide_fact_link_availability)
+_register_criterion(slide_orphography_correctness)
+_register_criterion(slide_title_slide_quality)
 
 def get_criterion(criterion_name: str) -> Optional[CriterionInfo]:
     """
