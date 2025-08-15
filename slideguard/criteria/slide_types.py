@@ -23,6 +23,7 @@ class SlideType(Enum):
     EXPERIMENT_SETTINGS = "Experiment Settings"
     EXPERIMENTAL_RESULTS = "Experimental Results"
     CONCLUSION = "Conclusion"
+    END_SLIDE = "End slide"
 
 @dataclass
 class SlideTypeInfo:
@@ -91,6 +92,11 @@ class SlideTypeManager:
             SlideType.CONCLUSION.value: SlideTypeInfo(
                 name=SlideType.CONCLUSION.value,
                 description="this is a slide that contains information about the conclusion of the presentation.",
+                category="content"
+            ),
+            SlideType.END_SLIDE.value: SlideTypeInfo(
+                name=SlideType.END_SLIDE.value,
+                description="this is a slide that identifies the end of the presentation. It usually contains a thank you message for the audience.",
                 category="content"
             )
         }
