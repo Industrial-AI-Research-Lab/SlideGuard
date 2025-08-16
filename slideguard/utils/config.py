@@ -2,20 +2,32 @@
 Configuration module for SlideGuard
 """
 
+import logging
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pathlib import Path
+
+
+from dotenv import load_dotenv
+from langfuse import Langfuse, get_client
+from openinference.instrumentation.crewai import CrewAIInstrumentor
+from openinference.instrumentation.litellm import LiteLLMInstrumentor
+
+
+logger = logging.getLogger(__name__)
+
 
 class SlideGuardConfig:
     """Configuration class for SlideGuard"""
     
-    def __init__(self):
+    def __init__(self, max_concurrency: Optional[int] = None):
         self.api_key = os.getenv('SLIDEGUARD_LLM_API_KEY')
         self.api_base = os.getenv('SLIDEGUARD_LLM_API_BASE')
         self.model = os.getenv('SLIDEGUARD_LLM_MODEL', '/model')
         self.cache_dir = os.getenv('SLIDEGUARD_CACHE_DIR', '.slideguard_cache')
         self.evaluations_cache_dir = os.getenv('SLIDEGUARD_EVALUATIONS_DIR', os.path.join(self.cache_dir, 'evaluations'))
         self.file_cache_dir = os.getenv('SLIDEGUARD_FILE_CACHE_DIR', os.path.join(self.cache_dir, 'file_cache'))
+        self.max_concurrency = max_concurrency or int(os.getenv('SLIDEGUARD_MAX_CONCURRENCY', '0'))
     
     def is_configured(self) -> bool:
         """Check if required environment variables are set"""
@@ -96,34 +108,26 @@ SLIDEGUARD_FILE_CACHE_DIR=.file_cache
     print(f"Created {env_file} template")
     print("Edit this file with your actual configuration values")
 
-def load_dotenv_if_available():
-    """Load .env file if python-dotenv is available"""
-    try:
-        from dotenv import load_dotenv
-        env_file = Path('.env')
-        if env_file.exists():
-            load_dotenv()
-            print(f"✓ Loaded environment variables from {env_file}")
-            return True
-        else:
-            # .env file doesn't exist, but that's okay
-            return False
-    except ImportError:
-        env_file = Path('.env')
-        if env_file.exists():
-            print(f"Warning: Found {env_file} but python-dotenv is not installed")
-            print("Install with: pip install python-dotenv")
-        return False
 
-# Auto-load .env file if available FIRST
-load_dotenv_if_available()
+def load_config(max_concurrency: Optional[int] = None) -> SlideGuardConfig:
+    """Load environment variables from .env file if it exists."""
+    load_dotenv()
+    
+    return SlideGuardConfig(max_concurrency=max_concurrency)
 
-# Then create global config instance
-config = SlideGuardConfig()
 
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "create_env_file":
-        create_env_file()
+def load_langfuse_client(use_langfuse: bool) -> Langfuse | None:
+    if not use_langfuse:
+        return None
+
+    langfuse_client: Langfuse = get_client()
+
+    if langfuse_client.auth_check():
+        logger.info("Langfuse client is authenticated and ready!")
     else:
-        config.print_config_status() 
+        logger.error("Langfuse Authentication failed. Please check your credentials and host.")
+
+    CrewAIInstrumentor().instrument(skip_dep_check=True)
+    LiteLLMInstrumentor().instrument()
+
+    return langfuse_client

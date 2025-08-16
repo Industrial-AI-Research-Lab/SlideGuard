@@ -3,14 +3,17 @@ Main evaluator for slide deck analysis using CrewAI agents
 """
 
 import base64
+import logging
 import re
 from threading import Semaphore
-import os
 from typing import List, Literal, Optional, Dict, Any, Type, Union
 
-from slideguard.config import config
+from slideguard.utils.config import SlideGuardConfig
 from crewai.llm import LLM
 from pydantic import BaseModel
+
+
+logger = logging.getLogger(__name__)
 
 
 def encode_image_to_base64(image_path):
@@ -88,8 +91,6 @@ class ControlledLLM(LLM):
         from_task: Optional[Any] = None,
         from_agent: Optional[Any] = None,
     ) -> Union[str, Any]:
-        # print(f"ControlledLLM.call: {messages}")
-
         def process_message_with_image(message: Dict[str, str]) -> str:
             if not(message.get("role", None) == "user" and "content" in message):
                 return message
@@ -123,16 +124,9 @@ class ControlledLLM(LLM):
             }
 
             return user_message
-        
-        # from pprint import pprint
-        # print(f"ControlledLLM.call:")
-        # pprint(messages, indent=4)
 
         messages = [process_message_with_image(m) for m in messages]
 
-        # print(f"ControlledLLM.call:")
-        # pprint(messages, indent=4)
-        
         if self._semaphore:
             with self._semaphore:
                 return super().call(
@@ -153,7 +147,7 @@ class ControlledLLM(LLM):
             from_agent=from_agent
         )
 
-def create_llm_from_env():
+def create_llm_from_config(config: SlideGuardConfig) -> ControlledLLM | None:
     """
     Create LLM instance from environment variables for CrewAI.
     
@@ -166,30 +160,29 @@ def create_llm_from_env():
         LLM instance compatible with CrewAI or None if environment variables are not set
     """
     if not config.is_configured():
-        print("Warning: LLM environment variables not set")
-        print("Set SLIDEGUARD_LLM_API_KEY and SLIDEGUARD_LLM_API_BASE to enable full evaluation")
+        logger.warning("LLM environment variables not set")
+        logger.warning("Set SLIDEGUARD_LLM_API_KEY and SLIDEGUARD_LLM_API_BASE to enable full evaluation")
         return None
     
     try:
         
         # Configure CrewAI to use LiteLLM with explicit provider
         # and wrap with a semaphore for bounded concurrency
-        max_concurrency = int(os.getenv("SLIDEGUARD_MAX_CONCURRENCY")) if os.getenv("SLIDEGUARD_MAX_CONCURRENCY") else None
         llm = ControlledLLM(
             model=f"openai/{config.model}",  # Tell LiteLLM this is an OpenAI-compatible model
             api_key=config.api_key,
             base_url=config.api_base,
             temperature=0.1,
             max_tokens=4000,
-            max_concurrency=max_concurrency
+            max_concurrency=config.max_concurrency
         )
         
         return llm
         
     except ImportError:
-        print("Warning: langchain-openai package not installed. Install with: pip install langchain-openai")
+        logger.warning("langchain-openai package not installed. Install with: pip install langchain-openai")
         return None
     except Exception as e:
-        print(f"Error creating LLM instance: {e}")
+        logger.error(f"Error creating LLM instance: {e}")
         return None
 

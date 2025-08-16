@@ -10,26 +10,28 @@ Usage examples:
 from __future__ import annotations
 
 import asyncio
-import json
-from typing import List, Optional
+import logging
+from typing import List, Optional, Tuple
 
 import typer
-from dotenv import load_dotenv
-import importlib
 
-from slideguard.config import config
+from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
+from slideguard.utils.config import SlideGuardConfig, load_config
+from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
+from slideguard.schemes import Criteria, FullEvaluation
+from slideguard.utils.config import load_langfuse_client
+from slideguard.utils.cache_manager import CacheManager
+from slideguard.utils.file_manager import FileManager
 
 
-def load_environment_variables() -> None:
-    """Load environment variables from .env file if it exists."""
-    load_dotenv()
-    # Enable Langfuse observability via OpenTelemetry (if available)
-    try:
-        _openlit = importlib.import_module("openlit")
-        _openlit.init(service_name="slideguard-cli")
-    except Exception:
-        pass
+def _initialize_logging() -> None:
+    """Initialize logging configuration for SlideGuard."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
 
 app = typer.Typer(help="SlideGuard - Evaluate slide decks with AI")
@@ -37,13 +39,56 @@ eval_app = typer.Typer(help="Run evaluations")
 app.add_typer(eval_app, name="eval")
 
 
-def _print_config_help() -> None:
+@app.callback()
+def main_callback() -> None:
+    """Initialize logging when the root command is executed."""
+    _initialize_logging()
+
+
+def _print_config_help(config: SlideGuardConfig) -> None:
     typer.echo("LLM not available. Configure environment variables or .env file.")
     config.print_config_status()
     typer.echo(
         "To create a .env template run: python -m slideguard.setup setup\n"
         "To test configuration run: python -m slideguard.setup test"
     )
+
+
+def _load_criterias(criteria: Optional[List[str]]) -> Tuple[List[Criteria], List[Criteria]]:
+    """Load slide and deck criteria based on input criteria list."""
+    if criteria:
+        criterias = [Criteria(c) for c in criteria]
+        slide_criterias = [c for c in criterias if c.is_slide_criteria()]
+        deck_criterias = [c for c in criterias if c.is_deck_criteria()]
+    else:
+        slide_criterias = list(SLIDE_CRITERIA_INFO.keys())
+        deck_criterias = list(DECK_CRITERIA_INFO.keys())
+    
+    return slide_criterias, deck_criterias
+
+
+@eval_app.command("list-criterias")
+def eval_list_criterias() -> None:
+    """List all available slide-level and deck-level criteria."""
+    typer.echo("SlideGuard - Available Evaluation Criteria")
+    typer.echo("=" * 45)
+    
+    # Slide-level criteria
+    typer.echo("\n📊 Slide-Level Criteria:")
+    typer.echo("-" * 25)
+    for criteria in SLIDE_CRITERIA_INFO.keys():
+        typer.echo(f"  • {criteria.value}")
+    
+    # Deck-level criteria
+    typer.echo("\n📋 Deck-Level Criteria:")
+    typer.echo("-" * 24)
+    for criteria in DECK_CRITERIA_INFO.keys():
+        typer.echo(f"  • {criteria.value}")
+    
+    typer.echo(f"\nTotal: {len(SLIDE_CRITERIA_INFO)} slide criteria, {len(DECK_CRITERIA_INFO)} deck criteria")
+    typer.echo("\nUsage examples:")
+    typer.echo("  slideguard eval run -p presentation.pdf --criteria slide_visual_arrangement")
+    typer.echo("  slideguard eval run -p presentation.pdf --criteria deck_structure_analysis")
 
 
 @eval_app.command("run")
@@ -54,58 +99,62 @@ def eval_run(
         "-p",
         help="Path to the presentation file (PDF)",
     ),
-    slide_criteria: Optional[List[str]] = typer.Option(
-        None,
-        "--slide-criteria",
-        help="Slide-level criteria names (repeat option to pass multiple)",
+    output_path: str = typer.Option(
+        "evaluation.json",
+        "--output-path",
+        "-o",
+        help="Path to the output file",
     ),
-    deck_criteria: Optional[List[str]] = typer.Option(
+    criteria: Optional[List[str]] = typer.Option(
         None,
-        "--deck-criteria",
-        help="Deck-level criteria names (repeat option to pass multiple)",
+        "--criteria",
+        help="Slide-level or Deck-level criteria names (repeat option to pass multiple).",
     ),
-    slide_types_filter: Optional[List[str]] = typer.Option(
+    max_concurrency: Optional[int] = typer.Option(
         None,
-        "--slide-types-filter",
-        help="Filter results to specific slide types (repeat option)",
+        "--max-concurrency",
+        help="Maximum number of requests to send to the LLM simultaneously",
     ),
-    json_output: bool = typer.Option(
+    use_langfuse: bool = typer.Option(
         False,
-        "--json-output",
-        help="Print raw JSON of the final evaluation result",
-    ),
-    concurrency_limit: int = typer.Option(
-        4,
-        "--concurrency-limit",
-        help="Maximum number of slides to evaluate concurrently",
+        "--use-langfuse",
+        help="Use Langfuse for observability",
     ),
 ) -> None:
     """Start an evaluation for the given presentation."""
+    typer.echo(f"Loading settings...")
+
+    slide_criterias, deck_criterias = _load_criterias(criteria)
 
     # Load environment variables from .env file
-    load_environment_variables()
+    config = load_config(max_concurrency)
 
-    evaluator = SlideGuardEvaluator(
-        file_manager=FileManager(),
-        cache_manager=CacheManager(),
-        llm=create_llm_from_env()
-    )
+    langfuse_client = load_langfuse_client(use_langfuse)
 
-    if evaluator.llm is None:
-        _print_config_help()
+    llm = create_llm_from_config(config)
+
+    if llm is None:
+        _print_config_help(config)
         raise typer.Exit(code=1)
 
-    async def _run():
+    evaluator = SlideGuardEvaluator(
+        file_manager=FileManager(config.file_cache_dir),
+        cache_manager=CacheManager(config.evaluations_cache_dir),
+        llm=llm
+    )
+
+    async def _run() -> FullEvaluation:
         return await evaluator.evaluate_presentation(
             presentation_path=presentation_path,
-            slide_criteria=slide_criteria,
-            deck_criteria=deck_criteria,
-            slide_types_filter=slide_types_filter,
-            concurrency_limit=concurrency_limit,
+            slide_criterias=slide_criterias,
+            deck_criterias=deck_criterias,
+            langfuse_client=langfuse_client
         )
 
+    typer.echo(f"Starting evaluation for {presentation_path}...")
+
     try:
-        result = asyncio.run(_run())
+        evaluation = asyncio.run(_run())
     except FileNotFoundError as e:
         typer.echo(str(e))
         raise typer.Exit(code=2)
@@ -113,19 +162,13 @@ def eval_run(
         typer.echo(f"Evaluation failed: {e}")
         raise typer.Exit(code=3)
 
-    if json_output:
-        # Pydantic v2 BaseModel
-        try:
-            payload = result.model_dump()
-        except Exception:
-            # Fallback for safety
-            payload = json.loads(result.json()) if hasattr(result, "json") else result.__dict__
-        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
-        return
+    typer.echo(f"Writing results to {output_path}...")
+
+    with open(output_path, "w") as f:
+        f.write(evaluation.model_dump_json(indent=4))
 
     # Human-friendly summary
-    typer.echo(f"Overall score: {result.overall_score}")
-    typer.echo(f"Summary: {result.summary}")
+    typer.echo(f"Evaluation is finished. Results have been written to {output_path}")
 
 
 def main() -> None:  # Console entrypoint

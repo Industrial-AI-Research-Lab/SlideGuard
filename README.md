@@ -5,6 +5,7 @@ A comprehensive slide deck evaluation system using CrewAI agents that analyzes p
 ## Features
 
 - **CrewAI Integration**: Uses specialized AI agents for different evaluation tasks
+- **CLI Interface**: Easy-to-use command-line interface with Typer
 - **Slide Type Filtering**: Apply criteria only to specific slide types
 - **Category Organization**: Criteria organized by functional categories (visual, content, structure, etc.)
 - **Priority-Based Evaluation**: Criteria evaluated in priority order
@@ -12,6 +13,7 @@ A comprehensive slide deck evaluation system using CrewAI agents that analyzes p
 - **Intelligent Caching**: Caching of evaluation results and file processing
 - **Environment Configuration**: Easy setup via environment variables
 - **vLLM Support**: Compatible with vLLM servers and other OpenAI-compatible APIs
+- **Langfuse Integration**: Optional observability and tracing support
 
 ## Quick Start
 
@@ -21,11 +23,10 @@ A comprehensive slide deck evaluation system using CrewAI agents that analyzes p
 # Using Poetry (recommended)
 poetry install
 
-# Or using pip
-pip install pydantic crewai openai python-dotenv
-
-# Optional: Install additional dependencies for full functionality
-pip install langchain-community pypdfium2 requests tiktoken pillow
+# Or using pip - install core dependencies
+pip install pydantic crewai python-dotenv typer langfuse
+pip install langchain-openai langchain-community
+pip install duckduckgo-search openinference-instrumentation-crewai openinference-instrumentation-litellm
 ```
 
 ### 2. Configuration
@@ -33,10 +34,14 @@ pip install langchain-community pypdfium2 requests tiktoken pillow
 Set up your environment variables for LLM access:
 
 ```bash
-# For vLLM server
+# For vLLM server or OpenAI-compatible API
 export SLIDEGUARD_LLM_API_KEY="your-api-key"
 export SLIDEGUARD_LLM_API_BASE="http://localhost:8000/v1"
 export SLIDEGUARD_LLM_MODEL="/model"
+
+# Optional: Cache directories
+export SLIDEGUARD_CACHE_DIR=".slideguard_cache"
+export SLIDEGUARD_FILE_CACHE_DIR=".file_cache"
 
 # Or use the interactive setup
 python -m slideguard.setup setup
@@ -44,13 +49,51 @@ python -m slideguard.setup setup
 
 ### 3. Basic Usage
 
+#### Command Line Interface (Recommended)
+
+```bash
+# List all available criteria
+slideguard eval list-criterias
+
+# Basic evaluation using CLI
+slideguard eval run --presentation-path presentation.pdf
+
+# With custom output file
+slideguard eval run -p presentation.pdf -o results.json
+
+# With specific criteria
+slideguard eval run -p presentation.pdf \
+  --criteria slide_visual_arrangement \
+  --criteria deck_structure_analysis
+
+# With Langfuse observability
+slideguard eval run -p presentation.pdf --use-langfuse
+
+# With custom concurrency limit
+slideguard eval run -p presentation.pdf --max-concurrency 5
+```
+
+#### Python API Usage
+
 ```python
 import asyncio
 from slideguard.crew.evaluator import SlideGuardEvaluator
+from slideguard.utils.config import load_config
+from slideguard.crew.controlled_llm import create_llm_from_config
+from slideguard.utils.file_manager import FileManager
+from slideguard.utils.cache_manager import CacheManager
 
 async def main():
-    # Initialize evaluator (uses environment variables automatically)
-    evaluator = SlideGuardEvaluator()
+    # Load configuration
+    config = load_config()
+    llm = create_llm_from_config(config)
+    
+    # Initialize evaluator with dependencies
+    evaluator = SlideGuardEvaluator(
+        file_manager=FileManager(config.file_cache_dir),
+        cache_manager=CacheManager(config.evaluations_cache_dir),
+        llm=llm
+    )
     
     # Evaluate a presentation
     result = await evaluator.evaluate_presentation("presentation.pdf")
@@ -92,114 +135,161 @@ python -m slideguard.setup all
 
 ## Usage Examples
 
-### Basic Evaluation
+### CLI Examples
+
+#### Discovering Available Criteria
+
+```bash
+# List all available evaluation criteria
+slideguard eval list-criterias
+
+# Output shows:
+# 📊 Slide-Level Criteria: (10 criteria)
+# 📋 Deck-Level Criteria: (3 criteria)
+# Plus usage examples
+```
+
+#### Running Evaluations
+
+```bash
+# Basic evaluation - all criteria
+slideguard eval run --presentation-path presentation.pdf
+
+# Specific slide criteria only
+slideguard eval run -p presentation.pdf \
+  --criteria slide_visual_arrangement \
+  --criteria slide_color_and_fonts
+
+# Mix of slide and deck criteria
+slideguard eval run -p presentation.pdf \
+  --criteria slide_visual_arrangement \
+  --criteria deck_structure_analysis \
+  --criteria deck_storytelling
+
+# With custom output and observability
+slideguard eval run -p presentation.pdf \
+  -o detailed_results.json \
+  --use-langfuse \
+  --max-concurrency 3
+```
+
+### Python API Examples
+
+#### Basic Evaluation
 
 ```python
+import asyncio
 from slideguard.crew.evaluator import SlideGuardEvaluator
+from slideguard.utils.config import load_config
+from slideguard.crew.controlled_llm import create_llm_from_config
+from slideguard.utils.file_manager import FileManager
+from slideguard.utils.cache_manager import CacheManager
 
-evaluator = SlideGuardEvaluator()
-result = await evaluator.evaluate_presentation("presentation.pdf")
+async def basic_evaluation():
+    config = load_config()
+    llm = create_llm_from_config(config)
+    
+    evaluator = SlideGuardEvaluator(
+        file_manager=FileManager(config.file_cache_dir),
+        cache_manager=CacheManager(config.evaluations_cache_dir),
+        llm=llm
+    )
+    
+    result = await evaluator.evaluate_presentation("presentation.pdf")
+    return result
+
+asyncio.run(basic_evaluation())
 ```
 
-### Filtered Evaluation
+#### Filtered Evaluation
 
 ```python
-# Evaluate with specific criteria and slide types
-result = await evaluator.evaluate_presentation(
-    "presentation.pdf",
-    slide_criteria=["Slide Visual Arrangement", "Slide Color Analysis"],
-    deck_criteria=["Deck Structure Analysis"],
-    slide_types_filter=["goals", "experimental_results"]
-)
-```
+from slideguard.schemes import Criteria
 
-### Category-Based Evaluation
-
-```python
-from slideguard.criteria import get_criteria_by_category
-
-# Get criteria by category
-visual_criteria = get_criteria_by_category("visual")
-visual_criterion_names = [c.criterion_name for c in visual_criteria]
-
-# Evaluate only visual aspects
-result = await evaluator.evaluate_presentation(
-    "presentation.pdf",
-    slide_criteria=visual_criterion_names
-)
-```
-
-### Synchronous Evaluation
-
-```python
-from slideguard.crew.evaluator import evaluate_presentation_sync
-
-result = evaluate_presentation_sync("presentation.pdf")
+async def filtered_evaluation():
+    # Setup evaluator (same as above)
+    config = load_config()
+    llm = create_llm_from_config(config)
+    evaluator = SlideGuardEvaluator(
+        file_manager=FileManager(config.file_cache_dir),
+        cache_manager=CacheManager(config.evaluations_cache_dir),
+        llm=llm
+    )
+    
+    # Evaluate with specific criteria
+    result = await evaluator.evaluate_presentation(
+        presentation_path="presentation.pdf",
+        slide_criterias=[
+            Criteria.slide_visual_arrangement,
+            Criteria.slide_color_and_fonts
+        ],
+        deck_criterias=[
+            Criteria.deck_structure_analysis
+        ]
+    )
+    return result
 ```
 
 ## Available Criteria
 
 ### Slide-Level Criteria
 
-- **Slide Description**: Comprehensive slide content analysis
-- **Slide Visual Arrangement**: Visual design and readability evaluation
-- **Slide Type**: Classification of slide types
-- **Slide Color Analysis**: Color theory and accessibility evaluation
-- **Slide Content Quality**: Content clarity and effectiveness evaluation
+- **`slide_type`**: Classification of slide types (title, motivation, goals, etc.)
+- **`slide_description`**: Comprehensive slide content analysis and description
+- **`slide_visual_arrangement`**: Visual design and layout evaluation
+- **`slide_color_and_fonts`**: Color theory, font choices, and visual consistency analysis
+- **`slide_abbreviations`**: Analysis of abbreviations usage and clarity
+- **`slide_fact_link_availability`**: Evaluation of factual claims and link availability
+- **`slide_graphic_content_match`**: Assessment of graphic-content alignment
+- **`slide_orphography_correctness`**: Spelling and grammar correctness evaluation
+- **`slide_title_content_match`**: Analysis of title-content alignment
+- **`slide_title_slide_quality`**: Overall slide title quality assessment
 
 ### Deck-Level Criteria
 
-- **Deck Structure Analysis**: Overall presentation structure evaluation
+- **`deck_structure_analysis`**: Overall presentation structure and flow evaluation
+- **`deck_storytelling`**: Narrative flow and storytelling quality assessment
+- **`deck_research_quality`**: Research methodology and quality evaluation
 
-### Criteria Categories
+### Using Criteria in Commands
 
-- **visual**: Visual design and layout criteria
-- **content**: Content quality and clarity criteria
-- **structure**: Structural organization criteria
-- **technical**: Technical aspects criteria
-- **accessibility**: Accessibility and usability criteria
-- **general**: General evaluation criteria
+```bash
+# Use criteria by their enum names
+slideguard eval run -p presentation.pdf \
+  --criteria slide_visual_arrangement \
+  --criteria slide_color_and_fonts \
+  --criteria deck_structure_analysis
 
-### Slide Types
+# Multiple criteria can be specified
+slideguard eval run -p presentation.pdf \
+  --criteria slide_type \
+  --criteria slide_description \
+  --criteria deck_storytelling \
+  --criteria deck_research_quality
+```
 
-- **title**: Title slides
-- **separator**: Section separator slides
-- **motivation**: Motivation slides
-- **goals**: Goals slides
-- **tasks**: Tasks slides
-- **current_state**: Current state slides
-- **proposed_solution**: Proposed solution slides
-- **experiment_settings**: Experiment settings slides
-- **experimental_results**: Experimental results slides
-- **conclusion**: Conclusion slides
-
-## Creating Custom Criteria
+### Using Criteria in Python
 
 ```python
-from slideguard.criteria.base import CriterionInfo
-from pydantic import BaseModel, Field
+from slideguard.schemes import Criteria
 
-# Define custom schema
-class CustomResult(BaseModel):
-    score: int = Field(description="Score from 1 to 5", ge=1, le=5)
-    feedback: str = Field(description="Custom feedback")
+# Reference criteria by enum values
+slide_criterias = [
+    Criteria.slide_visual_arrangement,
+    Criteria.slide_color_and_fonts,
+    Criteria.slide_abbreviations
+]
 
-# Create custom criterion
-custom_criterion = CriterionInfo(
-    criterion_name="Custom Analysis",
-    criterion_type="slide",
-    criterion_description="Custom analysis description",
-    criterion_prompt="Custom analysis prompt...",
-    criterion_schema=CustomResult,
-    applicable_slide_types=["goals", "conclusion"],
-    priority=3,
-    requires_slide_type=True,
-    category="custom"
+deck_criterias = [
+    Criteria.deck_structure_analysis,
+    Criteria.deck_storytelling
+]
+
+result = await evaluator.evaluate_presentation(
+    presentation_path="presentation.pdf",
+    slide_criterias=slide_criterias,
+    deck_criterias=deck_criterias
 )
-
-# Register the criterion
-from slideguard.criteria import register_criterion
-register_criterion(custom_criterion)
 ```
 
 ## Architecture
@@ -223,38 +313,70 @@ register_criterion(custom_criterion)
 ## Testing
 
 ```bash
-# Run basic structure tests
-poetry run python -m slideguard.simple_test
-
-# Run comprehensive tests (requires dependencies)
-poetry run python -m slideguard.test_crew_system
-
 # Test installation and configuration
-poetry run python -m slideguard.setup test
+python -m slideguard.setup test
+
+# Test CLI functionality
+slideguard eval run --help
+
+# Run a test evaluation (requires a sample PDF)
+slideguard eval run -p sample.pdf -o test_results.json
 ```
 
 ## Examples
 
 See the `examples/` directory for complete usage examples:
 
-- `examples/criteria_eval.py` - Basic evaluation examples
-- `slideguard/example_usage.py` - Comprehensive usage patterns
+- `examples/dynamic_prompt_example.py` - Dynamic prompt usage patterns
+- Use `python -m slideguard.setup example` to generate a sample evaluation script
+
+## Main.py Direct Usage
+
+You can also run the main.py file directly:
+
+```bash
+# List available criteria
+python -m slideguard.main eval list-criterias
+
+# Direct execution
+python -m slideguard.main eval run --presentation-path presentation.pdf
+
+# Or if installed via Poetry
+poetry run python -m slideguard.main eval run -p presentation.pdf
+
+# With all options
+python -m slideguard.main eval run \
+  --presentation-path presentation.pdf \
+  --output-path results.json \
+  --criteria slide_visual_arrangement \
+  --criteria deck_structure_analysis \
+  --max-concurrency 3 \
+  --use-langfuse
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **LLM not available**: Set environment variables or provide LLM instance
-2. **Import errors**: Install required dependencies
+1. **LLM not available**: Set environment variables using `python -m slideguard.setup setup`
+2. **Import errors**: Install required dependencies with `poetry install` or pip
 3. **File not found**: Ensure presentation file exists and is accessible
 4. **API errors**: Check API key and base URL configuration
+5. **CLI not found**: Ensure SlideGuard is installed (`poetry install` or `pip install -e .`)
 
-### Debug Mode
+### Debug and Configuration Check
 
-```python
-# Enable debug output
-evaluator = SlideGuardEvaluator()
-evaluator.print_status()  # Shows configuration status
+```bash
+# Check configuration status
+python -m slideguard.setup test
+
+# List available evaluation criteria
+slideguard eval list-criterias
+
+# Get help for CLI commands
+slideguard --help
+slideguard eval --help
+slideguard eval run --help
 ```
 
 ## Contributing

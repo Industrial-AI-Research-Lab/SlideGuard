@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 from pathlib import Path
@@ -6,6 +7,8 @@ from typing import Any, AsyncIterable, Callable, Generic, Iterable, List, Option
 from pydantic import BaseModel
 
 from slideguard.schemes import Slideable
+
+logger = logging.getLogger(__name__)
 
 
 T = TypeVar('T', bound=Slideable)
@@ -73,7 +76,7 @@ class CacheManager(Generic[T, U], ABC):
             else:
                 to_compute.append((i, in_))
 
-        print(f"Found cached results: {len(results)} / {len(inputs)}")
+        logger.info(f"Found cached results (criteria: {criteria_id}): {len(results)} / {len(inputs)}")
 
         if to_compute:
             async for i, result in func(to_compute):

@@ -6,24 +6,19 @@ import logging
 from typing import AsyncIterable, Callable, List, Any, Tuple, Type, TypeVar, cast
 
 from jsonschema import ValidationError
-from slideguard.crew.controlled_llm import create_llm_from_env
+from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.criteria.base import CriterionInfo
-from slideguard.criteria.deck_storytelling import DECK_STORYTELLING
-from slideguard.criteria.deck_structure_analysis import DECK_STRUCTURE_ANALYSIS
-from slideguard.criteria.slide_helper_description import SLIDE_HELPER_DESCRIPTION
-from slideguard.criteria.slide_helper_type import SLIDE_HELPER_TYPE
-from slideguard.criteria.slide_visual_arrangement import SLIDE_VISUAL_ARRANGEMENT
 from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType
 from slideguard.schemes import DeckEvaluationResult
 from slideguard.schemes import SlideEvaluationResult
 from slideguard.schemes import FullEvaluation
+from slideguard.utils.base import timer
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
-from slideguard.config import config
 
 from textwrap import dedent
-from crewai import LLM, Agent, Task, Crew, TaskOutput
+from crewai import Agent, Task, Crew, TaskOutput
 from pydantic import BaseModel
 import json
 import asyncio
@@ -49,13 +44,13 @@ class SlideGuardEvaluator:
     """Crew of agents for comprehensive slide deck evaluation"""
     
     def __init__(self,
-                 file_manager: FileManager | None = None,
-                 cache_manager: CacheManager | None = None,
-                 llm: LLM | None = None,
+                 file_manager: FileManager,
+                 cache_manager: CacheManager,
+                 llm: ControlledLLM,
                  max_retries: int = 3):
-        self.file_manager = file_manager or FileManager()
-        self.cache_manager = cache_manager or CacheManager()
-        self.llm = llm or create_llm_from_env()
+        self.file_manager = file_manager
+        self.cache_manager = cache_manager
+        self.llm = llm
         self.tools = self._setup_tools()
         self.max_retries = max_retries
 
@@ -65,28 +60,29 @@ class SlideGuardEvaluator:
                                     deck_criterias: List[Criteria] = None,
                                     langfuse_client: Langfuse | None = None) -> FullEvaluation:
         
-        if langfuse_client:
-            with langfuse_client.start_as_current_span(name="slideguard-crewai-trace") as span:
+        with timer("evaluate_presentation"):
+            if langfuse_client:
+                with langfuse_client.start_as_current_span(name="slideguard-crewai-trace") as span:
+                    evaluation = await self._evaluate_presentation(
+                        presentation_path=presentation_path,
+                        slide_criterias=slide_criterias,
+                        deck_criterias=deck_criterias
+                    )
+
+                    span.update_trace(
+                        input=presentation_path,
+                        output=evaluation.model_dump_json(),
+                        tags=["slideguard", "crewai"],
+                    )
+                
+                langfuse_client.flush()
+            else:
                 evaluation = await self._evaluate_presentation(
                     presentation_path=presentation_path,
                     slide_criterias=slide_criterias,
                     deck_criterias=deck_criterias
                 )
-
-                span.update_trace(
-                    input=presentation_path,
-                    output=evaluation.model_dump_json(),
-                    tags=["slideguard", "crewai"],
-                )
             
-            langfuse_client.flush()
-        else:
-            evaluation = await self._evaluate_presentation(
-                presentation_path=presentation_path,
-                slide_criterias=slide_criterias,
-                deck_criterias=deck_criterias
-            )
-        
         return evaluation
 
     def print_status(self):
@@ -95,9 +91,6 @@ class SlideGuardEvaluator:
         print(f"  LLM Available: {'✓ Yes' if self.llm else '✗ No'}")
         print(f"  Cache Directory: {self.cache_dir}")
         print(f"  File Cache Directory: {self.file_cache_dir}")
-        
-        if self.llm is None:
-            config.print_config_status()
 
     def _create_duckduckgo_search_tool(self):
         """Create a DuckDuckGo search tool for CrewAI"""
@@ -371,6 +364,9 @@ class SlideGuardEvaluator:
                                      slide_criterias: List[Criteria] = None,
                                      deck_criterias: List[Criteria] = None) -> FullEvaluation:
         """Main method to evaluate an entire presentation"""
+
+        if deck_criterias:
+            slide_criterias = list(set({Criteria.slide_type, Criteria.slide_description, *slide_criterias}))
         
         # Process presentation to get slide images
         slides = self.file_manager.process_presentation(presentation_path)
@@ -380,8 +376,7 @@ class SlideGuardEvaluator:
             criterias=slide_criterias
         )
 
-        # TODO: need to check if there is descriptions or not
-        if Criteria.slide_description in slide_criterias and Criteria.slide_type in slide_criterias:
+        if deck_criterias:
             slide_descriptions = [
                 SlideDescriptionWithType(
                     **slide.slide_description.model_dump(), 
@@ -402,7 +397,6 @@ class SlideGuardEvaluator:
             )
         else:
             deck_evaluations = None
-            logger.warning("No slide description and slide type criteria were asked for, skipping deck evaluation")
         
         # # Create final summary
         # final_result = await self.create_final_summary(
