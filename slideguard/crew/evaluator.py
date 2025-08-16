@@ -365,6 +365,9 @@ class SlideGuardEvaluator:
                                      slide_criterias: List[Criteria] = None,
                                      deck_criterias: List[Criteria] = None) -> FullEvaluation:
         """Main method to evaluate an entire presentation"""
+
+        if deck_criterias:
+            slide_criterias = list(set({Criteria.slide_type, Criteria.slide_description, *slide_criterias}))
         
         # Process presentation to get slide images
         slides = self.file_manager.process_presentation(presentation_path)
@@ -374,8 +377,7 @@ class SlideGuardEvaluator:
             criterias=slide_criterias
         )
 
-        # TODO: need to check if there is descriptions or not
-        if Criteria.slide_description in slide_criterias and Criteria.slide_type in slide_criterias:
+        if deck_criterias:
             slide_descriptions = [
                 SlideDescriptionWithType(
                     **slide.slide_description.model_dump(), 
@@ -396,7 +398,6 @@ class SlideGuardEvaluator:
             )
         else:
             deck_evaluations = None
-            logger.warning("No slide description and slide type criteria were asked for, skipping deck evaluation")
         
         # # Create final summary
         # final_result = await self.create_final_summary(
