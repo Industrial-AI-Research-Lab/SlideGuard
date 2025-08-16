@@ -13,6 +13,7 @@ from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, Sli
 from slideguard.schemes import DeckEvaluationResult
 from slideguard.schemes import SlideEvaluationResult
 from slideguard.schemes import FullEvaluation
+from slideguard.utils.base import timer
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
 
@@ -59,28 +60,29 @@ class SlideGuardEvaluator:
                                     deck_criterias: List[Criteria] = None,
                                     langfuse_client: Langfuse | None = None) -> FullEvaluation:
         
-        if langfuse_client:
-            with langfuse_client.start_as_current_span(name="slideguard-crewai-trace") as span:
+        with timer("evaluate_presentation"):
+            if langfuse_client:
+                with langfuse_client.start_as_current_span(name="slideguard-crewai-trace") as span:
+                    evaluation = await self._evaluate_presentation(
+                        presentation_path=presentation_path,
+                        slide_criterias=slide_criterias,
+                        deck_criterias=deck_criterias
+                    )
+
+                    span.update_trace(
+                        input=presentation_path,
+                        output=evaluation.model_dump_json(),
+                        tags=["slideguard", "crewai"],
+                    )
+                
+                langfuse_client.flush()
+            else:
                 evaluation = await self._evaluate_presentation(
                     presentation_path=presentation_path,
                     slide_criterias=slide_criterias,
                     deck_criterias=deck_criterias
                 )
-
-                span.update_trace(
-                    input=presentation_path,
-                    output=evaluation.model_dump_json(),
-                    tags=["slideguard", "crewai"],
-                )
             
-            langfuse_client.flush()
-        else:
-            evaluation = await self._evaluate_presentation(
-                presentation_path=presentation_path,
-                slide_criterias=slide_criterias,
-                deck_criterias=deck_criterias
-            )
-        
         return evaluation
 
     def print_status(self):
