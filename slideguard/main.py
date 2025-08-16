@@ -10,14 +10,15 @@ Usage examples:
 from __future__ import annotations
 
 import asyncio
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import typer
 
+from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.utils.config import SlideGuardConfig, load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
-from slideguard.schemes import FullEvaluation
+from slideguard.schemes import Criteria, FullEvaluation
 from slideguard.utils.config import load_langfuse_client
 from slideguard.utils.cache_manager import CacheManager
 from slideguard.utils.file_manager import FileManager
@@ -37,6 +38,19 @@ def _print_config_help(config: SlideGuardConfig) -> None:
     )
 
 
+def _load_criterias(criteria: Optional[List[str]]) -> Tuple[List[Criteria], List[Criteria]]:
+    """Load slide and deck criteria based on input criteria list."""
+    if criteria:
+        criterias = [Criteria(c) for c in criteria]
+        slide_criterias = [c for c in criterias if c.is_slide_criteria()]
+        deck_criterias = [c for c in criterias if c.is_deck_criteria()]
+    else:
+        slide_criterias = list(SLIDE_CRITERIA_INFO.keys())
+        deck_criterias = list(DECK_CRITERIA_INFO.keys())
+    
+    return slide_criterias, deck_criterias
+
+
 @eval_app.command("run")
 def eval_run(
     presentation_path: str = typer.Option(
@@ -51,15 +65,10 @@ def eval_run(
         "-o",
         help="Path to the output file",
     ),
-    slide_criteria: Optional[List[str]] = typer.Option(
+    criteria: Optional[List[str]] = typer.Option(
         None,
-        "--slide-criteria",
-        help="Slide-level criteria names (repeat option to pass multiple).",
-    ),
-    deck_criteria: Optional[List[str]] = typer.Option(
-        None,
-        "--deck-criteria",
-        help="Deck-level criteria names (repeat option to pass multiple)",
+        "--criteria",
+        help="Slide-level or Deck-level criteria names (repeat option to pass multiple).",
     ),
     max_concurrency: int = typer.Option(
         4,
@@ -73,6 +82,8 @@ def eval_run(
     ),
 ) -> None:
     """Start an evaluation for the given presentation."""
+
+    slide_criterias, deck_criterias = _load_criterias(criteria)
 
     # Load environment variables from .env file
     config = load_config(max_concurrency)
@@ -94,8 +105,8 @@ def eval_run(
     async def _run() -> FullEvaluation:
         return await evaluator.evaluate_presentation(
             presentation_path=presentation_path,
-            slide_criterias=slide_criteria,
-            deck_criterias=deck_criteria,
+            slide_criterias=slide_criterias,
+            deck_criterias=deck_criterias,
             langfuse_client=langfuse_client
         )
 

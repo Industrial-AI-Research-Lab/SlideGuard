@@ -37,6 +37,12 @@ class Criteria(str, Enum):
 
     def is_service_criteria(self) -> bool:
         return self in [self.slide_type, self.slide_description]
+    
+    def is_slide_criteria(self) -> bool:
+        return self.value.startswith("slide_")
+    
+    def is_deck_criteria(self) -> bool:
+        return self.value.startswith("deck_")
 
 
 class SlideDescription(BaseModel):
