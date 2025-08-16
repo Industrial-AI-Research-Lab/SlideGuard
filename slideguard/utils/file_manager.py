@@ -6,33 +6,35 @@ file conversion, image extraction, and caching. It handles various file formats
 and maintains a cache for processed files.
 """
 
-import base64
 import hashlib
-import json
+import logging
 import os
 import shutil
-import sys
-import tempfile
 import time
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 from io import BytesIO
 import pypdfium2 as pdfium
 
-import requests
-import tiktoken
-from PIL import Image
+from slideguard.schemes import SlideDeckImages, SlideImage
 
-from slideguard.utils.token_manager import TokenManager
-
-# Add parent directory to Python path to enable imports
-root_dir = str(Path(__file__).resolve().parents[2])
-if root_dir not in sys.path:
-    sys.path.append(root_dir)
+from pydantic import BaseModel
 
 
-# Constants for text processing
-TEXT_SEPARATOR_STRING = "\n\n"  # Separator for joining text content
+logger = logging.getLogger(__name__)
+
+
+class FileCacheEntry(BaseModel):
+    """Pydantic model for cache entries."""
+    file_hash: str
+    output_dir: str
+    presentation_path: str
+    processed_at: float
+
+
+class FileCache(BaseModel):
+    """Pydantic model for file cache."""
+    file_mappings: Dict[str, FileCacheEntry]
+
 
 def get_images_from_pdf(file: bytes, target_width: int = 1024, target_height: int = 768):
     pdf = pdfium.PdfDocument(file)
@@ -61,261 +63,129 @@ class FileManager:
     - Handling pdf file format
     """
 
-    def __init__(self, cache_dir: str = ".file_cache", llm=None, auto_populate: bool = False):
+    def __init__(self, cache_dir: str = ".slideguard_cache/file_cache"):
         """Initialize FileManager with a cache directory to store file mappings.
         
         Args:
             cache_dir: Directory to store cache files
-            llm: Language model instance for API calls (e.g., vLLM server)
-            auto_populate: If True and cache doesn't exist, automatically populate from server
         """
         self.cache_dir = cache_dir
         self.cache_file = os.path.join(cache_dir, "file_mappings.json")
-        self._ensure_cache_dir()
+        self.cache_decks_dir = os.path.join(cache_dir, "png")
         self.file_mappings = self._load_cache()
-        self.llm = llm
-        self.token_manager = TokenManager(cache_dir)
-        self.encoder = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
 
-        # Note: auto_populate not supported for vLLM (no remote file storage)
-
-    def _ensure_cache_dir(self):
-        """Ensure cache directory exists."""
-        os.makedirs(self.cache_dir, exist_ok=True)
-
-    def _load_cache(self) -> Dict[str, str]:
+    def _load_cache(self) -> Dict[str, FileCacheEntry]:
         """Load file mappings from cache."""
+        
+        os.makedirs(self.cache_dir, exist_ok=True)
+        os.makedirs(self.cache_decks_dir, exist_ok=True)
+
         if os.path.exists(self.cache_file):
             with open(self.cache_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return {}
+                self.file_mappings = FileCache.model_validate_json(f.read())
+        else:
+            self.file_mappings = FileCache(file_mappings=dict())
+        
+        return self.file_mappings
 
-    def _get_token_cache_path(self) -> str:
-        """Get path to token cache file."""
-        cache_dir = os.path.dirname(self.cache_file)
-        return os.path.join(cache_dir, 'token_cache.json')
-
-    def _load_cached_token(self) -> Optional[Tuple[str, int]]:
-        """Load token and expiry from cache if exists and not expired."""
-        cache_path = self._get_token_cache_path()
-        if os.path.exists(cache_path):
-            with open(cache_path, 'r', encoding='utf-8') as f:
-                cache = json.load(f)
-                if cache['expires_at'] > time.time() * 1000:  # Convert to milliseconds
-                    return cache['access_token'], cache['expires_at']
-        return None
-
-    def _save_token_cache(self, token: str, expires_at: int) -> None:
-        """Save token and expiry to cache."""
-        cache_path = self._get_token_cache_path()
-        with open(cache_path, 'w', encoding='utf-8') as f:
-            json.dump({
-                'access_token': token,
-                'expires_at': expires_at
-            }, f)
-
-    def get_access_token(self) -> str:
-        """Get a valid access token, either from cache or by requesting a new one."""
-        return self.token_manager.get_access_token()
-
-
-
-    def _save_cache(self):
-        """Save file mappings to cache."""
-        with open(self.cache_file, 'w', encoding='utf-8') as f:
-            json.dump(self.file_mappings, f)
-
-    def _calculate_file_hash(self, file_content: bytes) -> str:
-        """Calculate SHA-256 hash of file content."""
-        return hashlib.sha256(file_content).hexdigest()
-
-    def _uploaded_file_to_dict(self, file):
-        """Convert UploadedFile object to a dictionary for JSON serialization"""
-        return {
-            "id": file.id_,
-            "object": file.object_,
-            "bytes": file.bytes_,
-            "created_at": file.created_at,
-            "filename": file.filename,
-            "purpose": file.purpose
-        }
-
-    def process_presentation(self, llm, presentation_path: str, starting_slide: int = 1, ending_slide: int = None, 
-                           use_png: bool = True) -> tuple[str, List[Dict]]:
-        """Process a presentation file and upload its slides.
+    def _get_cache_entry(self, cache_key: str) -> Optional[FileCacheEntry]:
+        """Get a cache entry by key.
         
         Args:
-            llm: The language model instance
-            presentation_path: Path to the presentation file
-            starting_slide: First slide to process (1-based)
-            ending_slide: Last slide to process (inclusive)
-            use_png: If True, keep as PNG, if False convert to JPEG
-        """
-        # First, extract high-quality PNGs using appropriate method
-        print(f"Extracting PNGs from {presentation_path}")
-        png_dir = self.process_presentation_wrapper(presentation_path)
-        
-        # Get list of PNG files
-        png_files = sorted([f for f in os.listdir(png_dir) if f.endswith('.png')],
-                          key=lambda x: int(x.split('_')[1].split('.')[0]))
-        
-        # Convert to zero-based indices for internal use
-        zero_based_start = starting_slide - 1
-        zero_based_end = ending_slide
-        
-        # Validate and adjust slide range
-        total_slides = len(png_files)
-        if zero_based_start < 0:
-            zero_based_start = 0
-        
-        # Validate end slide
-        if zero_based_end is None or zero_based_end < 0 or zero_based_end > total_slides:
-            zero_based_end = total_slides
+            cache_key: The cache key to look up
             
-        # Get the requested slice of images
-        png_files = png_files[zero_based_start:zero_based_end]
+        Returns:
+            CacheEntry if found, None otherwise
+        """
+        return self.file_mappings.file_mappings.get(cache_key, None)
 
-        # Create base image cache directory
-        base_dir = os.path.dirname(presentation_path)
-        image_cache_dir = os.path.join(base_dir, "image_cache")
-        os.makedirs(image_cache_dir, exist_ok=True)
-
-        # Create placeholder content for slides since OCR is not needed
-        extracted_content = {}
-        for slide_idx in range(starting_slide, zero_based_end + 1):
-            extracted_content[slide_idx] = f"Image data for slide {slide_idx}"
-
-        uploaded_files = []
-        print(f"Processing and uploading {len(png_files)} slides...")
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            # Process each PNG file
-            for idx, png_file in enumerate(png_files):
-                # Use 1-based slide number for the filename
-                slide_num = starting_slide + idx
-                source_path = os.path.join(png_dir, png_file)
-                
-                # Determine output format and path
-                extension = "png" if use_png else "jpeg"
-                temp_output_path = os.path.join(tmpdirname, f"img_{slide_num}.{extension}")
-                
-                # Open and optionally convert the image
-                img = Image.open(source_path)
-                
-                if use_png:
-                    # Just copy the PNG file
-                    shutil.copy2(source_path, temp_output_path)
-                else:
-                    # Convert to JPEG with high quality
-                    img.save(temp_output_path, format='JPEG', quality=99)
-                
-                # Calculate hash for the image
-                with open(temp_output_path, 'rb') as f:
-                    image_hash = self._calculate_file_hash(f.read())
-                
-                # Create hash-specific directory
-                hash_dir = os.path.join(image_cache_dir, image_hash)
-                os.makedirs(hash_dir, exist_ok=True)
-                
-                # Define final paths in hash directory
-                final_image_path = os.path.join(hash_dir, f"image.{extension}")
-                ocr_path = os.path.join(hash_dir, "ocr_data.json")
-                
-                # Check if we already have this image processed
-                if os.path.exists(final_image_path) and os.path.exists(ocr_path):
-                    print(f"Using cached files from: {hash_dir}")
-                    # Load existing OCR data
-                    with open(ocr_path, 'r', encoding='utf-8') as f:
-                        slide_ocr = json.load(f)
-                else:
-                    # Move image to hash directory
-                    shutil.move(temp_output_path, final_image_path)
-                    
-                    # Create simple slide data without OCR processing
-                    slide_content = extracted_content.get(int(slide_num), f"Image data for slide {slide_num}")
-                    slide_ocr = {"raw_text": slide_content}
-                    
-                    # Save slide data in hash directory
-                    with open(ocr_path, 'w', encoding='utf-8') as f:
-                        json.dump(slide_ocr, f, ensure_ascii=False, indent=2)
-                    
-                    # Save plain text version
-                    text_path = os.path.join(hash_dir, "slide_data_text.txt")
-                    with open(text_path, 'w', encoding='utf-8') as f:
-                        if 'text_boxes' in slide_ocr:
-                            # Extract text from each text box and join with the separator
-                            texts = [box['text'] for box in slide_ocr['text_boxes']]
-                            f.write(TEXT_SEPARATOR_STRING.join(texts))
-                        elif 'raw_text' in slide_ocr:
-                            f.write(slide_ocr['raw_text'])
-                        else:
-                            # If no recognized format, write empty string
-                            f.write("")
-                
-                # Check if already processed
-                if image_hash in self.file_mappings:
-                    print(f"Image already processed: {self.file_mappings[image_hash]['filename']}")
-                    file_dict = self.file_mappings[image_hash]
-                    file_dict['ocr_file'] = ocr_path
-                    file_dict['image_file'] = final_image_path
-                    uploaded_files.append(file_dict)
-                    continue
-
-                # Process new image for local vLLM (no upload needed)
-                print(f"Processing slide {slide_num} for Qwen...")
-                
-                # Create file dictionary with local paths (no upload needed for vLLM)
-                file_dict = {
-                    'id': image_hash,  # Use hash as ID
-                    'filename': f"slide_{slide_num}.{extension}",
-                    'image_file': final_image_path,
-                    'ocr_file': ocr_path,
-                    'slide_number': slide_num
-                }
-                
-                # Store mapping
-                self.file_mappings[image_hash] = file_dict
-                uploaded_files.append(file_dict)
-
-        # Save updated cache
-        self._save_cache()
+    def _upsert_cache_entry(self, cache_key: str, cache_entry: FileCacheEntry) -> None:
+        """Insert or update a cache entry.
         
-        return png_dir, uploaded_files
-
-    def get_presentation_ids(self, presentation_path: str, max_slides: Optional[int] = None) -> List[str]:
+        Args:
+            cache_key: The cache key
+            cache_entry: The cache entry to store
         """
-        Get list of file IDs for a presentation's slides.
-        Returns empty list if presentation hasn't been processed yet.
+        self.file_mappings.file_mappings[cache_key] = cache_entry
+
+        with open(self.cache_file, 'w', encoding='utf-8') as f:
+            f.write(self.file_mappings.model_dump_json())
+
+    def process_presentation(self, presentation_path: str):
+        """Process a presentation file and extract PNG images to cache.
+        
+        Args:
+            presentation_path: Path to the presentation file
+            
+        Returns:
+            SlideDeckImages: Object containing PNG directory path and slide information
         """
-        with open(presentation_path, "rb") as f:
-            file_content = f.read()
+        
+        if not os.path.exists(presentation_path):
+            raise FileNotFoundError(f"Presentation file not found: {presentation_path}")
+        
+        if not os.path.isfile(presentation_path):
+            raise ValueError(f"Presentation path is a directory: {presentation_path}")
 
-        images = get_images_from_pdf(file_content)
-        if max_slides:
-            images = images[:max_slides]
+        file_ext = os.path.splitext(presentation_path)[1].lower()
+        if file_ext != '.pdf':
+            raise ValueError(f"Unsupported file type: {file_ext}")
 
-        file_ids = []
-        for image in images:
-            image_hash = self._calculate_file_hash(image)
-            if image_hash in self.file_mappings:
-                file_ids.append(self.file_mappings[image_hash]['id'])
-
-        return file_ids
-
-
+        # Calculate presentation hash for cache validation
+        cache_key = self._calculate_presentation_hash(presentation_path)
+        
+        # Create hash-specific output directory
+        output_dir = os.path.join(self.cache_decks_dir, os.path.basename(presentation_path))
+        
+        # Check if presentation is already cached and valid
+        cache_entry = self._get_cache_entry(cache_key)
+        cache_valid = (
+            os.path.exists(output_dir) 
+            and cache_entry is not None
+            and cache_entry.file_hash == cache_key
+        )
+        if not cache_valid:
+            logger.info(f"Removing invalid cache: {output_dir}")
+            shutil.rmtree(output_dir, ignore_errors=True)
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Extract images from presentation
+            logger.info(f"Extracting images from {presentation_path}")
+            self._process_presentation_from_pdf(presentation_path, output_dir)
+            
+            # Update cache with presentation info
+            new_cache_entry = FileCacheEntry(
+                file_hash=cache_key,
+                output_dir=output_dir,
+                presentation_path=presentation_path,
+                processed_at=time.time()
+            )
+            self._upsert_cache_entry(cache_key, new_cache_entry)
+        
+        # Get list of PNG files and create slide objects
+        png_files = (f for f in os.listdir(output_dir) if f.endswith('.png'))
+        
+        slides = (
+            SlideImage(
+                slide_id=int(png_file.split('_')[1].split('.')[0]),
+                slide_image_path=os.path.join(output_dir, png_file)
+            )
+            for png_file in png_files
+        )
+        slides = sorted(slides, key=lambda x: x.slide_id)
+        
+        return SlideDeckImages(
+            png_dir=output_dir,
+            slide_deck_path=presentation_path,
+            slides=slides
+        )
 
     def _calculate_presentation_hash(self, presentation_path: str) -> str:
         """Calculate hash of presentation file for caching"""
         with open(presentation_path, 'rb') as f:
-            return self._calculate_file_hash(f.read())
-    
-    def _verify_png_slides(self, png_dir: str, total_slides: int) -> bool:
-        """Verify that all slides are present in the PNG directory"""
-        for i in range(1, total_slides + 1):
-            if not os.path.exists(os.path.join(png_dir, f'slide_{i}.png')):
-                return False
-        return True
+            return hashlib.sha256(f.read()).hexdigest()
 
-    def process_presentation_from_pdf(self, presentation_path: str, output_dir: str) -> None:
+    def _process_presentation_from_pdf(self, presentation_path: str, output_dir: str) -> None:
         """Process PDF presentation and extract high-quality PNG images"""
         try:
             # Read PDF content
@@ -332,216 +202,5 @@ class FileManager:
                     f.write(image_data)
 
         except Exception as e:
-            print(f"Error processing PDF: {str(e)}")
+            logger.error(f"Error processing PDF: {str(e)}")
             raise
-
-    def process_presentation_wrapper(self, presentation_path: str) -> str:
-        """Process presentation file PDF and extract high-quality PNG images"""
-        if not os.path.exists(presentation_path):
-            raise FileNotFoundError(f"Presentation file not found: {presentation_path}")
-
-        # Create base png directory if it doesn't exist
-        base_dir = os.path.dirname(presentation_path)
-        png_dir = os.path.join(base_dir, "png")
-        if not os.path.exists(png_dir):
-            os.makedirs(png_dir)
-
-        # Calculate presentation hash for unique directory
-        presentation_hash = self._calculate_presentation_hash(presentation_path)
-        output_dir = os.path.join(png_dir, presentation_hash)
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Determine file type and process accordingly
-        file_ext = os.path.splitext(presentation_path)[1].lower()
-        if file_ext == '.pdf':
-            self.process_presentation_from_pdf(presentation_path, output_dir)
-        else:
-            raise ValueError(f"Unsupported file type: {file_ext}")
-
-        return output_dir
-
-    def _count_tokens(self, text: str) -> int:
-        """Count the number of tokens in a text using tiktoken."""
-        return len(self.encoder.encode(text))
-
-    def get_slides_descriptions(self, presentation_path: str, start_slide: int = 1, end_slide: int = None, max_tokens: Optional[int] = None) -> List[str]:
-        """Concatenate descriptions from selected slides in a presentation.
-        
-        Args:
-            presentation_path: Path to the presentation file
-            start_slide: First slide number to include (1-based indexing)
-            end_slide: Last slide number to include. If None, includes all slides
-            max_tokens: Maximum number of tokens per chunk. If None, no limit
-            
-        Returns:
-            List[str]: List of results, each element contains descriptions up to max_tokens
-        """
-        # Get presentation hash
-        presentation_hash = self._calculate_presentation_hash(presentation_path)
-        
-        # Find all PNG files and sort them by slide number
-        png_dir = os.path.join(os.path.dirname(presentation_path), "png", presentation_hash)
-        if not os.path.exists(png_dir):
-            raise ValueError(f"PNG directory not found: {png_dir}")
-            
-        png_files = sorted(
-            [f for f in os.listdir(png_dir) if f.endswith('.png') and f.startswith('slide_')],
-            key=lambda x: int(x.split('_')[1].split('.')[0])
-        )
-        
-        # Convert to zero-based indices for internal use
-        zero_based_start = start_slide - 1
-        zero_based_end = end_slide
-        
-        # Validate and adjust slide range
-        total_slides = len(png_files)
-        if zero_based_start < 0:
-            zero_based_start = 0
-        
-        # Validate end slide
-        if zero_based_end is None or zero_based_end < 0 or zero_based_end > total_slides:
-            zero_based_end = total_slides
-            
-        # Get the requested slice of images
-        png_files = png_files[zero_based_start:zero_based_end]
-
-        if not png_files:
-            return ["Нет слайдов в указанном диапазоне"]
-        
-        results = []
-        current_chunk = ["Вот общая информация по каждому слайду"]
-        current_tokens = self._count_tokens("\n".join(current_chunk))
-        
-        for png_file in png_files:
-            slide_num = int(png_file.split('_')[1].split('.')[0])
-            
-            # Calculate image hash for the slide
-            with open(os.path.join(png_dir, png_file), 'rb') as f:
-                image_hash = hashlib.sha256(f.read()).hexdigest()
-            
-            # Get description file path
-            desc_file = os.path.join(
-                os.path.dirname(presentation_path),
-                "image_cache",
-                image_hash,
-                "0_1_slide_description.txt"
-            )
-            
-            # Prepare slide content
-            slide_content = []
-            slide_content.append(f"Слайд {slide_num}")
-            slide_content.append("```")
-            
-            if os.path.exists(desc_file):
-                try:
-                    with open(desc_file, 'r', encoding='utf-8') as f:
-                        content = f.read().strip()
-                        slide_content.append(content)
-                except Exception as e:
-                    slide_content.append(f"Ошибка чтения описания: {str(e)}")
-            else:
-                slide_content.append("Описание отсутствует")
-            
-            slide_content.append("```")
-            
-            # Calculate tokens for this slide
-            slide_text = "\n".join(slide_content)
-            slide_tokens = self._count_tokens(slide_text)
-            
-            # Check if adding this slide would exceed max_tokens
-            if max_tokens is not None and current_tokens + slide_tokens > max_tokens:
-                # Save current chunk and start a new one
-                results.append("\n".join(current_chunk))
-                current_chunk = ["Вот общая информация по каждому слайду"]
-                current_tokens = self._count_tokens("\n".join(current_chunk))
-            
-            # Add slide content to current chunk
-            current_chunk.extend(slide_content)
-            current_tokens += slide_tokens
-        
-        # Add the last chunk if it's not empty
-        if current_chunk:
-            results.append("\n".join(current_chunk))
-        
-        return results if results else ["Нет слайдов в указанном диапазоне"]
-
-    def get_slide_image_bytes(self, image_url: str, img_dir: Optional[str] = None) -> Optional[bytes]:
-        """Retrieve image bytes from a slide image URL/ID.
-        
-        This method handles different types of image references:
-        - Base64 data URLs (data:image/...)
-        - File IDs that need to be resolved through file_mappings
-        - Direct file paths
-        
-        Args:
-            image_url: Image URL/ID from SlideData.image field
-            img_dir: Optional image directory path for fallback lookup
-            
-        Returns:
-            Image bytes if found, None otherwise
-        """
-        if not image_url:
-            return None
-            
-        try:
-            # Handle base64 data URLs
-            if image_url.startswith('data:image/'):
-                # Extract base64 data after the comma
-                if ',' in image_url:
-                    base64_data = image_url.split(',', 1)[1]
-                    return base64.b64decode(base64_data)
-                else:
-                    print(f"Invalid base64 data URL format: {image_url}")
-                    return None
-            
-            # Handle direct file paths
-            if os.path.isfile(image_url):
-                with open(image_url, 'rb') as f:
-                    return f.read()
-            
-            # Handle file IDs - look up in file_mappings
-            for file_hash, file_info in self.file_mappings.items():
-                if file_info.get('id') == image_url:
-                    # Found the file ID, get the image file path
-                    image_file = file_info.get('image_file')
-                    if image_file and os.path.exists(image_file):
-                        with open(image_file, 'rb') as f:
-                            return f.read()
-                    else:
-                        print(f"Image file not found for file ID {image_url}: {image_file}")
-                    break
-            
-            # Fallback: try to find image in img_dir by treating image_url as filename or slide number
-            if img_dir and os.path.isdir(img_dir):
-                # Try common slide naming patterns
-                possible_names = [
-                    image_url,
-                    f"{image_url}.png",
-                    f"{image_url}.jpg", 
-                    f"{image_url}.jpeg",
-                    f"slide_{image_url}.png",
-                    f"slide_{image_url}.jpg"
-                ]
-                
-                # If image_url is numeric, try slide numbering patterns
-                if image_url.isdigit():
-                    slide_num = int(image_url)
-                    possible_names.extend([
-                        f"slide_{slide_num + 1}.png",  # 1-based indexing
-                        f"slide_{slide_num + 1}.jpg",
-                        f"img_{slide_num + 1}.png",
-                        f"img_{slide_num + 1}.jpg"
-                    ])
-                
-                for name in possible_names:
-                    file_path = os.path.join(img_dir, name)
-                    if os.path.exists(file_path):
-                        with open(file_path, 'rb') as f:
-                            return f.read()
-            
-            print(f"Could not resolve image URL to file: {image_url}")
-            return None
-            
-        except Exception as e:
-            print(f"Error retrieving image bytes for {image_url}: {str(e)}")
-            return None

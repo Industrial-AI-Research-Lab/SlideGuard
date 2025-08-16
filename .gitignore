@@ -219,6 +219,10 @@ resources/slidedecks/**
 # Cache folders
 .slideguard_cache
 .file_cache
+evaluation.json
 
 # Env files
 .env
+
+# Meld files
+**/*.orig

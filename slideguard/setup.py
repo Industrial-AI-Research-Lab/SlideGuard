@@ -2,7 +2,6 @@
 Setup script for SlideGuard
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -66,8 +65,6 @@ def test_installation():
         from slideguard.config import config
         print("✓ Configuration module imported")
         
-        from slideguard.criteria import get_available_criteria
-        print("✓ Criteria module imported")
         
         from slideguard.crew.evaluator import SlideGuardEvaluator
         print("✓ Evaluator module imported")
@@ -78,10 +75,6 @@ def test_installation():
         # Test evaluator initialization
         evaluator = SlideGuardEvaluator()
         evaluator.print_status()
-        
-        # Test criteria system
-        criteria = get_available_criteria()
-        print(f"\n✓ Available criteria: {len(criteria['slide'])} slide, {len(criteria['deck'])} deck")
         
         print("\n✓ All tests passed! SlideGuard is ready to use.")
         

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """
 You are an expert in evaluating the storytelling quality of students' presentations.
@@ -65,25 +66,31 @@ Provide specific, actionable feedback including:
 - In the "Recommendations" section, provide only clear, actionable comments for the user
 - Focus on the logical flow and coherence of the story, not content quality
 
+The answer in the 'Answer' section should be in the following JSON format:
 {schema_format}
 """
+
 
 class DeckStorytellingResult(BaseModel):
     evaluation_element: str = Field(description="Evaluation element")
     evaluation_suggestion: str = Field(description="Evaluation suggestion")
 
+
 class DeckStorytelling(BaseModel):
     evaluation_results: list[DeckStorytellingResult] = Field(description="List of evaluation results with specific elements and suggestions")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
+    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5")
 
-deck_storytelling = CriterionInfo(
-    criterion_name="Deck Storytelling",
-    criterion_type="deck",
+
+DECK_STORYTELLING = CriterionInfo(
+    criteria=Criteria.deck_storytelling,
+    type="deck",
     criterion_description='You are an expert in evaluating the storytelling quality of students\' presentations. Your task is to assess whether the presentation tells a coherent, logical story by evaluating: Logical progression from introduction to conclusion, Clear cause-and-effect relationships between ideas, Smooth transitions between related topics, Proper topic separation when switching between unrelated subjects, No contradictions or conflicting information',
-    criterion_prompt=prompt,
-    criterion_schema=DeckStorytelling,
+    agent_prompt_template=prompt,
+    task_prompt_template=BASE_DECK_TASK_PROMPT,
+    pydantic=DeckStorytelling,
     applicable_slide_types=None,  # Applies to entire deck
     priority=1,
     requires_slide_type=True,  # Needs slide types to evaluate structure
     category="structure"
-) 
+)
+

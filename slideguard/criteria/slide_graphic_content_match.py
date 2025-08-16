@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide that may contain a visualization. 
@@ -29,12 +30,14 @@ class SlideGraphicContentMatch(BaseModel):
     evaluation_results: list[SlideGraphicContentMatchResult] = Field(description="List of identified content issues")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
-slide_graphic_content_match = CriterionInfo(
-    criterion_name="Slide Graphic Content Match",
-    criterion_type="slide",
+
+SLIDE_GRAPHIC_CONTENT_MATCH = CriterionInfo(
+    criteria=Criteria.slide_graphic_content_match,
+    type="slide",
     criterion_description="Analyzing whether graphic content matches the slide content and provide appropriate suggestions",
-    criterion_prompt=prompt,
-    criterion_schema=SlideGraphicContentMatch,
+    agent_prompt_template=prompt,
+    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+    pydantic=SlideGraphicContentMatch,
     applicable_slide_types=["experiment_settings", "experimental_results"],
     priority=4,
     requires_slide_type=True,
