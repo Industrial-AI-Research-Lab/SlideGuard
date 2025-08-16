@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from dataclasses import dataclass
 from typing import Literal, List, Optional, Type
 from textwrap import dedent
 

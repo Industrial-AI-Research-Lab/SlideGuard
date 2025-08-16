@@ -2,7 +2,6 @@ import asyncio
 import base64
 import os
 from pprint import pprint
-from typing import Any, Dict, List
 
 
 from dotenv import load_dotenv
@@ -11,12 +10,8 @@ from openinference.instrumentation.crewai import CrewAIInstrumentor
 from openinference.instrumentation.litellm import LiteLLMInstrumentor
 
 from slideguard.crew.evaluator import SlideGuardEvaluator
-from crewai import Task, Crew
-from textwrap import dedent
 from crewai.tools import tool
 
-from slideguard.criteria.slide_helper_description import SlideDescription
-from slideguard.schemes import SlideType
 from slideguard.schemes import Criteria
 
 
