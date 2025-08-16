@@ -6,7 +6,7 @@ import logging
 from typing import AsyncIterable, Callable, List, Any, Tuple, Type, TypeVar, cast
 
 from jsonschema import ValidationError
-from slideguard.crew.controlled_llm import ControlledLLM, create_llm_from_config
+from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.criteria.base import CriterionInfo
 from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType
@@ -18,7 +18,7 @@ from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
 
 from textwrap import dedent
-from crewai import LLM, Agent, Task, Crew, TaskOutput
+from crewai import Agent, Task, Crew, TaskOutput
 from pydantic import BaseModel
 import json
 import asyncio
