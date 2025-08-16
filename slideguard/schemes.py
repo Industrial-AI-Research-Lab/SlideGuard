@@ -18,14 +18,22 @@ class SlideImage(Slideable):
         frozen = True
 
 class Criteria(str, Enum):
+    # slide criteria
     slide_type = "slide_type"
     slide_description = "slide_description"
     slide_visual_arrangement = "slide_visual_arrangement"
-    slide_color = "slide_color"
     slide_color_and_fonts = "slide_color_and_fonts"
-    slide_content = "slide_content"
+    slide_abbreviations = "slide_abbreviations"
+    slide_fact_link_availability = "slide_fact_link_availability"
+    slide_graphic_content_match = "slide_graphic_content_match"
+    slide_orphography_correctness = "slide_orphography_correctness"
+    slide_title_content_match = "slide_title_content_match"
+    slide_title_slide_quality = "slide_title_slide_quality"
+
+    # deck criteria
     deck_storytelling = "deck_storytelling"
     deck_structure_analysis = "deck_structure_analysis"
+    deck_research_quality = "deck_research_quality"
 
     def is_service_criteria(self) -> bool:
         return self in [self.slide_type, self.slide_description]

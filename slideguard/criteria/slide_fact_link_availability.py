@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide. 
@@ -20,26 +21,30 @@ Strictly follow the following rules:
 - in the 'Answer:' section, provide only clear comments for the user on the presence of sources, if they were required on the slide
 - if you have no comments on the slide in the 'Answer:' section, write **only** 'Problems not found' and nothing else
 
-Write the result in the following JSON format:
-{schema_format}
+Write the result in a JSON format.
 """
+
 
 class SlideFactLinkAvailabilityResult(BaseModel):
     evaluation_element: str = Field(description="Comment on the slide ")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 
+
 class SlideFactLinkAvailability(BaseModel):
     evaluation_results: list[SlideFactLinkAvailabilityResult] = Field(description="List of identified content issues")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
-slide_fact_link_availability = CriterionInfo(
-    criterion_name="Slide Fact Link Availability",
-    criterion_type="slide",
+
+SLIDE_FACT_LINK_AVAILABILITY = CriterionInfo(
+    criteria=Criteria.slide_fact_link_availability,
+    type="slide",
     criterion_description="Analyzing whether fact links are available on the slide and provide appropriate suggestions",
-    criterion_prompt=prompt,
-    criterion_schema=SlideFactLinkAvailability,
+    agent_prompt=prompt,
+    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    pydantic=SlideFactLinkAvailability,
     applicable_slide_types=["current_state", "proposed_solution", "experimental_results"],
     priority=4,
     requires_slide_type=True,
     category="visual"
 )
+

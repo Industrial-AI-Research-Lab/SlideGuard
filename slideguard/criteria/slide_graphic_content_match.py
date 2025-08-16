@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide that may contain a visualization. 
@@ -17,8 +18,7 @@ Strictly follow the following rules:
 - always provide the 'Thought:' section, and the 'Answer:' section, otherwise you will not be able to complete the task
 - in the 'Answer:' section, provide only clear comments for the user on the consistency of the infographic with the slide content, if you have no comments on the slide, write **only** 'Problems not found' and nothing else
 
-Write the result in the following JSON format:
-{schema_format}
+Write the result in a JSON format.
 """
 
 class SlideGraphicContentMatchResult(BaseModel):
@@ -29,12 +29,14 @@ class SlideGraphicContentMatch(BaseModel):
     evaluation_results: list[SlideGraphicContentMatchResult] = Field(description="List of identified content issues")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
-slide_graphic_content_match = CriterionInfo(
-    criterion_name="Slide Graphic Content Match",
-    criterion_type="slide",
+
+SLIDE_GRAPHIC_CONTENT_MATCH = CriterionInfo(
+    criteria=Criteria.slide_graphic_content_match,
+    type="slide",
     criterion_description="Analyzing whether graphic content matches the slide content and provide appropriate suggestions",
-    criterion_prompt=prompt,
-    criterion_schema=SlideGraphicContentMatch,
+    agent_prompt=prompt,
+    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    pydantic=SlideGraphicContentMatch,
     applicable_slide_types=["experiment_settings", "experimental_results"],
     priority=4,
     requires_slide_type=True,

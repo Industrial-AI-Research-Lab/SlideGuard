@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """
 You are an expert in evaluating the research quality of students' presentations.
@@ -21,27 +22,30 @@ Evaluate the presentation's research quality by examining the evidence-based app
 **Answer Section:**
 Provide specific suggestions for improving the research quality of the presentation.
 
-The answer in the 'Answer' section should be in JSON format:
-{schema_format}
-
+The answer in the 'Answer' section should be in JSON format.
 """
+
 
 class DeckResearchQualityResult(BaseModel):
     evaluation_element: str = Field(description="Evaluation element")
     evaluation_suggestion: str = Field(description="Evaluation suggestion")
 
+
 class DeckResearchQuality(BaseModel):
     evaluation_results: list[DeckResearchQualityResult] = Field(description="List of evaluation results with specific elements and suggestions")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
-deck_research_quality = CriterionInfo(
-    criterion_name="Deck Research Quality",
-    criterion_type="deck",
+
+DECK_RESEARCH_QUALITY = CriterionInfo(
+    criteria=Criteria.deck_research_quality,
+    type="deck",
     criterion_description="Evaluating the research quality of students' presentations",
-    criterion_prompt=prompt,
-    criterion_schema=DeckResearchQuality,
+    agent_prompt=prompt,
+    task_prompt=BASE_DECK_TASK_PROMPT,
+    pydantic=DeckResearchQuality,
     applicable_slide_types=None,  # Applies to all slide types
     priority=3,
     requires_slide_type=False,
     category="research"
 )
+

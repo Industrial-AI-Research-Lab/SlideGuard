@@ -67,13 +67,16 @@ Provide specific, actionable feedback including:
 - Focus on the logical flow and coherence of the story, not content quality
 """
 
+
 class DeckStorytellingResult(BaseModel):
     evaluation_element: str = Field(description="Evaluation element")
     evaluation_suggestion: str = Field(description="Evaluation suggestion")
 
+
 class DeckStorytelling(BaseModel):
     evaluation_results: list[DeckStorytellingResult] = Field(description="List of evaluation results with specific elements and suggestions")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5")
+
 
 DECK_STORYTELLING = CriterionInfo(
     criteria=Criteria.deck_storytelling,
@@ -86,4 +89,5 @@ DECK_STORYTELLING = CriterionInfo(
     priority=1,
     requires_slide_type=True,  # Needs slide types to evaluate structure
     category="structure"
-) 
+)
+

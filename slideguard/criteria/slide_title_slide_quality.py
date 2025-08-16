@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """You are an expert in analyzing student presentations.
 You will be provided with a screenshot of the title slide of a presentation.
@@ -20,8 +21,7 @@ Then, in the «Answer:» section, write the final answer for the user in Russian
 Strictly follow the following rules:
 - always provide the «Thought:» section, and the «Answer:» section, otherwise you will not be able to complete the task
 
-Write the result in the following JSON format:
-{schema_format}
+Write the result in a JSON format.
 """
 
 class SlideTitleSlideQualityResult(BaseModel):
@@ -32,12 +32,13 @@ class SlideTitleSlideQuality(BaseModel):
     evaluation_results: list[SlideTitleSlideQualityResult] = Field(description="List of identified content issues")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
-slide_title_slide_quality = CriterionInfo(
-    criterion_name="Slide Title Slide Quality",
-    criterion_type="slide",
+SLIDE_TITLE_SLIDE_QUALITY = CriterionInfo(
+    criteria=Criteria.slide_title_slide_quality,
+    type="slide",
     criterion_description="Analyzing whether the slide title matches the slide quality",
-    criterion_prompt=prompt,
-    criterion_schema=SlideTitleSlideQuality,
+    agent_prompt=prompt,
+    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    pydantic=SlideTitleSlideQuality,
     applicable_slide_types=["title_slide"],
     priority=4,
     requires_slide_type=True,

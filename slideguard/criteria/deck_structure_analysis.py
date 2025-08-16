@@ -10,16 +10,19 @@ Your task is to check whether the presentation contains key elements:
 
 If something of above is missing it is a strict violation of the slide deck structure and should be reported.
 
-Write the result in the following JSON format:
+The result should be in a JSON format.
 """
+
 
 class DeckStructureAnalysisResult(BaseModel):
     evaluation_element: str = Field(description="Evaluation element")
     evaluation_suggestion: str = Field(description="Evaluation suggestion")
 
+
 class DeckStructureAnalysis(BaseModel):
     evaluation_results: list[DeckStructureAnalysisResult] = Field(description="List of evaluation results with specific elements and suggestions")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5")
+
 
 DECK_STRUCTURE_ANALYSIS = CriterionInfo(
     criteria=Criteria.deck_structure_analysis,
@@ -32,4 +35,5 @@ DECK_STRUCTURE_ANALYSIS = CriterionInfo(
     priority=1,
     requires_slide_type=True,  # Needs slide types to evaluate structure
     category="structure"
-) 
+)
+

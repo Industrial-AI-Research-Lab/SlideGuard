@@ -6,6 +6,7 @@ from typing import AsyncIterable, Callable, List, Any, Tuple, Type, TypeVar, cas
 
 from jsonschema import ValidationError
 from slideguard.crew.controlled_llm import create_llm_from_env
+from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.criteria.base import CriterionInfo
 from slideguard.criteria.deck_storytelling import DECK_STORYTELLING
 from slideguard.criteria.deck_structure_analysis import DECK_STRUCTURE_ANALYSIS
@@ -217,24 +218,24 @@ class SlideGuardEvaluator:
         )
     
     def _get_slide_criterias_info(self, criterias: List[Criteria] | None) -> List[CriterionInfo]:
-        all_infos = {
-            SLIDE_HELPER_TYPE.criteria: SLIDE_HELPER_TYPE,
-            SLIDE_HELPER_DESCRIPTION.criteria: SLIDE_HELPER_DESCRIPTION,
-            SLIDE_VISUAL_ARRANGEMENT.criteria: SLIDE_VISUAL_ARRANGEMENT
-        }
-
         if criterias is None:
-            return list(all_infos.values())
+            return list(SLIDE_CRITERIA_INFO.values())
         
-        return [all_infos[criteria] for criteria in criterias if criteria in all_infos]
+        not_found_criterias = [criteria for criteria in criterias if criteria not in SLIDE_CRITERIA_INFO]
+        if not_found_criterias:
+            raise ValueError(f"Criteria {not_found_criterias} not found in SLIDE_CRITERIA_INFO")
+
+        return [SLIDE_CRITERIA_INFO[criteria] for criteria in criterias]
     
     def _get_deck_criterias_info(self, criterias: List[Criteria] | None) -> List[CriterionInfo]:
-        all_infos = {
-            DECK_STORYTELLING.criteria: DECK_STORYTELLING,
-            DECK_STRUCTURE_ANALYSIS.criteria: DECK_STRUCTURE_ANALYSIS
-        }
+        if criterias is None:
+            return list(DECK_CRITERIA_INFO.values())
         
-        return [all_infos[criteria] for criteria in criterias if criteria in all_infos]
+        not_found_criterias = [criteria for criteria in criterias if criteria not in DECK_CRITERIA_INFO]
+        if not_found_criterias:
+            raise ValueError(f"Criteria {not_found_criterias} not found in DECK_CRITERIA_INFO")
+
+        return [DECK_CRITERIA_INFO[criteria] for criteria in criterias]
     
     async def _run_crew(self, 
                         criteria_info: CriterionInfo, 

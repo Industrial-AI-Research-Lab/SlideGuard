@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.schemes import Criteria
 
 prompt = """
 You are an expert in working with presentations.
@@ -21,22 +22,27 @@ Normal words and abbreviations from known words cannot be abbreviations.
 Your answer should have two sections: Thought and Answer.
 
 First, in the 'Thought' section, write down your reasoning on the task STRICTLY following the plan of the solution and mark the individual stages of the solution. 
-Then, in the 'Answer' section, form the final answer in the following JSON format:"""
+Then, in the 'Answer' section, form the final answer in the following JSON format.
+"""
+
 
 class SlideAbbreviationsResult(BaseModel):
     evaluation_element: str = Field(description="Found abbreviation (write here ONLY the abbreviation exactly as it appeared in the text, and nothing else)")
     evaluation_suggestion: str = Field(description="<Specify that it needs to be explained>")
 
+
 class SlideAbbreviations(BaseModel):
     evaluation_results: list[SlideAbbreviationsResult] = Field(description="List of identified abbreviations")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
-slide_abbreviations = CriterionInfo(
-    criterion_name="Slide Abbreviations",
-    criterion_type="slide",
+
+SLIDE_ABBREVIATIONS = CriterionInfo(
+    criteria=Criteria.slide_abbreviations,
+    type="slide",
     criterion_description="You are an expert in working with presentations. You will be provided with a screenshot of a presentation slide. Your task is to analyze the slide and determine if there are any abbreviations for which there is no explicit explanation. The surrounding text of the abbreviation itself cannot be considered an explanation. The explanation must be explicit.",
-    criterion_prompt=prompt,
-    criterion_schema=SlideAbbreviations,
+    agent_prompt=prompt,
+    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    pydantic=SlideAbbreviations,
     # This criterion is most relevant for slides with visual content
     applicable_slide_types=None,
     priority=4,
