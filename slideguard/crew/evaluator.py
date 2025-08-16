@@ -174,10 +174,12 @@ class SlideGuardEvaluator:
     
     def create_agent(self, criteria: CriterionInfo) -> Agent:
         agent = Agent(
-            role="",
-            goal="",
-            backstory="",
-            system_template=criteria.agent_prompt,
+            role='a helpful assistant and expert',
+            goal='evaluate the criteria you are responsible for',
+            backstory=criteria.agent_prompt,
+            # use_system_prompt=True,
+            # system_template=criteria.agent_prompt,
+            # prompt_template=criteria.agent_prompt,
             tools=self.tools,
             verbose=True,
             allow_delegation=False,

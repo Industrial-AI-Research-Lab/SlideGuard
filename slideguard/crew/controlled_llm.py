@@ -123,6 +123,10 @@ class ControlledLLM(LLM):
             }
 
             return user_message
+        
+        # from pprint import pprint
+        # print(f"ControlledLLM.call:")
+        # pprint(messages, indent=4)
 
         messages = [process_message_with_image(m) for m in messages]
 
