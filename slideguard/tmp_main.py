@@ -55,8 +55,8 @@ async def main():
         CrewAIInstrumentor().instrument(skip_dep_check=True)
         LiteLLMInstrumentor().instrument()
 
-    presentation_path = "resources/slidedecks/test_one_slide.pdf"
-    # presentation_path = "resources/slidedecks/30_EN_Matveeva_Thesis.pdf"
+    # presentation_path = "resources/slidedecks/test_one_slide.pdf"
+    presentation_path = "resources/slidedecks/30_EN_Matveeva_Thesis.pdf"
 
     evaluator = SlideGuardEvaluator()
 
@@ -76,6 +76,8 @@ async def main():
         # Use model_dump() with mode='json' to ensure proper serialization of nested BaseModel objects
         evaluation_dict = evaluation.model_dump(mode='json')
         f.write(json.dumps(evaluation_dict, indent=4))
+    
+    print("Evaluation saved to evaluation.json")
 
     # pprint(evaluation)
 
