@@ -194,6 +194,7 @@ class SlideGuardEvaluator:
             name=criteria.criteria.value,
             description=criteria.task_prompt,
             agent=agent,
+            # output_json=criteria.pydantic,
             output_pydantic=criteria.pydantic,
             guardrail=self._make_pydantic_guardrail(criteria.pydantic),
             max_retries=self.max_retries,

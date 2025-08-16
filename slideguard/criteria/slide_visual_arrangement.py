@@ -30,7 +30,8 @@ Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall visual assessment of the slide, identification of the slide title and its visual treatment, and analysis of layout structure and information hierarchy.
 In the Answer section, provide the final evaluation in JSON format with specific visual issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 
-The answer in the 'Answer' section should be in JSON format.
+The answer in the 'Answer' section should be in JSON format:
+{schema_format}
 """
 
 class SlideVisualArrangementResult(BaseModel):
@@ -46,7 +47,7 @@ SLIDE_VISUAL_ARRANGEMENT = CriterionInfo(
     criteria=Criteria.slide_visual_arrangement,
     type="slide",
     criterion_description="Visual arrangement of the slide",
-    agent_prompt=prompt,
+    agent_prompt=prompt.format(schema_format=SlideVisualArrangement.model_json_schema()),
     task_prompt=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideVisualArrangement,
     applicable_slide_types=None,  # Applies to all slide types
