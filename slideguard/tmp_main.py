@@ -63,7 +63,6 @@ async def main():
         # slide_criterias=[Criteria.slide_visual_arrangement],
         slide_criterias=[Criteria.slide_type, Criteria.slide_description, Criteria.slide_visual_arrangement],
         deck_criterias=[Criteria.deck_storytelling],
-        deck_criterias=[],
         langfuse_client=langfuse_client
     )
     pprint(evaluation)

@@ -294,11 +294,11 @@ class SlideGuardEvaluator:
                 slide_id=slide.slide_id,
                 slide_type=cast(SlideType, crit2result[Criteria.slide_type][i]) if Criteria.slide_type in criterias else None,
                 slide_description=cast(SlideDescription, crit2result[Criteria.slide_description][i]) if Criteria.slide_description in criterias else None,
-                evaluations=[
-                    crit2result[info.criteria][i] 
+                evaluations={
+                    info.criteria: crit2result[info.criteria][i] 
                     for info in infos
                     if not info.criteria.is_service_criteria()
-                ]
+                }
             )
             for i, slide in enumerate(slides.slides)
         ]
@@ -401,6 +401,7 @@ class SlideGuardEvaluator:
                 deck_criterias
             )
         else:
+            deck_evaluations = None
             logger.warning("No slide description and slide type criteria were asked for, skipping deck evaluation")
         
         # # Create final summary
