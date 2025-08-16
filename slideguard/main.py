@@ -125,7 +125,7 @@ def eval_run(
     typer.echo(f"Writing results to {output_path}...")
 
     with open(output_path, "w") as f:
-        f.write(evaluation.model_dump_json())
+        f.write(evaluation.model_dump_json(indent=4))
 
     # Human-friendly summary
     typer.echo(f"Evaluation is finished. Results have been written to {output_path}")
