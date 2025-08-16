@@ -6,21 +6,15 @@ import logging
 from typing import AsyncIterable, Callable, List, Any, Tuple, Type, TypeVar, cast
 
 from jsonschema import ValidationError
-from slideguard.crew.controlled_llm import create_llm_from_env
+from slideguard.crew.controlled_llm import ControlledLLM, create_llm_from_config
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.criteria.base import CriterionInfo
-from slideguard.criteria.deck_storytelling import DECK_STORYTELLING
-from slideguard.criteria.deck_structure_analysis import DECK_STRUCTURE_ANALYSIS
-from slideguard.criteria.slide_helper_description import SLIDE_HELPER_DESCRIPTION
-from slideguard.criteria.slide_helper_type import SLIDE_HELPER_TYPE
-from slideguard.criteria.slide_visual_arrangement import SLIDE_VISUAL_ARRANGEMENT
 from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType
 from slideguard.schemes import DeckEvaluationResult
 from slideguard.schemes import SlideEvaluationResult
 from slideguard.schemes import FullEvaluation
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
-from slideguard.config import config
 
 from textwrap import dedent
 from crewai import LLM, Agent, Task, Crew, TaskOutput
@@ -49,13 +43,13 @@ class SlideGuardEvaluator:
     """Crew of agents for comprehensive slide deck evaluation"""
     
     def __init__(self,
-                 file_manager: FileManager | None = None,
-                 cache_manager: CacheManager | None = None,
-                 llm: LLM | None = None,
+                 file_manager: FileManager,
+                 cache_manager: CacheManager,
+                 llm: ControlledLLM,
                  max_retries: int = 3):
-        self.file_manager = file_manager or FileManager()
-        self.cache_manager = cache_manager or CacheManager()
-        self.llm = llm or create_llm_from_env()
+        self.file_manager = file_manager
+        self.cache_manager = cache_manager
+        self.llm = llm
         self.tools = self._setup_tools()
         self.max_retries = max_retries
 

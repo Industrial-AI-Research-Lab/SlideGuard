@@ -2,7 +2,6 @@ import asyncio
 import base64
 import json
 import os
-from pprint import pprint
 
 
 from dotenv import load_dotenv
@@ -14,7 +13,6 @@ from slideguard.crew.evaluator import SlideGuardEvaluator
 from crewai.tools import tool
 
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
-from slideguard.schemes import Criteria
 
 
 def encode_image_to_base64(image_path):

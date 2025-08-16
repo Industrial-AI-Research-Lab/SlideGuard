@@ -5,10 +5,9 @@ Main evaluator for slide deck analysis using CrewAI agents
 import base64
 import re
 from threading import Semaphore
-import os
 from typing import List, Literal, Optional, Dict, Any, Type, Union
 
-from slideguard.config import config
+from slideguard.utils.config import SlideGuardConfig
 from crewai.llm import LLM
 from pydantic import BaseModel
 
@@ -153,7 +152,7 @@ class ControlledLLM(LLM):
             from_agent=from_agent
         )
 
-def create_llm_from_env():
+def create_llm_from_config(config: SlideGuardConfig) -> ControlledLLM | None:
     """
     Create LLM instance from environment variables for CrewAI.
     
@@ -174,14 +173,13 @@ def create_llm_from_env():
         
         # Configure CrewAI to use LiteLLM with explicit provider
         # and wrap with a semaphore for bounded concurrency
-        max_concurrency = int(os.getenv("SLIDEGUARD_MAX_CONCURRENCY")) if os.getenv("SLIDEGUARD_MAX_CONCURRENCY") else None
         llm = ControlledLLM(
             model=f"openai/{config.model}",  # Tell LiteLLM this is an OpenAI-compatible model
             api_key=config.api_key,
             base_url=config.api_base,
             temperature=0.1,
             max_tokens=4000,
-            max_concurrency=max_concurrency
+            max_concurrency=config.max_concurrency
         )
         
         return llm

@@ -62,7 +62,8 @@ def test_installation():
     
     try:
         # Test basic imports
-        from slideguard.config import config
+        from slideguard.utils.config import load_config
+        config = load_config()
         print("✓ Configuration module imported")
         
         
