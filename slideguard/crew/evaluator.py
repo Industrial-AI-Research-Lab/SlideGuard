@@ -192,7 +192,7 @@ class SlideGuardEvaluator:
         agent = self.create_agent(criteria)
         task = Task(
             name=criteria.criteria.value,
-            description=criteria.task_prompt,
+            description=criteria.task_prompt_template,
             agent=agent,
             # output_json=criteria.pydantic,
             output_pydantic=criteria.pydantic,

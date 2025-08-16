@@ -27,8 +27,8 @@ SLIDE_COLOR_AND_FONTS = CriterionInfo(
     criteria=Criteria.slide_color_and_fonts,
     type="slide",
     criterion_description="Checking the color scheme and fonts of the slide",
-    agent_prompt=prompt,
-    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    agent_prompt_template=prompt,
+    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideColorAndFontsAnalysis,
     # This criterion is most relevant for slides with visual content
     applicable_slide_types=["Title slide", "Motivation", "Goal", "Current State", "Proposed Solution", "Experimental Results", "Conclusion"],

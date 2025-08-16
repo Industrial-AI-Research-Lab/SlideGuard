@@ -48,8 +48,8 @@ SLIDE_VISUAL_ARRANGEMENT = CriterionInfo(
     criteria=Criteria.slide_visual_arrangement,
     type="slide",
     criterion_description="Visual arrangement of the slide",
-    agent_prompt=prompt.format(schema_format=SlideVisualArrangement.model_json_schema()),
-    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    agent_prompt_template=prompt.format(schema_format=SlideVisualArrangement.model_json_schema()),
+    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideVisualArrangement,
     applicable_slide_types=None,  # Applies to all slide types
     priority=2,

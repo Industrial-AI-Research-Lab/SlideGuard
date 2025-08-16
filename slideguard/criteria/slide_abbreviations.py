@@ -40,8 +40,8 @@ SLIDE_ABBREVIATIONS = CriterionInfo(
     criteria=Criteria.slide_abbreviations,
     type="slide",
     criterion_description="You are an expert in working with presentations. You will be provided with a screenshot of a presentation slide. Your task is to analyze the slide and determine if there are any abbreviations for which there is no explicit explanation. The surrounding text of the abbreviation itself cannot be considered an explanation. The explanation must be explicit.",
-    agent_prompt=prompt,
-    task_prompt=BASE_SLIDE_TASK_PROMPT,
+    agent_prompt_template=prompt,
+    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideAbbreviations,
     # This criterion is most relevant for slides with visual content
     applicable_slide_types=None,
