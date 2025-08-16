@@ -67,6 +67,30 @@ def _load_criterias(criteria: Optional[List[str]]) -> Tuple[List[Criteria], List
     return slide_criterias, deck_criterias
 
 
+@eval_app.command("list-criterias")
+def eval_list_criterias() -> None:
+    """List all available slide-level and deck-level criteria."""
+    typer.echo("SlideGuard - Available Evaluation Criteria")
+    typer.echo("=" * 45)
+    
+    # Slide-level criteria
+    typer.echo("\n📊 Slide-Level Criteria:")
+    typer.echo("-" * 25)
+    for criteria in SLIDE_CRITERIA_INFO.keys():
+        typer.echo(f"  • {criteria.value}")
+    
+    # Deck-level criteria
+    typer.echo("\n📋 Deck-Level Criteria:")
+    typer.echo("-" * 24)
+    for criteria in DECK_CRITERIA_INFO.keys():
+        typer.echo(f"  • {criteria.value}")
+    
+    typer.echo(f"\nTotal: {len(SLIDE_CRITERIA_INFO)} slide criteria, {len(DECK_CRITERIA_INFO)} deck criteria")
+    typer.echo("\nUsage examples:")
+    typer.echo("  slideguard eval run -p presentation.pdf --criteria slide_visual_arrangement")
+    typer.echo("  slideguard eval run -p presentation.pdf --criteria deck_structure_analysis")
+
+
 @eval_app.command("run")
 def eval_run(
     presentation_path: str = typer.Option(

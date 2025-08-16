@@ -52,6 +52,9 @@ python -m slideguard.setup setup
 #### Command Line Interface (Recommended)
 
 ```bash
+# List all available criteria
+slideguard eval list-criterias
+
 # Basic evaluation using CLI
 slideguard eval run --presentation-path presentation.pdf
 
@@ -133,6 +136,20 @@ python -m slideguard.setup all
 ## Usage Examples
 
 ### CLI Examples
+
+#### Discovering Available Criteria
+
+```bash
+# List all available evaluation criteria
+slideguard eval list-criterias
+
+# Output shows:
+# 📊 Slide-Level Criteria: (10 criteria)
+# 📋 Deck-Level Criteria: (3 criteria)
+# Plus usage examples
+```
+
+#### Running Evaluations
 
 ```bash
 # Basic evaluation - all criteria
@@ -318,6 +335,9 @@ See the `examples/` directory for complete usage examples:
 You can also run the main.py file directly:
 
 ```bash
+# List available criteria
+python -m slideguard.main eval list-criterias
+
 # Direct execution
 python -m slideguard.main eval run --presentation-path presentation.pdf
 
@@ -349,6 +369,9 @@ python -m slideguard.main eval run \
 ```bash
 # Check configuration status
 python -m slideguard.setup test
+
+# List available evaluation criteria
+slideguard eval list-criterias
 
 # Get help for CLI commands
 slideguard --help
