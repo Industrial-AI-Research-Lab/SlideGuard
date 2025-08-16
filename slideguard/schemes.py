@@ -67,7 +67,7 @@ class DeckDescription(Slideable):
 
 class DeckEvaluationResult(BaseModel):
     """Result of a single criterion evaluation"""
-    evaluations: Dict[Criteria, BaseModel]
+    evaluations: Dict[Criteria, Any]
 
 
 class SlideEvaluationResult(BaseModel):
@@ -76,7 +76,7 @@ class SlideEvaluationResult(BaseModel):
     slide_id: int
     slide_type: Optional[SlideType] = None
     slide_description: Optional[SlideDescription] = None
-    evaluations: Optional[Dict[Criteria, BaseModel]] = None
+    evaluations: Optional[Dict[Criteria, Any]] = None
 
 
 class FullEvaluation(BaseModel):

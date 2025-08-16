@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import json
 import os
 from pprint import pprint
 
@@ -12,6 +13,7 @@ from openinference.instrumentation.litellm import LiteLLMInstrumentor
 from slideguard.crew.evaluator import SlideGuardEvaluator
 from crewai.tools import tool
 
+from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.schemes import Criteria
 
 
@@ -61,11 +63,21 @@ async def main():
     evaluation = await evaluator.evaluate_presentation(
         presentation_path=presentation_path,
         # slide_criterias=[Criteria.slide_visual_arrangement],
-        slide_criterias=[Criteria.slide_type, Criteria.slide_description, Criteria.slide_visual_arrangement],
-        deck_criterias=[Criteria.deck_storytelling],
+        # slide_criterias=[Criteria.slide_type, Criteria.slide_description, Criteria.slide_visual_arrangement],
+        # deck_criterias=[Criteria.deck_storytelling],
+        slide_criterias=list(SLIDE_CRITERIA_INFO.keys()),
+        deck_criterias=list(DECK_CRITERIA_INFO.keys()),
         langfuse_client=langfuse_client
     )
-    pprint(evaluation)
+
+    # pprint(evaluation.model_dump())
+
+    with open("evaluation.json", "w") as f:
+        # Use model_dump() with mode='json' to ensure proper serialization of nested BaseModel objects
+        evaluation_dict = evaluation.model_dump(mode='json')
+        f.write(json.dumps(evaluation_dict, indent=4))
+
+    # pprint(evaluation)
 
     # slide_deck_images = evaluator.agents.file_manager.process_presentation(presentation_path)
 

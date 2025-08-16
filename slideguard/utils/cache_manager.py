@@ -13,7 +13,7 @@ U = TypeVar('U')
 
 class CacheManager(Generic[T, U], ABC):
     """Async cache manager for storing processing results"""
-    def __init__(self, cache_dir: Union[Path, str] = ".slideguard_cache/file_cache"):
+    def __init__(self, cache_dir: Union[Path, str] = ".slideguard_cache/evaluations"):
         self.cache_dir = cache_dir if isinstance(cache_dir, Path) else Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 

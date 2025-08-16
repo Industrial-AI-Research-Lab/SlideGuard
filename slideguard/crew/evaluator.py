@@ -413,7 +413,5 @@ class SlideGuardEvaluator:
         return FullEvaluation(
             slide_deck_path=presentation_path,
             slide_evaluations=slide_evaluations,
-            deck_evaluations=deck_evaluations,
-            overall_score=-1.0,
-            summary="Evaluation summary not available"
+            deck_evaluations=deck_evaluations
         )
