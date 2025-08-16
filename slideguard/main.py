@@ -10,6 +10,7 @@ Usage examples:
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import List, Optional, Tuple
 
 import typer
@@ -24,9 +25,24 @@ from slideguard.utils.cache_manager import CacheManager
 from slideguard.utils.file_manager import FileManager
 
 
+def _initialize_logging() -> None:
+    """Initialize logging configuration for SlideGuard."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+
 app = typer.Typer(help="SlideGuard - Evaluate slide decks with AI")
 eval_app = typer.Typer(help="Run evaluations")
 app.add_typer(eval_app, name="eval")
+
+
+@app.callback()
+def main_callback() -> None:
+    """Initialize logging when the root command is executed."""
+    _initialize_logging()
 
 
 def _print_config_help(config: SlideGuardConfig) -> None:
@@ -70,8 +86,8 @@ def eval_run(
         "--criteria",
         help="Slide-level or Deck-level criteria names (repeat option to pass multiple).",
     ),
-    max_concurrency: int = typer.Option(
-        4,
+    max_concurrency: Optional[int] = typer.Option(
+        None,
         "--max-concurrency",
         help="Maximum number of requests to send to the LLM simultaneously",
     ),
