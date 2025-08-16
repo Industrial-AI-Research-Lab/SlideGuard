@@ -265,4 +265,49 @@ from slideguard.criteria.slide_types import get_slide_types
 slide_types = get_slide_types()  # Gets all registered types dynamically
 ```
 
+## Dynamic Prompt Generation
+
+The slide type system is now **dynamically connected** to the `slide_helper_type` prompt! When you add new slide types, the prompt automatically updates to include them.
+
+### How It Works
+
+```python
+from slideguard.criteria.slide_types import add_slide_type
+from slideguard.criteria.slide_helper_type import get_slide_helper_type_prompt
+
+# Add a new slide type
+add_slide_type("Methodology", "slide that describes the research methodology...", "content")
+
+# The prompt automatically includes the new slide type!
+prompt = get_slide_helper_type_prompt()
+print(prompt)  # Now includes "11) Methodology - slide that describes..."
+```
+
+### Prompt Template Variables
+
+The prompt supports template variables for customization:
+
+```python
+# Customize the prompt template
+custom_prompt = get_slide_helper_type_prompt(
+    schema_format="MY_CUSTOM_SCHEMA",
+    description="MY_CUSTOM_DESCRIPTION_PLACEHOLDER"
+)
+```
+
+### Automatic Integration
+
+- **No manual prompt editing**: Slide types are automatically added to the prompt
+- **Consistent descriptions**: The prompt always matches the slide type definitions
+- **Template flexibility**: Customize schema format and description placeholders
+- **Real-time updates**: Changes to slide types immediately reflect in the prompt
+
+### Benefits
+
+1. **Single Source of Truth**: Slide type definitions and prompt descriptions are unified
+2. **Automatic Consistency**: No risk of prompt and slide types getting out of sync
+3. **Easy Extension**: Add new slide types and they're immediately available in the prompt
+4. **Rich Metadata**: Use aliases and metadata for advanced functionality
+5. **Template Support**: Customize prompt variables as needed
+
 This new system makes it much easier to extend and manage slide types in SlideGuard!

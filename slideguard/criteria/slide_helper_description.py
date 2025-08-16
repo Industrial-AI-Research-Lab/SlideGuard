@@ -25,7 +25,7 @@ class SlideDescription(BaseModel):
 slide_helper_description = CriterionInfo(
     criterion_name="Slide Description",
     criterion_type="slide",
-    criterion_description=prompt,
+    criterion_description="You are an expert in detailed presentation analysis. You are provided with ONLY ONE single slide. You need to describe it in maximum detail so that the information can be used to evaluate the structure of the entire presentation. DO NOT make assumptions and DO NOT invent anything regarding what might be on other slides. You always work with only one slide.",
     criterion_prompt=prompt,
     criterion_schema=SlideDescription,
     applicable_slide_types=None,  # Applies to all slide types

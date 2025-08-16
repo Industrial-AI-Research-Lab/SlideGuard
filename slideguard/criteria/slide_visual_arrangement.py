@@ -2,38 +2,52 @@ from pydantic import BaseModel, Field
 from slideguard.criteria.base import CriterionInfo
 
 prompt = """
-You are an expert in slide readability analysis.
+You are an expert in slide visual design and readability analysis.
 You will be provided with a screenshot of one slide from a presentation.
-Your task is to check whether the arrangement, size, and quantity of elements interfere with perception. Note that you are evaluating only the visual criterion and your comments should be related only to it.
+Your task is to evaluate the visual arrangement, layout, and readability of elements on the slide. Focus specifically on how the visual design affects information perception and audience comprehension.
 
-Problems you may encounter and report to the user:
-- Text on the slide may be too small to be easily readable
-- There may be poor use of color, for example white text on a gray background, making text difficult to read
+**Key Visual Elements to Evaluate:**
+- Text readability (size, contrast, font choice)
+- Layout organization (alignment, spacing, hierarchy)
+- Color usage and contrast
+- Information density and visual balance
 
-Follow these rules:
-- Tell the user specifically what needs to be changed on the slide so they understand exactly what your comment refers to.
-- If elements are arranged in a way that makes reading or information perception difficult, record this.
-- Only report problems you are confident about
-- Each of your comments should be accompanied by examples, i.e., contain 'for example'
+**Common Problems to Identify:**
+- Text that is too small or has poor contrast for easy reading
+- Poor color combinations (e.g., white text on light gray background)
+- Cluttered layout with insufficient spacing between elements
+- Overcrowded slides with too much information
+- Poor visual hierarchy or inconsistent formatting
+
+**Evaluation Guidelines:**
+- Be specific about what needs to be changed and where on the slide
+- Provide concrete examples and suggestions for improvement
+- Focus on visual design principles (contrast, alignment, proximity, repetition)
+- Only report issues you are confident about
 
 Your response should have two sections: Thought and Answer.
+In the Thought section, provide your reasoning and analysis including an overall visual assessment of the slide, identification of the slide title and its visual treatment, and analysis of layout structure and information hierarchy.
+In the Answer section, provide the final evaluation in JSON format with specific visual issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 
-First, in the 'Thought' section, provide your reasoning on the task, including analysis of slide content and thoughts on its correspondence to the title. Make sure you have correctly identified the slide title.
-Then in the 'Answer' section: write the final answer, namely list all inconsistencies and problems if they exist. The final answer should not contain comments that do NOT have a conclusion about what needs to be fixed.
 The answer in the 'Answer' section should be in JSON format:
 {schema_format}
 """
 
-class SlideVisualArrangementAnalysis(BaseModel):
-    evaluation_results: list = Field(description="List of evaluation results with specific elements and suggestions")
+class SlideVisualArrangementResult(BaseModel):
+    evaluation_element: str = Field(description="Comment on the slide ")
+    evaluation_suggestion: str = Field(description="Suggestion for the slide")
+
+class SlideVisualArrangement(BaseModel):
+    evaluation_results: list[SlideVisualArrangementResult] = Field(description="List of identified visual issues")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
+
 
 slide_visual_arrangement = CriterionInfo(
     criterion_name="Slide Visual Arrangement",
     criterion_type="slide",
-    criterion_description=prompt,
+    criterion_description="You are an expert in slide visual design and readability analysis. You will be provided with a screenshot of one slide from a presentation. Your task is to evaluate the visual arrangement, layout, and readability of elements on the slide. Focus specifically on how the visual design affects information perception and audience comprehension.",
     criterion_prompt=prompt,
-    criterion_schema=SlideVisualArrangementAnalysis,
+    criterion_schema=SlideVisualArrangement,
     applicable_slide_types=None,  # Applies to all slide types
     priority=2,
     requires_slide_type=False,

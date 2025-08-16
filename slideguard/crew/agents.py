@@ -256,11 +256,13 @@ class SlideGuardAgents:
         tasks = []
         
         # Task 1: Determine slide type
+        from slideguard.criteria.slide_helper_type import get_slide_helper_type_prompt
+        
         type_task = Task(
             description=dedent(f"""
                 Analyze the slide image at {slide_image_path} and determine its type(s).
                 
-                {slide_helper_type.criterion_prompt.format(
+                {get_slide_helper_type_prompt(
                     schema_format=slide_helper_type.criterion_schema.model_json_schema(),
                     description="Analyze the provided slide image"
                 )}

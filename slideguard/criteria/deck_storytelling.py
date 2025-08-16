@@ -40,7 +40,7 @@ A[Motivation] --> G[Experiment Results]
 2. **Current State → Goal Connection**: Does the goal propose improvement over current state?
 3. **Goal → Tasks Connection**: Do tasks directly support achieving the goal?
 4. **Goal → Solution Connection**: Does the proposed solution align with the goal?
-5. **Solution → Experiments Connection**: Do experiments test the proposed solution?
+5. **Solution → Experiments Connection**: Do experiments test the proposed solution and provide explicit result that this approach is better than the current state in some way?
 6. **Experiments → Results Connection**: Do results relate to the experimental setup?
 7. **Motivation → Results Connection**: Do results address the original motivation?
 

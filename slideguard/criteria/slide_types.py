@@ -23,6 +23,7 @@ class SlideType(Enum):
     EXPERIMENT_SETTINGS = "Experiment Settings"
     EXPERIMENTAL_RESULTS = "Experimental Results"
     CONCLUSION = "Conclusion"
+    END_SLIDE = "End slide"
 
 @dataclass
 class SlideTypeInfo:
@@ -41,56 +42,61 @@ class SlideTypeManager:
         self._load_default_types()
     
     def _load_default_types(self):
-        """Load default slide types"""
+        """Load default slide types with detailed descriptions matching slide_helper_type prompt"""
         default_types = {
             SlideType.TITLE_SLIDE.value: SlideTypeInfo(
                 name=SlideType.TITLE_SLIDE.value,
-                description="First slide with presentation title and presenter information",
+                description="this is the first slide of the presentation. It usually contains the title of the presentation and the name of the presenter and scientific advisor.",
                 category="structure"
             ),
             SlideType.SEPARATOR.value: SlideTypeInfo(
                 name=SlideType.SEPARATOR.value,
-                description="Slide that separates logical sections of the presentation",
+                description="this is a slide that separates logical sections of the presentation. Usually contains only a title or title and illustration.",
                 category="structure"
             ),
             SlideType.MOTIVATION.value: SlideTypeInfo(
                 name=SlideType.MOTIVATION.value,
-                description="Slide containing project motivation and problem statement",
-                category="content"
-            ),
-            SlideType.GOAL.value: SlideTypeInfo(
-                name=SlideType.GOAL.value,
-                description="Slide with explicitly formulated goals for the project",
-                category="content"
-            ),
-            SlideType.TASKS.value: SlideTypeInfo(
-                name=SlideType.TASKS.value,
-                description="Slide describing tasks needed to implement the project",
+                description="this is a slide that contains information about the motivation for the project.",
                 category="content"
             ),
             SlideType.CURRENT_STATE.value: SlideTypeInfo(
                 name=SlideType.CURRENT_STATE.value,
-                description="Slide about current state of the field and existing solutions",
+                description="this is a slide that contains information about the current state of the field and existing products / methods / solutions.",
+                category="content"
+            ),
+            SlideType.GOAL.value: SlideTypeInfo(
+                name=SlideType.GOAL.value,
+                description="slide that contain information about goals that need to be achieved to implement the project or product, which is the subject of the entire presentation. Goals must be EXPLICITLY FORMULATED. Remember that goals can only be statements (including those transmitted through infographic) ALWAYS directed into the future. Information about past results, achievements, experience, about what has already been done, CANNOT be a goal.",
+                category="content"
+            ),
+            SlideType.TASKS.value: SlideTypeInfo(
+                name=SlideType.TASKS.value,
+                description="slide that contain information about tasks that need to be performed to implement the project or product, which is the subject of the entire presentation. Differ from goals in that they describe actions, not the final state to which you need to go.",
                 category="content"
             ),
             SlideType.PROPOSED_SOLUTION.value: SlideTypeInfo(
                 name=SlideType.PROPOSED_SOLUTION.value,
-                description="Slide with proposed solution workflow or diagram",
+                description="this is a slide that contains information about the proposed solution to the problem. Can be shown as a workflow or a diagram with description.",
                 category="content"
             ),
             SlideType.EXPERIMENT_SETTINGS.value: SlideTypeInfo(
                 name=SlideType.EXPERIMENT_SETTINGS.value,
-                description="Slide with experiment datasets and hyperparameters",
+                description="slide with description of used for experiments datasets or description of hyperparameters of used methods and models.",
                 category="technical"
             ),
             SlideType.EXPERIMENTAL_RESULTS.value: SlideTypeInfo(
                 name=SlideType.EXPERIMENTAL_RESULTS.value,
-                description="Slide with experimental results showing solution effectiveness",
+                description="this is a slide that contains information about the experimental results that show the effectiveness of the proposed solution.",
                 category="content"
             ),
             SlideType.CONCLUSION.value: SlideTypeInfo(
                 name=SlideType.CONCLUSION.value,
-                description="Slide with presentation conclusion and summary",
+                description="this is a slide that contains information about the conclusion of the presentation.",
+                category="content"
+            ),
+            SlideType.END_SLIDE.value: SlideTypeInfo(
+                name=SlideType.END_SLIDE.value,
+                description="this is a slide that identifies the end of the presentation. It usually contains a thank you message for the audience.",
                 category="content"
             )
         }
@@ -198,6 +204,50 @@ class SlideTypeManager:
                 imported_count += 1
         
         return imported_count
+    
+    def generate_slide_type_prompt_section(self) -> str:
+        """
+        Generate the slide type descriptions section for the prompt.
+        This creates the numbered list of slide types with their descriptions.
+        """
+        prompt_sections = []
+        
+        for i, (name, info) in enumerate(self._slide_types.items(), 1):
+            prompt_sections.append(f"{i}) {name} - {info.description}")
+        
+        return "\n\n".join(prompt_sections)
+    
+    def generate_slide_helper_type_prompt(self, schema_format: str = "{schema_format}", 
+                                        description: str = "{description}") -> str:
+        """
+        Generate the complete slide helper type prompt with dynamic slide type descriptions.
+        
+        Args:
+            schema_format: Template variable for schema format
+            description: Template variable for slide description
+            
+        Returns:
+            Complete prompt with dynamic slide type descriptions
+        """
+        slide_types_section = self.generate_slide_type_prompt_section()
+        
+        prompt = f"""
+You are an expert in detailed presentation analysis. You are provided with a single slide.
+You need to describe it in maximum detail so that the information can be used to evaluate the structure of the entire presentation.
+DO NOT make assumptions and DO NOT invent anything regarding what might be on other slides.
+You always work with only one slide.
+
+You need to remember that slides can contain information of the following types and also belong to the corresponding sections:
+{slide_types_section}
+
+Write the answer in the following JSON format:
+{schema_format}
+
+IMPORTANT! You cannot specify more than three types for one slide. But you can not specify any type if the slide does not belong to any of the listed types.
+
+Slide description: {description}
+"""
+        return prompt.strip()
 
 # Global instance for easy access
 slide_type_manager = SlideTypeManager()
@@ -219,3 +269,12 @@ def get_slide_types_by_category(category: str) -> List[str]:
 def validate_slide_type(name: str) -> bool:
     """Validate if a slide type exists"""
     return slide_type_manager.validate_slide_type(name)
+
+def generate_slide_helper_type_prompt(schema_format: str = "{schema_format}", 
+                                    description: str = "{description}") -> str:
+    """Generate the complete slide helper type prompt with dynamic slide type descriptions"""
+    return slide_type_manager.generate_slide_helper_type_prompt(schema_format, description)
+
+def get_slide_type_prompt_section() -> str:
+    """Get the slide type descriptions section for prompts"""
+    return slide_type_manager.generate_slide_type_prompt_section()
