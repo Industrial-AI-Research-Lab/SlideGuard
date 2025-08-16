@@ -53,15 +53,16 @@ async def main():
         CrewAIInstrumentor().instrument(skip_dep_check=True)
         LiteLLMInstrumentor().instrument()
 
-    # presentation_path = "resources/slidedecks/test_one_slide.pdf"
-    presentation_path = "resources/slidedecks/30_EN_Matveeva_Thesis.pdf"
+    presentation_path = "resources/slidedecks/test_one_slide.pdf"
+    # presentation_path = "resources/slidedecks/30_EN_Matveeva_Thesis.pdf"
 
     evaluator = SlideGuardEvaluator()
 
     evaluation = await evaluator.evaluate_presentation(
         presentation_path=presentation_path,
         slide_criterias=[Criteria.slide_type, Criteria.slide_description],
-        deck_criterias=[Criteria.deck_storytelling],
+        # deck_criterias=[Criteria.deck_storytelling],
+        deck_criterias=[],
         langfuse_client=langfuse_client
     )
     pprint(evaluation)
