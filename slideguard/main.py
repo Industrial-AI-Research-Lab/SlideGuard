@@ -82,6 +82,7 @@ def eval_run(
     ),
 ) -> None:
     """Start an evaluation for the given presentation."""
+    typer.echo(f"Loading settings...")
 
     slide_criterias, deck_criterias = _load_criterias(criteria)
 
@@ -110,6 +111,8 @@ def eval_run(
             langfuse_client=langfuse_client
         )
 
+    typer.echo(f"Starting evaluation for {presentation_path}...")
+
     try:
         evaluation = asyncio.run(_run())
     except FileNotFoundError as e:
@@ -118,6 +121,8 @@ def eval_run(
     except Exception as e:
         typer.echo(f"Evaluation failed: {e}")
         raise typer.Exit(code=3)
+
+    typer.echo(f"Writing results to {output_path}...")
 
     with open(output_path, "w") as f:
         f.write(evaluation.model_dump_json())

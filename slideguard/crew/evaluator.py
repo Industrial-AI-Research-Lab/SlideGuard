@@ -89,9 +89,6 @@ class SlideGuardEvaluator:
         print(f"  LLM Available: {'✓ Yes' if self.llm else '✗ No'}")
         print(f"  Cache Directory: {self.cache_dir}")
         print(f"  File Cache Directory: {self.file_cache_dir}")
-        
-        if self.llm is None:
-            config.print_config_status()
 
     def _create_duckduckgo_search_tool(self):
         """Create a DuckDuckGo search tool for CrewAI"""
