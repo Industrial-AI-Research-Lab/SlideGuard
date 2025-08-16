@@ -2,6 +2,7 @@
 Agents for slides evaluation and presentation analysis on multiple criteria
 """
 
+import logging
 from typing import AsyncIterable, Callable, List, Any, Tuple, Type, TypeVar, cast
 
 from jsonschema import ValidationError
@@ -14,9 +15,9 @@ from slideguard.criteria.slide_helper_description import SLIDE_HELPER_DESCRIPTIO
 from slideguard.criteria.slide_helper_type import SLIDE_HELPER_TYPE
 from slideguard.criteria.slide_visual_arrangement import SLIDE_VISUAL_ARRANGEMENT
 from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType
-from slideguard.schemes import EvaluationResult
-from slideguard.schemes import SlideEvaluationResult
 from slideguard.schemes import DeckEvaluationResult
+from slideguard.schemes import SlideEvaluationResult
+from slideguard.schemes import FullEvaluation
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
 from slideguard.config import config
@@ -27,6 +28,9 @@ from pydantic import BaseModel
 import json
 import asyncio
 from langfuse import Langfuse
+
+
+logger = logging.getLogger(__name__)
 
 
 T = TypeVar('T', bound=BaseModel)
@@ -59,7 +63,7 @@ class SlideGuardEvaluator:
                                     presentation_path: str,
                                     slide_criterias: List[Criteria] = None,
                                     deck_criterias: List[Criteria] = None,
-                                    langfuse_client: Langfuse | None = None) -> DeckEvaluationResult:
+                                    langfuse_client: Langfuse | None = None) -> FullEvaluation:
         
         if langfuse_client:
             with langfuse_client.start_as_current_span(name="slideguard-crewai-trace") as span:
@@ -263,8 +267,7 @@ class SlideGuardEvaluator:
     async def _evaluate_slides(
         self,
         slides: SlideDeckImages,
-        criterias: List[Criteria] | None = None,
-        langfuse_client: Langfuse | None = None,
+        criterias: List[Criteria] | None = None
     ) -> List[SlideEvaluationResult]:
         """Evaluate a batch of slides using CrewAI's kickoff_for_each_async.
 
@@ -289,10 +292,10 @@ class SlideGuardEvaluator:
             SlideEvaluationResult(
                 slide_deck_path=slides.slide_deck_path,
                 slide_id=slide.slide_id,
-                slide_type=cast(SlideType, crit2result[Criteria.slide_type][i]),
-                slide_description=cast(SlideDescription, crit2result[Criteria.slide_description][i]),
+                slide_type=cast(SlideType, crit2result[Criteria.slide_type][i]) if Criteria.slide_type in criterias else None,
+                slide_description=cast(SlideDescription, crit2result[Criteria.slide_description][i]) if Criteria.slide_description in criterias else None,
                 evaluations=[
-                    cast(EvaluationResult, crit2result[info.criteria][i]) 
+                    crit2result[info.criteria][i] 
                     for info in infos
                     if not info.criteria.is_service_criteria()
                 ]
@@ -302,40 +305,26 @@ class SlideGuardEvaluator:
 
         return slide_evaluation_results
 
-    async def _evaluate_slide(
-        self,
-        slide_image_path: str,
-        slide_id: str,
-        slide_criteria: List[CriterionInfo] | None = None,
-        slide_types: List[str] | None = None,
-    ) -> SlideEvaluationResult:
-        """Backward-compatible wrapper to evaluate a single slide using the batch engine."""
-        results = await self._evaluate_slides(
-            slides=[{"slide_id": slide_id, "slide_image_path": slide_image_path}],
-            criterias=slide_criteria,
-            concurrency_limit=1,
-        )
-
     async def _evaluate_deck(self,
                             slide_descriptions: SlideDeckDescriptions,
-                            deck_criterias: List[Criteria] | None = None) -> List[EvaluationResult]:
+                            deck_criterias: List[Criteria] | None = None) -> DeckEvaluationResult:
         """Evaluate the entire deck structure"""
         
         infos = self._get_deck_criterias_info(deck_criterias)
 
         running_crews = [self._run_crew(info, slide_descriptions) for info in infos]
-        results = cast(List[List[EvaluationResult]], await asyncio.gather(*running_crews))
+        results = cast(List[List[BaseModel]], await asyncio.gather(*running_crews))
         
         for result in results:
             assert len(result) == 1
 
-        results = [result[0] for result in results]
+        evaluations = {info.criteria: result[0] for info, result in zip(infos, results)}
 
-        return results
+        return DeckEvaluationResult(evaluations=evaluations)
 
     async def _create_final_summary(self, 
                                  slide_evaluations: List[SlideEvaluationResult],
-                                 deck_evaluations: List[EvaluationResult]) -> DeckEvaluationResult:
+                                 deck_evaluations: List[DeckEvaluationResult]) -> FullEvaluation:
         """Create final comprehensive summary"""
         
         summary_agent = self.create_summary_agent()
@@ -380,7 +369,7 @@ class SlideGuardEvaluator:
     async def _evaluate_presentation(self,
                                      presentation_path: str,
                                      slide_criterias: List[Criteria] = None,
-                                     deck_criterias: List[Criteria] = None) -> DeckEvaluationResult:
+                                     deck_criterias: List[Criteria] = None) -> FullEvaluation:
         """Main method to evaluate an entire presentation"""
         
         # Process presentation to get slide images
@@ -390,26 +379,29 @@ class SlideGuardEvaluator:
             slides=slides,
             criterias=slide_criterias
         )
-        
 
-        slide_descriptions = [
-            SlideDescriptionWithType(
-                **slide.slide_description.model_dump(), 
-                slide_type=slide.slide_type.slide_type
-            ) 
-            for slide in slide_evaluations
-        ]
+        # TODO: need to check if there is descriptions or not
+        if Criteria.slide_description in slide_criterias and Criteria.slide_type in slide_criterias:
+            slide_descriptions = [
+                SlideDescriptionWithType(
+                    **slide.slide_description.model_dump(), 
+                    slide_type=slide.slide_type.slide_type
+                ) 
+                for slide in slide_evaluations
+            ]
 
-        slide_deck_descriptions = SlideDeckDescriptions(
-            slide_deck_path=presentation_path,
-            slides=[DeckDescription.from_slide_descriptions(slide_descriptions)]
-        )
+            slide_deck_descriptions = SlideDeckDescriptions(
+                slide_deck_path=presentation_path,
+                slides=[DeckDescription.from_slide_descriptions(slide_descriptions)]
+            )
 
-        # Evaluate deck structure
-        deck_evaluations = await self._evaluate_deck(
-            slide_deck_descriptions, 
-            deck_criterias
-        )
+            # Evaluate deck structure
+            deck_evaluations = await self._evaluate_deck(
+                slide_deck_descriptions, 
+                deck_criterias
+            )
+        else:
+            logger.warning("No slide description and slide type criteria were asked for, skipping deck evaluation")
         
         # # Create final summary
         # final_result = await self.create_final_summary(
@@ -417,8 +409,8 @@ class SlideGuardEvaluator:
         #     deck_evaluations
         # )
         
-        return DeckEvaluationResult(
-            deck_name=presentation_path,
+        return FullEvaluation(
+            slide_deck_path=presentation_path,
             slide_evaluations=slide_evaluations,
             deck_evaluations=deck_evaluations,
             overall_score=-1.0,

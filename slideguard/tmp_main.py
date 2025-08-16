@@ -60,9 +60,9 @@ async def main():
 
     evaluation = await evaluator.evaluate_presentation(
         presentation_path=presentation_path,
-        slide_criterias=[Criteria.slide_visual_arrangement],
-        # slide_criterias=[Criteria.slide_type, Criteria.slide_description],
-        # deck_criterias=[Criteria.deck_storytelling],
+        # slide_criterias=[Criteria.slide_visual_arrangement],
+        slide_criterias=[Criteria.slide_type, Criteria.slide_description, Criteria.slide_visual_arrangement],
+        deck_criterias=[Criteria.deck_storytelling],
         deck_criterias=[],
         langfuse_client=langfuse_client
     )

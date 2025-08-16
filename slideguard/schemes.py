@@ -65,32 +65,27 @@ class DeckDescription(Slideable):
         frozen = True
 
 
-class EvaluationResult(BaseModel):
+class DeckEvaluationResult(BaseModel):
     """Result of a single criterion evaluation"""
-    criterion_name: str
-    criterion_type: str
-    slide_id: Optional[str] = None
-    result: Dict[str, Any]
-    score: Optional[int] = None
-    suggestions: List[str] = []
+    evaluations: Dict[Criteria, List[BaseModel]]
 
 
 class SlideEvaluationResult(BaseModel):
     """Result of slide-level evaluation"""
     slide_deck_path: str
     slide_id: int
-    slide_type: SlideType
-    slide_description: SlideDescription
-    evaluations: List[EvaluationResult]
+    slide_type: Optional[SlideType] = None
+    slide_description: Optional[SlideDescription] = None
+    evaluations: Optional[Dict[Criteria, List[BaseModel]]] = None
 
 
-class DeckEvaluationResult(BaseModel):
+class FullEvaluation(BaseModel):
     """Result of deck-level evaluation"""
-    deck_name: str
+    slide_deck_path: str
     slide_evaluations: List[SlideEvaluationResult]
-    deck_evaluations: List[EvaluationResult]
-    overall_score: float
-    summary: str
+    deck_evaluations: List[DeckEvaluationResult]
+    overall_score: Optional[float] = None
+    summary: Optional[str] = None
 
 
 class AbstractSlideDeck(ABC, BaseModel, Generic[T]):
