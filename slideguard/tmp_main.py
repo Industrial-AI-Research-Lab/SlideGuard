@@ -40,7 +40,7 @@ async def main():
     for key, value in os.environ.items():
         print(f"{key}: {value}")
 
-    if True:
+    if False:
         langfuse_client = None
     else:
         langfuse_client: Langfuse = get_client()
@@ -60,7 +60,8 @@ async def main():
 
     evaluation = await evaluator.evaluate_presentation(
         presentation_path=presentation_path,
-        slide_criterias=[Criteria.slide_type, Criteria.slide_description],
+        slide_criterias=[Criteria.slide_visual_arrangement],
+        # slide_criterias=[Criteria.slide_type, Criteria.slide_description],
         # deck_criterias=[Criteria.deck_storytelling],
         deck_criterias=[],
         langfuse_client=langfuse_client
