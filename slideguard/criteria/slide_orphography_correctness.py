@@ -26,7 +26,8 @@ Strictly follow the following rules:
 - always provide the «Thought:» section, and the «Answer:» section, otherwise you will not be able to complete the task
 - in the «Answer:» section, provide only a description of the problems in the form of clear comments for the user on the errors that need to be corrected, if you have no comments on the task, write only 'Problems not found' and nothing else
 
-Write the final answer in a JSON format.
+Write the final answer in the following JSON format:
+{schema_format}
 """
 
 class SlideOrphographyCorrectnessResult(BaseModel):

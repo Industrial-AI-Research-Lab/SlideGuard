@@ -10,7 +10,8 @@ Your task is to check whether the presentation contains key elements:
 
 If something of above is missing it is a strict violation of the slide deck structure and should be reported.
 
-The result should be in a JSON format.
+The result should be in the following JSON format:
+{schema_format}
 """
 
 

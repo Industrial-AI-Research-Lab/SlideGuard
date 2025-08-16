@@ -18,7 +18,8 @@ Strictly follow the following rules:
 - always provide the 'Thought:' section, and the 'Answer:' section, otherwise you will not be able to complete the task
 - in the 'Answer:' section, provide only clear comments for the user on the consistency of the infographic with the slide content, if you have no comments on the slide, write **only** 'Problems not found' and nothing else
 
-Write the result in a JSON format.
+Write the result in the following JSON format:
+{schema_format}
 """
 
 class SlideGraphicContentMatchResult(BaseModel):

@@ -23,8 +23,8 @@ Problem-solving plan:
 Your response should have two sections: Thought and Answer.
 
 First, in the 'Thought' section, provide your reasoning on the task STRICTLY following the problem-solving plan and marking individual stages of the task solution.
-Then in the 'Answer' section, rewrite the found mismatches and how to fix them, if any, in the form of a final answer in a JSON format.
-
+Then in the 'Answer' section, rewrite the found mismatches and how to fix them, if any, in the form of a final answer in the following JSON format:
+{schema_format}
 """
 
 class SlideTitleContentMatchResult(BaseModel):

@@ -22,7 +22,8 @@ Normal words and abbreviations from known words cannot be abbreviations.
 Your answer should have two sections: Thought and Answer.
 
 First, in the 'Thought' section, write down your reasoning on the task STRICTLY following the plan of the solution and mark the individual stages of the solution. 
-Then, in the 'Answer' section, form the final answer in the following JSON format.
+Then, in the 'Answer' section, form the final answer in the following JSON format:
+{schema_format}
 """
 
 

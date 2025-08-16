@@ -1,8 +1,12 @@
+import logging
 from pydantic import BaseModel
 from typing import Literal, List, Optional, Type
 from textwrap import dedent
 
 from slideguard.schemes import Criteria
+
+
+logger = logging.getLogger(__name__)
 
 class CriterionInfo(BaseModel):
     criteria: Criteria
@@ -19,7 +23,11 @@ class CriterionInfo(BaseModel):
 
     @property
     def agent_prompt(self) -> str:
-        return self.agent_prompt_template.format(schema_format=self.pydantic.model_json_schema())
+        try:
+            return self.agent_prompt_template.format(schema_format=self.pydantic.model_json_schema())
+        except (KeyError, ValueError) as e:
+            logger.info(f"Template formatting error: {e}. Template may not contain 'schema_format' placeholder or has other unresolved placeholders. Returning template as-is.")
+            return self.agent_prompt_template
 
 # Define criterion categories
 CRITERION_CATEGORIES = [

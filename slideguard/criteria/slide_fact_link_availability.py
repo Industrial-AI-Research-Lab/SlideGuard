@@ -21,7 +21,8 @@ Strictly follow the following rules:
 - in the 'Answer:' section, provide only clear comments for the user on the presence of sources, if they were required on the slide
 - if you have no comments on the slide in the 'Answer:' section, write **only** 'Problems not found' and nothing else
 
-Write the result in a JSON format.
+Write the result in the following JSON format:
+{schema_format}
 """
 
 

@@ -273,7 +273,7 @@ def validate_slide_type(name: str) -> bool:
 def generate_slide_helper_type_prompt(schema_format: str = "{schema_format}", 
                                     description: str = "{description}") -> str:
     """Generate the complete slide helper type prompt with dynamic slide type descriptions"""
-    return slide_type_manager.generate_slide_helper_type_prompt(schema_format, description)
+    return slide_type_manager.generate_slide_helper_type_prompt(schema_format, description="")
 
 def get_slide_type_prompt_section() -> str:
     """Get the slide type descriptions section for prompts"""

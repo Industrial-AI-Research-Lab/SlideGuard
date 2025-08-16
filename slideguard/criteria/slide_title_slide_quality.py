@@ -21,7 +21,8 @@ Then, in the «Answer:» section, write the final answer for the user in Russian
 Strictly follow the following rules:
 - always provide the «Thought:» section, and the «Answer:» section, otherwise you will not be able to complete the task
 
-Write the result in a JSON format.
+Write the result in the following JSON format:
+{schema_format}
 """
 
 class SlideTitleSlideQualityResult(BaseModel):

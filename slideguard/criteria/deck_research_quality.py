@@ -22,7 +22,8 @@ Evaluate the presentation's research quality by examining the evidence-based app
 **Answer Section:**
 Provide specific suggestions for improving the research quality of the presentation.
 
-The answer in the 'Answer' section should be in JSON format.
+The answer in the 'Answer' section should be in the following JSON format:
+{schema_format}
 """
 
 

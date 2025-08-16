@@ -9,7 +9,8 @@ Your task is to check whether the color scheme and fonts correspond to the gener
 
 **IMPORTANT!** Do not comment on the slide content or business recommendations. Avoid your own comments.
 
-Write the result in a JSON format.
+Write the result in the following JSON format:
+{schema_format}
 """
 
 

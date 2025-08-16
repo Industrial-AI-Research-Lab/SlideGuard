@@ -65,6 +65,9 @@ Provide specific, actionable feedback including:
 - In the "Analysis" section, conduct systematic reasoning about logical connections
 - In the "Recommendations" section, provide only clear, actionable comments for the user
 - Focus on the logical flow and coherence of the story, not content quality
+
+The answer in the 'Answer' section should be in the following JSON format:
+{schema_format}
 """
 
 
