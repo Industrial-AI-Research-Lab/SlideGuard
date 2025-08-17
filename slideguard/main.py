@@ -222,10 +222,18 @@ async def _process_pdf_with_capture(
         Tuple of (pdf_name, success)
     """
     pdf_name = pdf_path.stem
+
+    json_filepath = output_folder / f"evaluations_{pdf_name}.json"
+    stdout_filepath = output_folder / f"evaluations_{pdf_name}.stdout"
+    stderr_filepath = output_folder / f"evaluations_{pdf_name}.stderr"
+    error_filepath = output_folder / f"evaluations_{pdf_name}.error"
     
     # Capture stdout and stderr
     stdout_capture = StringIO()
     stderr_capture = StringIO()
+
+    result_content = None
+    full_error = None
     
     async with semaphore if semaphore else nullcontext():
         try:
@@ -239,39 +247,26 @@ async def _process_pdf_with_capture(
                 )
             
             result_content = evaluation.model_dump_json(indent=4)
-            log_content = stdout_capture.getvalue()
-            error_content = stderr_capture.getvalue()
-            
-            # Write JSON result file
-            json_filepath = output_folder / f"evaluations_{pdf_name}.json"
+        except Exception as e:
+            full_error = f"Exception:\n{traceback.format_exc()}"
+        finally:
+            stdout_content = stdout_capture.getvalue()
+            stderr_content = stderr_capture.getvalue()
+
+        if result_content is not None:
             with open(json_filepath, "w") as f:
                 f.write(result_content)
-            
-            # Write log file
-            log_filepath = output_folder / f"evaluations_{pdf_name}.log"
-            with open(log_filepath, "w") as f:
-                f.write(log_content)
-                if error_content:  # Include stderr in log even if successful
-                    f.write(f"\n--- STDERR ---\n{error_content}")
-            
-            return pdf_name, True
-            
-        except Exception as e:
-            log_content = stdout_capture.getvalue()
-            error_content = stderr_capture.getvalue()
-            full_error = f"{error_content}\n\nException:\n{traceback.format_exc()}"
-            
-            # Write error file
-            error_filepath = output_folder / f"evaluations_{pdf_name}.error"
+        else:
             with open(error_filepath, "w") as f:
                 f.write(full_error)
-            
-            # Write log file
-            log_filepath = output_folder / f"evaluations_{pdf_name}.log"
-            with open(log_filepath, "w") as f:
-                f.write(log_content)
-            
-            return pdf_name, False
+
+        with open(stdout_filepath, "w") as f:
+            f.write(stdout_content)
+
+        with open(stderr_filepath, "w") as f:
+            f.write(stderr_content)
+
+        return pdf_name, result_content is not None
 
 
 @eval_app.command("multirun")
@@ -383,11 +378,8 @@ def eval_multirun(
     successful_count = 0
     failed_count = 0
     
-    for pdf_name, success in results:
-        if success:
-            successful_count += 1
-        else:
-            failed_count += 1
+    successful_count = sum(success for _, success in results)
+    failed_count = sum(not success for _, success in results)
     
     # Summary
     typer.echo(f"\nMultirun completed:")
