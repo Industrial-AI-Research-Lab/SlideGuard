@@ -17,6 +17,7 @@ typer = "^0.16.0"
 langfuse = "^3.2.4"
 openinference-instrumentation-crewai = "^0.1.11"
 openinference-instrumentation-litellm = "^0.1.24"
+tqdm = "^4.66.0"
 
 [tool.poetry.scripts]
 slideguard = "slideguard.main:main"

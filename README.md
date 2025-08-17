@@ -71,6 +71,15 @@ slideguard eval run -p presentation.pdf --use-langfuse
 
 # With custom concurrency limit
 slideguard eval run -p presentation.pdf --max-concurrency 5
+
+# Batch processing multiple PDFs
+slideguard eval multirun --folder-path /path/to/pdf/folder
+
+# With custom deck concurrency and criteria
+slideguard eval multirun -f /path/to/pdf/folder \
+  --deck-concurrency 5 \
+  --criteria slide_visual_arrangement \
+  --criteria deck_structure_analysis
 ```
 
 #### Python API Usage
@@ -171,6 +180,40 @@ slideguard eval run -p presentation.pdf \
   -o detailed_results.json \
   --use-langfuse \
   --max-concurrency 3
+```
+
+#### Batch Processing Multiple PDFs
+
+The `multirun` command allows you to process multiple PDF files in a folder concurrently:
+
+```bash
+# Basic batch processing - all PDFs in folder
+slideguard eval multirun --folder-path /path/to/presentations/
+
+# With custom concurrency and criteria
+slideguard eval multirun -f /path/to/presentations/ \
+  --deck-concurrency 5 \
+  --criteria slide_visual_arrangement \
+  --criteria deck_structure_analysis \
+  --max-concurrency 10
+
+# With observability
+slideguard eval multirun -f /path/to/presentations/ \
+  --use-langfuse \
+  --deck-concurrency 3
+```
+
+**Output Files:**
+- `evaluations_<filename>.json` - Successful evaluation results
+- `evaluations_<filename>.error` - Error details for failed evaluations  
+- `evaluations_<filename>.log` - Captured stdout/stderr logs
+
+**Features:**
+- Recursive PDF discovery in the specified folder
+- Concurrent processing with configurable limits
+- Individual error handling per PDF
+- Progress tracking with visual progress bar
+- Comprehensive logging and error reporting
 ```
 
 ### Python API Examples
