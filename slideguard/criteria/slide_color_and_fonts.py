@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
 
 prompt = """
@@ -14,7 +14,7 @@ Write the result in the following JSON format:
 """
 
 
-class SlideColorAndFontsAnalysisResult(BaseModel):
+class SlideColorAndFontsAnalysisResult(BaseAttributes):
     evaluation_element: str = Field(description="Comment on the slide ")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 

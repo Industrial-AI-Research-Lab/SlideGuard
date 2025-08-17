@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
 
 prompt = """You are an expert in analyzing student presentations.
@@ -25,7 +25,7 @@ Write the result in the following JSON format:
 {schema_format}
 """
 
-class SlideTitleSlideQualityResult(BaseModel):
+class SlideTitleSlideQualityResult(BaseAttributes):
     evaluation_element: str = Field(description="Comment on the slide ")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 

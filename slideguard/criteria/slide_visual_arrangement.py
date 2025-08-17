@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
 
 prompt = """
@@ -34,10 +34,9 @@ The answer in the 'Answer' section should be in the following JSON format:
 {schema_format}
 """
 
-class SlideVisualArrangementResult(BaseModel):
+class SlideVisualArrangementResult(BaseAttributes):
     evaluation_element: str = Field(description="Comment on the slide ")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
-    severity: int = Field(description="Severity of the issue: 1 - very minor, 2 - minor, 3 - serious, 4 - very serious, 5 - critical", ge=1, le=5)
 
 class SlideVisualArrangement(BaseModel):
     evaluation_results: list[SlideVisualArrangementResult] = Field(description="List of identified visual issues")

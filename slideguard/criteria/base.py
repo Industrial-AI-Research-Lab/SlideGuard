@@ -1,5 +1,5 @@
 import logging
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Literal, List, Optional, Type
 from textwrap import dedent
 
@@ -28,6 +28,11 @@ class CriterionInfo(BaseModel):
         except (KeyError, ValueError) as e:
             logger.info(f"Template formatting error: {e}. Template may not contain 'schema_format' placeholder or has other unresolved placeholders. Returning template as-is.")
             return self.agent_prompt_template
+        
+
+class BaseAttributes(BaseModel):
+        severity: int = Field(description="Severity of the issue: 1 - very minor, 2 - minor, 3 - serious, 4 - very serious, 5 - critical", ge=1, le=5)
+
 
 # Define criterion categories
 CRITERION_CATEGORIES = [

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
 
 prompt = """You are an expert in working with students' presentations.
@@ -30,7 +30,7 @@ Write the final answer in the following JSON format:
 {schema_format}
 """
 
-class SlideOrphographyCorrectnessResult(BaseModel):
+class SlideOrphographyCorrectnessResult(BaseAttributes):
     evaluation_element: str = Field(description="Orphographic error")
     evaluation_suggestion: str = Field(description="Fix the word <<incorrect word>>")
 

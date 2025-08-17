@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, CriterionInfo
+from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
 
 prompt = """
@@ -71,7 +71,7 @@ The answer in the 'Answer' section should be in the following JSON format:
 """
 
 
-class DeckStorytellingResult(BaseModel):
+class DeckStorytellingResult(BaseAttributes):
     evaluation_element: str = Field(description="Evaluation element")
     evaluation_suggestion: str = Field(description="Evaluation suggestion")
 

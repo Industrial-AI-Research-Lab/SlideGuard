@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
 
 prompt = """You are an expert in working with students' presentations.
@@ -27,7 +27,7 @@ Then in the 'Answer' section, rewrite the found mismatches and how to fix them, 
 {schema_format}
 """
 
-class SlideTitleContentMatchResult(BaseModel):
+class SlideTitleContentMatchResult(BaseAttributes):
     evaluation_element: str = Field(description="Comment on the slide ")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 

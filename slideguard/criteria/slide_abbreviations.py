@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
+from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
 
 prompt = """
@@ -27,7 +27,7 @@ Then, in the 'Answer' section, form the final answer in the following JSON forma
 """
 
 
-class SlideAbbreviationsResult(BaseModel):
+class SlideAbbreviationsResult(BaseAttributes):
     evaluation_element: str = Field(description="Found abbreviation (write here ONLY the abbreviation exactly as it appeared in the text, and nothing else)")
     evaluation_suggestion: str = Field(description="<Specify that it needs to be explained>")
 
