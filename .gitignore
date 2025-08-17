@@ -215,11 +215,13 @@ __marimo__/
 # Resources
 resources/slidedecks/**
 !resources/slidedecks/.gitkeep
+resources/test_folder
 
 # Cache folders
 .slideguard_cache
 .file_cache
 evaluation.json
+multirun_results
 
 # Env files
 .env
