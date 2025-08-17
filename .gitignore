@@ -215,6 +215,7 @@ __marimo__/
 # Resources
 resources/slidedecks/**
 !resources/slidedecks/.gitkeep
+resources/test_folder
 
 # Cache folders
 .slideguard_cache
