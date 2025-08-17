@@ -41,15 +41,16 @@ def _initialize_logging() -> None:
     )
 
 
-app = typer.Typer(help="SlideGuard - Evaluate slide decks with AI")
-eval_app = typer.Typer(help="Run evaluations")
-app.add_typer(eval_app, name="eval")
-
-
-@app.callback()
-def main_callback() -> None:
-    """Initialize logging when the root command is executed."""
-    _initialize_logging()
+def _find_pdf_files(folder_path: str) -> List[Path]:
+    """Recursively find all PDF files in the given folder."""
+    folder = Path(folder_path)
+    if not folder.exists():
+        raise FileNotFoundError(f"Folder not found: {folder_path}")
+    if not folder.is_dir():
+        raise ValueError(f"Path is not a directory: {folder_path}")
+    
+    pdf_files = list(folder.rglob("*.pdf"))
+    return pdf_files
 
 
 def _print_config_help(config: SlideGuardConfig) -> None:
@@ -91,6 +92,79 @@ async def _process_single_presentation(
         deck_criterias=deck_criterias,
         langfuse_client=langfuse_client
     )
+
+
+async def _process_pdf_with_capture(
+    pdf_path: Path,
+    evaluator: SlideGuardEvaluator,
+    slide_criterias: List[Criteria],
+    deck_criterias: List[Criteria],
+    output_folder: Path,
+    langfuse_client=None,
+    semaphore: asyncio.Semaphore = None
+) -> Tuple[str, bool]:
+    """Process a single PDF with stdout/stderr capture and write result files directly.
+    
+    Returns:
+        Tuple of (pdf_name, success)
+    """
+    pdf_name = pdf_path.stem
+
+    json_filepath = output_folder / f"evaluations_{pdf_name}.json"
+    stdout_filepath = output_folder / f"evaluations_{pdf_name}.stdout"
+    stderr_filepath = output_folder / f"evaluations_{pdf_name}.stderr"
+    error_filepath = output_folder / f"evaluations_{pdf_name}.error"
+    
+    # Capture stdout and stderr
+    stdout_capture = StringIO()
+    stderr_capture = StringIO()
+
+    result_content = None
+    full_error = None
+    
+    async with semaphore if semaphore else nullcontext():
+        try:
+            with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+                evaluation = await _process_single_presentation(
+                    presentation_path=str(pdf_path),
+                    evaluator=evaluator,
+                    slide_criterias=slide_criterias,
+                    deck_criterias=deck_criterias,
+                    langfuse_client=langfuse_client
+                )
+            
+            result_content = evaluation.model_dump_json(indent=4)
+        except Exception as e:
+            full_error = f"Exception:\n{traceback.format_exc()}"
+        finally:
+            stdout_content = stdout_capture.getvalue()
+            stderr_content = stderr_capture.getvalue()
+
+        if result_content is not None:
+            with open(json_filepath, "w") as f:
+                f.write(result_content)
+        else:
+            with open(error_filepath, "w") as f:
+                f.write(full_error)
+
+        with open(stdout_filepath, "w") as f:
+            f.write(stdout_content)
+
+        with open(stderr_filepath, "w") as f:
+            f.write(stderr_content)
+
+        return pdf_name, result_content is not None
+
+
+app = typer.Typer(help="SlideGuard - Evaluate slide decks with AI")
+eval_app = typer.Typer(help="Run evaluations")
+app.add_typer(eval_app, name="eval")
+
+
+@app.callback()
+def main_callback() -> None:
+    """Initialize logging when the root command is executed."""
+    _initialize_logging()
 
 
 @eval_app.command("list-criterias")
@@ -193,80 +267,6 @@ def eval_run(
 
     # Human-friendly summary
     typer.echo(f"Evaluation is finished. Results have been written to {output_path}")
-
-
-def _find_pdf_files(folder_path: str) -> List[Path]:
-    """Recursively find all PDF files in the given folder."""
-    folder = Path(folder_path)
-    if not folder.exists():
-        raise FileNotFoundError(f"Folder not found: {folder_path}")
-    if not folder.is_dir():
-        raise ValueError(f"Path is not a directory: {folder_path}")
-    
-    pdf_files = list(folder.rglob("*.pdf"))
-    return pdf_files
-
-
-async def _process_pdf_with_capture(
-    pdf_path: Path,
-    evaluator: SlideGuardEvaluator,
-    slide_criterias: List[Criteria],
-    deck_criterias: List[Criteria],
-    output_folder: Path,
-    langfuse_client=None,
-    semaphore: asyncio.Semaphore = None
-) -> Tuple[str, bool]:
-    """Process a single PDF with stdout/stderr capture and write result files directly.
-    
-    Returns:
-        Tuple of (pdf_name, success)
-    """
-    pdf_name = pdf_path.stem
-
-    json_filepath = output_folder / f"evaluations_{pdf_name}.json"
-    stdout_filepath = output_folder / f"evaluations_{pdf_name}.stdout"
-    stderr_filepath = output_folder / f"evaluations_{pdf_name}.stderr"
-    error_filepath = output_folder / f"evaluations_{pdf_name}.error"
-    
-    # Capture stdout and stderr
-    stdout_capture = StringIO()
-    stderr_capture = StringIO()
-
-    result_content = None
-    full_error = None
-    
-    async with semaphore if semaphore else nullcontext():
-        try:
-            with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
-                evaluation = await _process_single_presentation(
-                    presentation_path=str(pdf_path),
-                    evaluator=evaluator,
-                    slide_criterias=slide_criterias,
-                    deck_criterias=deck_criterias,
-                    langfuse_client=langfuse_client
-                )
-            
-            result_content = evaluation.model_dump_json(indent=4)
-        except Exception as e:
-            full_error = f"Exception:\n{traceback.format_exc()}"
-        finally:
-            stdout_content = stdout_capture.getvalue()
-            stderr_content = stderr_capture.getvalue()
-
-        if result_content is not None:
-            with open(json_filepath, "w") as f:
-                f.write(result_content)
-        else:
-            with open(error_filepath, "w") as f:
-                f.write(full_error)
-
-        with open(stdout_filepath, "w") as f:
-            f.write(stdout_content)
-
-        with open(stderr_filepath, "w") as f:
-            f.write(stderr_content)
-
-        return pdf_name, result_content is not None
 
 
 @eval_app.command("multirun")
