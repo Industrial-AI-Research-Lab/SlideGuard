@@ -16,7 +16,7 @@ import sys
 import traceback
 from pathlib import Path
 from typing import List, Optional, Tuple
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stdout, redirect_stderr, nullcontext
 from io import StringIO
 
 import typer
@@ -212,13 +212,14 @@ async def _process_pdf_with_capture(
     evaluator: SlideGuardEvaluator,
     slide_criterias: List[Criteria],
     deck_criterias: List[Criteria],
+    output_folder: Path,
     langfuse_client=None,
     semaphore: asyncio.Semaphore = None
-) -> Tuple[str, bool, str, str, str]:
-    """Process a single PDF with stdout/stderr capture.
+) -> Tuple[str, bool]:
+    """Process a single PDF with stdout/stderr capture and write result files directly.
     
     Returns:
-        Tuple of (pdf_name, success, result_content, log_content, error_content)
+        Tuple of (pdf_name, success)
     """
     pdf_name = pdf_path.stem
     
@@ -226,7 +227,7 @@ async def _process_pdf_with_capture(
     stdout_capture = StringIO()
     stderr_capture = StringIO()
     
-    async with semaphore if semaphore else asyncio.nullcontext():
+    async with semaphore if semaphore else nullcontext():
         try:
             with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
                 evaluation = await _process_single_presentation(
@@ -241,14 +242,36 @@ async def _process_pdf_with_capture(
             log_content = stdout_capture.getvalue()
             error_content = stderr_capture.getvalue()
             
-            return pdf_name, True, result_content, log_content, error_content
+            # Write JSON result file
+            json_filepath = output_folder / f"evaluations_{pdf_name}.json"
+            with open(json_filepath, "w") as f:
+                f.write(result_content)
+            
+            # Write log file
+            log_filepath = output_folder / f"evaluations_{pdf_name}.log"
+            with open(log_filepath, "w") as f:
+                f.write(log_content)
+                if error_content:  # Include stderr in log even if successful
+                    f.write(f"\n--- STDERR ---\n{error_content}")
+            
+            return pdf_name, True
             
         except Exception as e:
             log_content = stdout_capture.getvalue()
             error_content = stderr_capture.getvalue()
             full_error = f"{error_content}\n\nException:\n{traceback.format_exc()}"
             
-            return pdf_name, False, "", log_content, full_error
+            # Write error file
+            error_filepath = output_folder / f"evaluations_{pdf_name}.error"
+            with open(error_filepath, "w") as f:
+                f.write(full_error)
+            
+            # Write log file
+            log_filepath = output_folder / f"evaluations_{pdf_name}.log"
+            with open(log_filepath, "w") as f:
+                f.write(log_content)
+            
+            return pdf_name, False
 
 
 @eval_app.command("multirun")
@@ -258,6 +281,12 @@ def eval_multirun(
         "--folder-path",
         "-f",
         help="Path to the folder containing PDF presentations",
+    ),
+    output_folder: str = typer.Option(
+        "multirun_results",
+        "--output-folder",
+        "-o",
+        help="Path to the output folder for results",
     ),
     criteria: Optional[List[str]] = typer.Option(
         None,
@@ -310,6 +339,11 @@ def eval_multirun(
         typer.echo(f"No PDF files found in {folder_path}")
         raise typer.Exit(code=3)
     
+    # Create output folder
+    output_path = Path(output_folder)
+    output_path.mkdir(parents=True, exist_ok=True)
+    typer.echo(f"Output folder created/verified: {output_path.absolute()}")
+    
     typer.echo(f"Found {len(pdf_files)} PDF files to process")
     
     async def _run_multirun():
@@ -322,6 +356,7 @@ def eval_multirun(
                 evaluator=evaluator,
                 slide_criterias=slide_criterias,
                 deck_criterias=deck_criterias,
+                output_folder=output_path,
                 langfuse_client=langfuse_client,
                 semaphore=semaphore
             )
@@ -344,29 +379,14 @@ def eval_multirun(
         typer.echo(f"Multirun failed: {e}")
         raise typer.Exit(code=4)
     
-    # Write results to files
+    # Count results (files are already written by _process_pdf_with_capture)
     successful_count = 0
     failed_count = 0
     
-    for pdf_name, success, result_content, log_content, error_content in results:
-        # Write log file
-        log_filename = f"evaluations_{pdf_name}.log"
-        with open(log_filename, "w") as f:
-            f.write(log_content)
-            if error_content and success:  # Include stderr in log even if successful
-                f.write(f"\n--- STDERR ---\n{error_content}")
-        
+    for pdf_name, success in results:
         if success:
-            # Write JSON result
-            json_filename = f"evaluations_{pdf_name}.json"
-            with open(json_filename, "w") as f:
-                f.write(result_content)
             successful_count += 1
         else:
-            # Write error file
-            error_filename = f"evaluations_{pdf_name}.error"
-            with open(error_filename, "w") as f:
-                f.write(error_content)
             failed_count += 1
     
     # Summary
@@ -374,6 +394,7 @@ def eval_multirun(
     typer.echo(f"  Successfully processed: {successful_count} PDFs")
     typer.echo(f"  Failed: {failed_count} PDFs")
     typer.echo(f"  Total: {len(results)} PDFs")
+    typer.echo(f"  Results written to: {output_path.absolute()}")
 
 
 def main() -> None:  # Console entrypoint
