@@ -1,0 +1,563 @@
+{
+    "records": [
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "увеличить шрифт на схеме и сделать его более контрастным",
+            "ai_comments": [
+                "The text within the colored boxes (pink, green, blue) is quite small and may be difficult to read from a distance. Consider increasing the font size or using a bolder font weight for better visibility."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "увеличить шрифт в зеленых блоках",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "плохо видимые подписи осей",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "слишком мелкий шрифт, особенно на графике",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "много текста, желательно сократить",
+            "ai_comments": [
+                "The slide contains a significant amount of text, which can appear overwhelming. To improve clarity, consider breaking down the content into smaller chunks or using bullet points more effectively to enhance readability."
+            ],
+            "judgement": true,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "плохо видимые подписи осей",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 8
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "не хватает процентных соотношений в выводах",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 11
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Неочевидно как цель и задачи связаны с проблемой метрик",
+            "ai_comments": [
+                "The connection between the motivation and the goal could be clearer. While the motivation is implied in the challenges of topic modeling evaluation, the goal should explicitly address these challenges. Consider restating the goal to directly tackle the issues identified in the current state."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Intro есть, но нет описание почему topic modelling важен и для чего нужен",
+            "ai_comments": [
+                "The connection between the motivation and the goal could be clearer. While the motivation is implied in the challenges of topic modeling evaluation, the goal should explicitly address these challenges. Consider restating the goal to directly tackle the issues identified in the current state."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "выводы на слайде 12 должны совпадать с задачами со слайда 3",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Отсутствует обзор литературы (альтернативные подходы)",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "1_EN_Kataeva_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Не хватает слайда с обзором конкурирующих решений",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "На титульном слайде не указано место и год защиты",
+            "ai_comments": [
+                "Отсутствует город и год презентации"
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Точки в названиях не ставятся",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Место работы руководителя и консультата отсутствуют",
+            "ai_comments": [
+                "Отсутствует место работы руководителя"
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Произвольная постановка точек",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Тексты на графиках не видны совсем",
+            "ai_comments": [
+                "The bar chart on the right side is slightly crowded with labels. Consider rotating the x-axis labels to a vertical orientation or abbreviating them to improve spacing and clarity."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Здесь и далее - ОЧЕНЬ мелкая нумерация слайдов",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Неаккуратное форматирование - задачи не выделены маркерами",
+            "ai_comments": [
+                "The layout is generally well-organized, but the second section ('Задачи исследования') contains multiple lines of text which could be visually overwhelming. Consider breaking down the tasks into bullet points or using icons to differentiate each task for better visual separation."
+            ],
+            "judgement": true,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Нет пояснения к информации, отображенной на слайде. В частности, какую роль играют признаки и графики.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Подписи к графикам плохо видны.",
+            "ai_comments": [
+                "The text size for the list items is relatively small, which may make it difficult for viewers at the back of the room to read. Consider increasing the font size slightly for better visibility."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Нет пояснения к схеме, приведенной на слайде.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Ничего вообще не видно на схеме",
+            "ai_comments": [
+                "The text within the flowchart and some of the bullet points is quite small and may be difficult to read for viewers who are not close to the screen. Consider increasing the font size or simplifying the text to ensure clarity."
+            ],
+            "judgement": false,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "не хватает сопровождающих описаний",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "график не понятен, нужно изменить визуализацию",
+            "ai_comments": [
+                "Remove negative values from the bar chart as they do not make sense in the context of average precision."
+            ],
+            "judgement": false,
+            "slide_id": 9
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "неудачная визуализация",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Непонятно Как перечисленные проблемы на слайде соотносятся с настоящей работой, т.е. как 'автоматическая идентификация контекста и атрибутов табулярных данных' поможет и какую мы вообще решаем проблему",
+            "ai_comments": [
+                "The goal addresses the motivation to some extent by proposing the development of intelligent methods for automatic identification of context and attributes of tabular data. However, the connection could be stronger by explicitly stating how these methods will solve the problems mentioned in the motivation, such as handling the exponential growth of data volume and the difficulties in analyzing Excel documents."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Описание проблемы не достаточно четкое: непонятно, какие конкретно задачи мешают решать указанные сложности. Нужен либо пример задачи, либо конкретизация сложностей.",
+            "ai_comments": [
+                "The goal addresses the motivation to some extent by proposing the development of intelligent methods for automatic identification of context and attributes of tabular data. However, the connection could be stronger by explicitly stating how these methods will solve the problems mentioned in the motivation, such as handling the exponential growth of data volume and the difficulties in analyzing Excel documents."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Цель плохо связана с проблемой. В частности, контекст и атрибуты табулярных данных не были введены ранеею",
+            "ai_comments": [
+                "The goal addresses the motivation to some extent by proposing the development of intelligent methods for automatic identification of context and attributes of tabular data. However, the connection could be stronger by explicitly stating how these methods will solve the problems mentioned in the motivation, such as handling the exponential growth of data volume and the difficulties in analyzing Excel documents."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Первые три задачи на слайде с целями и задачами слишком размытые и не достаточно конкретные. Указан термин изоморфизм, понятие которого не было обозначено ранее.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "непонятно как проведенный обзор литературы, указанный на слайде 4, связан с поставленной целью и решаемыми задачами",
+            "ai_comments": [
+                "The goal addresses the motivation to some extent by proposing the development of intelligent methods for automatic identification of context and attributes of tabular data. However, the connection could be stronger by explicitly stating how these methods will solve the problems mentioned in the motivation, such as handling the exponential growth of data volume and the difficulties in analyzing Excel documents."
+            ],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "На слайде 6 не отображена связь решения с обозначенными целью и задачами исследования",
+            "ai_comments": [
+                "The experiments test the proposed solution by evaluating the model's performance on a dataset of annotated Excel documents. However, the connection could be stronger by explicitly stating how the experimental setup tests the specific aspects of the proposed solution."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Выводы в заключении неконкретные.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "На слайде 5 непонятно чей это алгоритм и почему мы его рассматриваем",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "На слайде 4 критерии в таблице не продуманы - не видно проблемы",
+            "ai_comments": [
+                "The goal addresses the motivation to some extent by proposing the development of intelligent methods for automatic identification of context and attributes of tabular data. However, the connection could be stronger by explicitly stating how these methods will solve the problems mentioned in the motivation, such as handling the exponential growth of data volume and the difficulties in analyzing Excel documents."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "На слайде 4 ужасное деление на методы - это не ортогональные классы",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "На слайде 6 совершенно не понятно, что оригинального было предложено студентом в качестве решения",
+            "ai_comments": [
+                "While the presentation includes some graphical data and experimental results, it lacks a comprehensive discussion of the evidence supporting the chosen methods and solutions. More detailed explanations of why certain methods were selected and how they address the identified problems would strengthen the evidence-based approach."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Нет года на титульном слайде, кто такой \"scientific diector\"",
+            "ai_comments": [
+                "The date of the presentation is given, but the year is missing. It's important to add the year for clarity."
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "непонятно кто такой \"scientific diector\"",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Здесь и далее рисунки не нужно нумеровать в презентации",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "нет пояснения относительно того, что изображено на слайде",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Слишком мелкий шрифт",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Схема не снабжена пояснениями ни тут, ни далее - что такое Regular Expression и какова его роль, что такое semi semantic text и text with NER",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_content_match",
+            "expert_comment": "неудачное наименование слайда \"How?\"",
+            "ai_comments": [
+                "The title 'How?' is too abstract and does not accurately reflect the detailed workflow presented on the slide."
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "плохая практика показывать график с сеткой",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "нет пояснения относительно того, что изображено на слайде, необходимо текстовое описание процесса",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "нужен отдельный слайд с результатами экспериментов - таблица или графики с цифрами",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "ничего не видно на схеме - мелкий шрифт, плохая контрастность;",
+            "ai_comments": [
+                "The text within some of the boxes, particularly those with smaller fonts, is difficult to read. Increasing the font size and ensuring consistent font sizes across similar elements would improve readability."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "не пронумерован",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Нет полноценного интро в решаемую проблему",
+            "ai_comments": [
+                "The presentation lacks a clear connection between the motivation and the goal. The initial slide introduces the topic but does not explicitly state the goal or how it addresses the motivation."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Непонятно, приведенные на слайде 4 и 5 схемы описывают предложенный студентом метод или существующий",
+            "ai_comments": [
+                "The proposed solution does not clearly align with the stated goal. The solution focuses on technical aspects without demonstrating how it addresses the broader objectives."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Обзор литературы не описывает как предлагаемое студентом решение отличается от уже существующих. Обзор должен сравнивать между собой решения.",
+            "ai_comments": [
+                "The proposed solution does not clearly align with the stated goal. The solution focuses on technical aspects without demonstrating how it addresses the broader objectives."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Слайд 3 тоже мотивация, нужно объединить со слайдом 2",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Не понятно о чем слайд 2, неудачное название \"What is it?\". Скорее всего это мотивация, но не хватает сопроводительного текста о том, какие проблемы будут решаться в исследовании и почему.",
+            "ai_comments": [
+                "The presentation lacks a clear connection between the motivation and the goal. The initial slide introduces the topic but does not explicitly state the goal or how it addresses the motivation."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Не понятно о чем слайд 7",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет проблемы, которую нужно решить",
+            "ai_comments": [
+                "The presentation lacks a clear motivation slide that explains why the research is important and what problem it aims to solve."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет описания важности устранения проблемы",
+            "ai_comments": [
+                "The presentation lacks a clear motivation slide that explains why the research is important and what problem it aims to solve."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "непонятен объект и субъект исследования",
+            "ai_comments": [
+                "The presentation lacks a clear motivation slide that explains why the research is important and what problem it aims to solve."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет целей и задач исследования",
+            "ai_comments": [
+                "There is no dedicated slide outlining the goals of the research. This is crucial for setting expectations and guiding the audience through the presentation.",
+                "A slide detailing the specific tasks undertaken to achieve the research goals is missing. This would help clarify the scope and methodology of the work."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "обзор литературы находится не на своем месте, он должен стоять после целей и задач",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет описания экспериментального сетапа",
+            "ai_comments": [
+                "The presentation does not include a slide describing the experiment settings, which is essential for understanding how the research was conducted and ensuring its reproducibility."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет выводов",
+            "ai_comments": [
+                "There is no conclusion slide summarizing the findings and their implications. This is necessary to provide closure and reinforce the key takeaways for the audience."
+            ],
+            "judgement": true,
+            "slide_id": null
+        }
+    ]
+}
