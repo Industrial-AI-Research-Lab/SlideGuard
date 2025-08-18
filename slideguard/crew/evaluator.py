@@ -238,11 +238,12 @@ class SlideGuardEvaluator:
         return [DECK_CRITERIA_INFO[criteria] for criteria in criterias]
     
     
-    async def _kickoff_for_each_async(self, inputs: List[Dict]) -> AsyncIterable[Tuple[int, CrewOutput]]:
+    @staticmethod
+    async def _kickoff_for_each_async(crew: Crew, inputs: List[Dict]) -> AsyncIterable[Tuple[int, CrewOutput]]:
         # We add this function, because Crew.kickoff_for_each_async can not provide us with the results as soon as they are available.
         # This is a workaround to get the results as soon as they are available.
         # The implementation is based on the implementation of Crew.kickoff_for_each_async.
-        crew_copies = [self.copy() for _ in inputs]
+        crew_copies = [crew.copy() for _ in inputs]
 
         async def run_crew(crew, input_data, index):
             result = await crew.kickoff_async(inputs=input_data)
@@ -265,7 +266,7 @@ class SlideGuardEvaluator:
 
         async def compute(inputs: List[Tuple[int, T]]) -> AsyncIterable[Tuple[int, BaseModel]]:
             ins = [in_.model_dump() for _, in_ in inputs]
-            async for i, result in self._kickoff_for_each_async(ins):
+            async for i, result in self._kickoff_for_each_async(crew, ins):
                 idx, _ = inputs[i]
                 yield idx, result.pydantic
 

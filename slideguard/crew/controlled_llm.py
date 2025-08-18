@@ -179,8 +179,8 @@ def create_llm_from_config(config: SlideGuardConfig) -> ControlledLLM | None:
         return None
     
     try:
-        # temperature = 0.1
-        temperature = 1
+        temperature = 0.1
+        # temperature = 1
         
         # Configure CrewAI to use LiteLLM with explicit provider
         # and wrap with a semaphore for bounded concurrency
