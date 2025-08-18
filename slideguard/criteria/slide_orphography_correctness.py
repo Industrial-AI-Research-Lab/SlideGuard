@@ -18,17 +18,19 @@ The plan of the solution of the task:
 3. Formulate conclusions about how to correct each error found on the slide.
 
 Common problems that can be found on a slide:
-- Lists may have ending dots which is not correct
+- Lists may have ending periods which is not correct
+- Titles should may have periods at the end which is not correct
 
+## Evaluation Guidelines:
+- Be specific about what needs to be changed and where on the slide
+- Provide concrete examples and suggestions for improvement
+- usually in presentations there are very few orthographic and grammatical errors, so make sure you are sure you have found them
+- Only report issues you are confident about
+
+## Response Format:
 Your answer should have two sections: «Thought» and «Answer».
-
 First, in the «Thought:» section, write down your reasoning on the task strictly in accordance with the plan of the solution of the task. Perform all the steps of the plan of the solution of the task and describe your results.
 Then, in the «Answer:» section, write the final answer for the user in Russian, based on your reasoning, namely list all the problems you found, if there are any.
-
-Strictly follow the following rules:
-- usually in presentations there are very few orthographic and grammatical errors, so make sure you are sure you have found them
-- always provide the «Thought:» section, and the «Answer:» section, otherwise you will not be able to complete the task
-- in the «Answer:» section, provide only a description of the problems in the form of clear comments for the user on the errors that need to be corrected, if you have no comments on the task, write only 'Problems not found' and nothing else
 
 Write the final answer in the following JSON format:
 {schema_format}

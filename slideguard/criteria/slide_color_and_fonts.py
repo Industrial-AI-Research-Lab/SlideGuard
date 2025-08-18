@@ -24,6 +24,9 @@ Your task is to check whether the color scheme and fonts correspond to the gener
 - Focus on color and fonts design principles (contrast, repetition, visual balance)
 - Only report issues you are confident about
 
+## What is not a problem:
+- It is fine when there are different fonts on the slide, but they are used for different elements (e.g. images on a slide)
+
 ## Response Format:
 Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall assessment of the slide color scheme and fonts.

@@ -5,11 +5,21 @@ from slideguard.schemes import Criteria
 prompt = """
 You are an expert in evaluating the completeness of presentation structure.
 You will be provided with information about all slides in the presentation.
-Your task is to check whether the presentation contains key elements:
-- The following elements should be present in the slide deck in the following order: 1) Motivation, 2) Goals, 3) Tasks, 4) Current State, 5) Proposed Solution, 6) Experiment Settings, 7) Experimental Results, 8) Conclusion.
+Your task is to check whether the presentation contains all the key structural elements.
+
+## Key Structural Elements to Evaluate:
+- The following elements should be present in the slide deck in the following order: 1) Title slide, 2) Separator slide, 3) Motivation, 4) Goals, 5) Tasks, 6) Current State, 7) Proposed Solution, 8) Experiment Settings, 9) Experimental Results, 10) Conclusion, 11) End slide.
+
+## Common Problems to Identify:
+- Absence of structural elements
+- Incorrect order of structural elements
+
+## What is not a problem:
+- Some presentations may have extra slides after the last slide, which is not a problem
 
 If something of above is missing it is a strict violation of the slide deck structure and should be reported.
 
+## Response Format:
 The result should be in the following JSON format:
 {schema_format}
 """
