@@ -3,7 +3,7 @@ Agents for slides evaluation and presentation analysis on multiple criteria
 """
 
 import logging
-from typing import AsyncIterable, Callable, List, Any, Tuple, Type, TypeVar, cast
+from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast
 
 from jsonschema import ValidationError
 from slideguard.crew.controlled_llm import ControlledLLM
@@ -18,7 +18,7 @@ from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
 
 from textwrap import dedent
-from crewai import Agent, Task, Crew, TaskOutput
+from crewai import Agent, Task, Crew, CrewOutput, TaskOutput
 from pydantic import BaseModel
 import json
 import asyncio
@@ -237,6 +237,27 @@ class SlideGuardEvaluator:
 
         return [DECK_CRITERIA_INFO[criteria] for criteria in criterias]
     
+    
+    async def _kickoff_for_each_async(self, inputs: List[Dict]) -> AsyncIterable[Tuple[int, CrewOutput]]:
+        # We add this function, because Crew.kickoff_for_each_async can not provide us with the results as soon as they are available.
+        # This is a workaround to get the results as soon as they are available.
+        # The implementation is based on the implementation of Crew.kickoff_for_each_async.
+        crew_copies = [self.copy() for _ in inputs]
+
+        async def run_crew(crew, input_data, index):
+            result = await crew.kickoff_async(inputs=input_data)
+            return index, result
+
+        tasks = [
+            asyncio.create_task(run_crew(crew_copies[i], inputs[i], i))
+            for i in range(len(inputs))
+        ]
+
+        # Process results as they complete, maintaining original order
+        for coro in asyncio.as_completed(tasks):
+            index, result = await coro
+            yield index, result
+    
     async def _run_crew(self, 
                         criteria_info: CriterionInfo, 
                         slides: AbstractSlideDeck[T]) -> List[BaseModel]:
@@ -244,9 +265,9 @@ class SlideGuardEvaluator:
 
         async def compute(inputs: List[Tuple[int, T]]) -> AsyncIterable[Tuple[int, BaseModel]]:
             ins = [in_.model_dump() for _, in_ in inputs]
-            results = await crew.kickoff_for_each_async(ins)
-            for (i, _), result in zip(inputs, results):
-                yield (i, result.pydantic)
+            async for i, result in self._kickoff_for_each_async(ins):
+                idx, _ = inputs[i]
+                yield idx, result.pydantic
 
         entities = await self.cache_manager.compute_with_cache(
             deck_name=slides.slide_deck_path,
