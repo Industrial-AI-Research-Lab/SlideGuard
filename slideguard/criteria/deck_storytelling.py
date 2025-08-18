@@ -15,6 +15,7 @@ Your task is to assess whether the presentation tells a coherent, logical story 
 - Proper topic separation when switching between different topics
 - Each slide should be a part of coherent overall story 
 - No contradictions or conflicting information
+- The title of the whole presentation should be a good reflection of the content of the presentation
 
 ## Evaluation Plan:
 Evaluate the presentation's storytelling quality by examining the logical connections between slides according to the Required Logical Connections (Mermaid Diagram):
@@ -48,6 +49,7 @@ A[Motivation] --> G[Experiment Results]
 - If Experiment Settings don't test the Proposed Solution → violation
 - If Experiment Results don't connect back to the original Motivation → violation
 - If some slide is not a part of the overall story → violation
+- If the title of the whole presentation is not a good reflection of the content of the presentation → violation
 
 ## Evaluation Guidelines:
 - Point to the exact slides / elements where the issue is observed
