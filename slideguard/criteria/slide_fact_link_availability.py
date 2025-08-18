@@ -8,20 +8,25 @@ Your task is to check whether the numerical data (including data presented in th
 Do not pay attention to any other data, except numerical data.
 Fix if the link is missing, invalid, or the data is unjustified.
 
-Your answer should have two sections: Thought and Answer.
+## Key Elements to Evaluate:
+- Links to the sources for numerical data (including data presented in the form of diagrams, graphs, tables)
 
-First, in the 'Thought' section, write down your reasoning on the task, including searching for links and facts that must be supported by sources on the slide. Make sure that important information on the slide is provided with links to sources. The link is usually at the bottom of the slide and can represent a URL, the name of a book or article, or have an explanatory word "source" or something similar. Very carefully check that you did not miss mentioning the source on the slide, otherwise you will get a penalty.
-Then, in the 'Answer' section: write the final answer for the user in Russian, namely list all the problems, if there are any.
+## Common Problems to Identify:
+- Links to the sources are missing while they should be present to justify the numerical data
 
-Strictly follow the following rules:
+## What is not a problem:
+- Slides may contain experimental results made by the student - this data will not have links to sources and it is not a problem
+
+## Evaluation Guidelines:
+- determine if there are any pictures of infographics on the slide that represent numerical data
 - **very carefully** check the slide for the presence of sources of information, explicitly write in the 'Thought' section of the reasoning on the task which sources you found
-- determine if there are any pictures of infographics on the slide that represent numerical or financial data
-- for each such picture of infographics, make sure that the infographic represents data that is external to the operational activity of the company whose slide we are considering. If the infographic picture represents data that belongs to the company itself (for example, the number of product sales or the loading of company warehouses), then skip this infographic and do not check it further.
-- always provide the 'Thought:' section, and the 'Answer:' section, otherwise you will not be able to complete the task
-- in the 'Answer:' section, provide only clear comments for the user on the presence of sources, if they were required on the slide
-- if you have no comments on the slide in the 'Answer:' section, write **only** 'Problems not found' and nothing else
 
-Write the result in the following JSON format:
+## Response Format:
+Your answer should have two sections: Thought and Answer.
+First, in the 'Thought' section, write down your reasoning on the task, including searching for links and facts that must be supported by sources on the slide. Make sure that important information on the slide is provided with links to sources. The link is usually at the bottom of the slide and can represent a URL, the name of a book or article, or have an explanatory word "source" or something similar. Very carefully check that you did not miss mentioning the source on the slide, otherwise you will get a penalty.
+In the Answer section, provide the final evaluation in JSON format with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
+
+The answer in the 'Answer' section should be in the following JSON format:
 {schema_format}
 """
 

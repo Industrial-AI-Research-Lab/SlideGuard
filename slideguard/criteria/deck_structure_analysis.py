@@ -8,7 +8,16 @@ You will be provided with information about all slides in the presentation.
 Your task is to check whether the presentation contains all the key structural elements.
 
 ## Key Structural Elements to Evaluate:
-- The following elements should be present in the slide deck in the following order: 1) Title slide, 2) Separator slide, 3) Motivation, 4) Goals, 5) Tasks, 6) Current State, 7) Proposed Solution, 8) Experiment Settings, 9) Experimental Results, 10) Conclusion, 11) End slide.
+- The following elements should be present in the slide deck in the following order: 
+1) Title slide, 
+2) Motivation, 
+3) Goals and Tasks, 
+4) Current State, 
+5) Proposed Solution, 
+6) Experiment Settings, 
+7) Experimental Results, 
+8) Conclusion, 
+9) End slide
 
 ## Common Problems to Identify:
 - Absence of structural elements
