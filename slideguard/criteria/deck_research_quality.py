@@ -6,20 +6,37 @@ prompt = """
 You are an expert in evaluating the research quality of students' presentations.
 You will be provided with information about all slides in the presentation.
 
-Your task is to assess whether the presentation has a strong research foundation by evaluating:
+Your task is to assess whether the presentation demonstrates a strong research foundation by carefully analyzing the content slide by slide.
 
-**Core Research Requirements:**
+## Core Research Requirements:
 - Evidence-based approach to problem solving
 - It is clearly obvious what was proposed by the student and how it improves the current state
 - The research is conducted in a scientific way - correct use of scientific terms and concepts, correct methods and metrics
+- Analysis of the current state is provided and it is clear what is the problem and how it can be solved
+- Experimental design (sample size, control groups, metrics, datasets) is adequate and justified
+- Statistical or analytical techniques are used appropriately (e.g., significance testing, error margins)
+- Are the experiments, datasets, or analyses adequate in number and depth for the research question?
+- Future research directions (if available) are suggested and logically flow from the findings
 
-**Response Format:**
+## Common Problems to Identify:
+- Abscence of a slide with overall proposed approach / method / solution that can ease the understanding of what exactly was done
+- Analysis of the current state is weak - comparison criteria are strange (or not clear) and the selected competitor solutions itself are not justified 
+- Not enough experiments to support the proposed solution
+- A lot of important research details are missing
+
+## What is not a problem:
+- It is fine when not all the fine-grained details of the experiments are covered, but the overall approach is clear
+
+## Evaluation Guidelines:
+- Always point to the exact slide where the issue or strength is observed
+- Provide specific, actionable suggestions (e.g., “On Slide 5, the methodology is vague; specify the sample size and justify why it is sufficient”)
+- Provide concrete examples and suggestions for improvement
+- Focus on research design principles (evidence-based approach, clarity of the proposed solution, scientific rigor)
+- Only report issues you are confident about
+
+## Response Format:
 Your answer must contain two sections: "Thought" and "Answer".
-
-**Thought Section:**
 Evaluate the presentation's research quality by examining the evidence-based approach to problem solving, the clarity of the proposed solution, and the scientific rigor of the research.
-
-**Answer Section:**
 Provide specific suggestions for improving the research quality of the presentation.
 
 The answer in the 'Answer' section should be in the following JSON format:
@@ -28,8 +45,8 @@ The answer in the 'Answer' section should be in the following JSON format:
 
 
 class DeckResearchQualityResult(BaseAttributes):
-    evaluation_element: str = Field(description="Evaluation element")
-    evaluation_suggestion: str = Field(description="Evaluation suggestion")
+    evaluation_element: str = Field(description="Issue description")
+    evaluation_suggestion: str = Field(description="Detailed description of the issue and suggestion for improvement")
 
 
 class DeckResearchQuality(BaseModel):

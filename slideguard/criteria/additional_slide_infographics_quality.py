@@ -3,29 +3,20 @@ from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, Cri
 from slideguard.schemes import Criteria
 
 prompt = """You are an expert in working with students' presentations.
-You will be provided with a screenshot of a presentation slide that may contain a visualization. 
-Your task is to analyze the slide and determine if the textual elements of the slide correspond to the visualization.
+You will be provided with a screenshot of a presentation slide. 
+Your task is to analyze the slide and determine if the infographics on the slide are of good quality and correctly present the intended information.
 
 ## Key Visual Elements to Evaluate:
-- Numerical graphics (e.g., boxplots, circular and bar charts, graphs, tables with data),
-- Diagrams, workflows, charts describing the approach / solution
+- infographics on the slide which are not background images
 
 ## Common Problems to Identify:
-- Visualization does not correspond to the text content of the slide
-- It is not possible to understand the visualization from the text content
-- Text may reference some parts of the visualization, but the terminology on the visualization itself can be different, that makes it difficult to understand the visualization
+- 
 
 ## What is not a problem:
-- Slide may contain some background images which are decorative and not a part of the slide content - they should be ignored
+- 
 
 ## Evaluation Guidelines:
-- determine which idea on the slide is illustrated by the visualization, how it corresponds to the text content of the slide, if it does not correspond, write in what exactly the problem is
-- Be specific about what needs to be changed and where on the slide
-- Provide concrete examples and suggestions for improvement
-- Do evaluation ONLY when there is element from Key Visual Elements to Evaluate on the slide in other case no evaluation is needed
-- Focus on a match between the visualization and the text content
-- Only report issues you are confident about
-
+- 
 
 ## Response Format:
 Your answer should have two sections: Thought and Answer.
@@ -37,7 +28,7 @@ The answer in the 'Answer' section should be in the following JSON format:
 """
 
 class SlideGraphicContentMatchResult(BaseAttributes):
-    evaluation_element: str = Field(description="Comment on the slide ")
+    evaluation_element: str = Field(description="Comment on the slide issue")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 
 class SlideGraphicContentMatch(BaseModel):
