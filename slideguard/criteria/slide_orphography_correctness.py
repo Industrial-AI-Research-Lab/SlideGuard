@@ -37,7 +37,7 @@ Write the final answer in the following JSON format:
 """
 
 class SlideOrphographyCorrectnessResult(BaseAttributes):
-    evaluation_element: str = Field(description="Orphographic error")
+    evaluation_element: str = Field(description="Found Orphographic or grammatical error")
     evaluation_suggestion: str = Field(description="Fix the word <<incorrect word>>")
 
 class SlideOrphographyCorrectness(BaseModel):

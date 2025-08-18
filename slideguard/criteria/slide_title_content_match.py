@@ -32,7 +32,7 @@ Then in the 'Answer' section, rewrite the found mismatches and how to fix them, 
 """
 
 class SlideTitleContentMatchResult(BaseAttributes):
-    evaluation_element: str = Field(description="Comment on the slide ")
+    evaluation_element: str = Field(description="Comment on the slide issue")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 
 class SlideTitleContentMatch(BaseModel):

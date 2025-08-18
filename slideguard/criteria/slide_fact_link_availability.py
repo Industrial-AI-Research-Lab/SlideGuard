@@ -32,7 +32,7 @@ The answer in the 'Answer' section should be in the following JSON format:
 
 
 class SlideFactLinkAvailabilityResult(BaseAttributes):
-    evaluation_element: str = Field(description="Comment on the slide ")
+    evaluation_element: str = Field(description="Comment on the slide issue")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 
 

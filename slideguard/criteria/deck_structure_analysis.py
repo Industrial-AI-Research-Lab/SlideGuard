@@ -36,8 +36,8 @@ The result should be in the following JSON format:
 
 
 class DeckStructureAnalysisResult(BaseAttributes):
-    evaluation_element: str = Field(description="Evaluation element")
-    evaluation_suggestion: str = Field(description="Evaluation suggestion")
+    evaluation_element: str = Field(description="Issue description")
+    evaluation_suggestion: str = Field(description="Detailed description of the issue and suggestion for improvement")
 
 
 class DeckStructureAnalysis(BaseModel):
