@@ -16,7 +16,7 @@ Then, in the 'Answer' section: write the final answer for the user in Russian, n
 Strictly follow the following rules:
 - determine which idea on the slide is illustrated by the visualization, how it corresponds to the text content of the slide, if it does not correspond, write in what exactly the problem is
 - always provide the 'Thought:' section, and the 'Answer:' section, otherwise you will not be able to complete the task
-- in the 'Answer:' section, provide only clear comments for the user on the consistency of the infographic with the slide content, if you have no comments on the slide, write **only** 'Problems not found' and nothing else
+- in the 'Answer:' section, provide only clear comments for the user on the consistency of the infographic with the slide content, if you have no comments on the slide, leave the corresponding field an empty list
 
 Write the result in the following JSON format:
 {schema_format}

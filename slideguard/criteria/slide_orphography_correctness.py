@@ -14,7 +14,11 @@ What can be considered as an error:
 
 The plan of the solution of the task:
 1. Review the entire slide of the presentation and find typographical and grammatical errors.
-2. Formulate conclusions about how to correct each error found on the slide.
+2. When checking grammar and punctuation make sure that you consider the whole element, not just a part of it (some elements may occupy several lines, so you need to check the whole element).
+3. Formulate conclusions about how to correct each error found on the slide.
+
+Common problems that can be found on a slide:
+- Lists may have ending dots which is not correct
 
 Your answer should have two sections: «Thought» and «Answer».
 
