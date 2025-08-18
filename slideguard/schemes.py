@@ -89,7 +89,7 @@ class FullEvaluation(BaseModel):
     """Result of deck-level evaluation"""
     slide_deck_path: str
     slide_evaluations: List[SlideEvaluationResult]
-    deck_evaluations: DeckEvaluationResult
+    deck_evaluations: Optional[DeckEvaluationResult] = None
     overall_score: Optional[float] = None
     summary: Optional[str] = None
 

@@ -146,6 +146,20 @@ class ControlledLLM(LLM):
             from_task=from_task, 
             from_agent=from_agent
         )
+    
+    def _prepare_completion_params(
+        self,
+        messages: Union[str, List[Dict[str, str]]],
+        tools: Optional[List[dict]] = None,
+    ) -> Dict[str, Any]:
+        params = super()._prepare_completion_params(messages, tools)
+        
+        if "max_tokens" in params:
+            max_tokens = params["max_tokens"]
+            del params["max_tokens"]
+            params["max_completion_tokens"] = max_tokens
+        
+        return params
 
 def create_llm_from_config(config: SlideGuardConfig) -> ControlledLLM | None:
     """
@@ -165,6 +179,8 @@ def create_llm_from_config(config: SlideGuardConfig) -> ControlledLLM | None:
         return None
     
     try:
+        # temperature = 0.1
+        temperature = 1
         
         # Configure CrewAI to use LiteLLM with explicit provider
         # and wrap with a semaphore for bounded concurrency
@@ -172,7 +188,7 @@ def create_llm_from_config(config: SlideGuardConfig) -> ControlledLLM | None:
             model=f"openai/{config.model}",  # Tell LiteLLM this is an OpenAI-compatible model
             api_key=config.api_key,
             base_url=config.api_base,
-            temperature=0.1,
+            temperature=temperature,
             max_tokens=4000,
             max_concurrency=config.max_concurrency
         )
