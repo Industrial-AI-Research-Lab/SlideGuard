@@ -1,0 +1,574 @@
+{
+    "records": [
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Student's group number is missing.: Add the student's group number next to the presenter's name. For example: 'Докладчик: Басилаев Даниил Игоревич, группа 123'.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Supervisor's place of work is missing.: Include the supervisor's place of work after their name. For example: 'Руководитель: Насонов Денис Александрович, к.т.н., ITMO University'.",
+            "ai_comments": [
+                "Место работы руководителя и консультата отсутствуют"
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Place (city) and year of the presentation are missing.: Add the city and year at the bottom of the slide. For example: 'Санкт-Петербург, 2023'.",
+            "ai_comments": [
+                "На титульном слайде не указано место и год защиты"
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text size in the bar chart labels at the bottom is quite small, making it hard to read. Consider increasing the font size for better readability.",
+            "ai_comments": [
+                "Тексты на графиках не видны совсем"
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The bar chart on the right side has labels that are rotated and closely packed, which can make them difficult to read. Adjusting the label orientation to horizontal and increasing the spacing could improve clarity.",
+            "ai_comments": [
+                "Тексты на графиках не видны совсем"
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide contains useful information, the inclusion of the source citation at the bottom left corner of the bar chart could be moved to a less cluttered area to avoid interfering with the main data visualization.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text size within the blue boxes appears slightly small, especially for viewers who may be seated further back in a large room. Consider increasing the font size by a few points to ensure all audience members can easily read the content.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The second blue box contains multiple lines of text without clear separation between different tasks. Adding bullet points or numbered lists could improve clarity and make each task stand out more distinctly.",
+            "ai_comments": [
+                "Неаккуратное форматирование - задачи не выделены маркерами"
+            ],
+            "judgement": true,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide is not overly crowded, the second box contains several tasks listed together. Breaking down this information into separate, smaller sections might enhance comprehension and allow for better pacing during the presentation.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text size for the numbered list items appears to be quite small, making it challenging for viewers to read comfortably, especially from a distance. Consider increasing the font size for better readability.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The alignment of the text block on the left side could be improved. The text block is slightly off-center and doesn't align well with the central diagram. Aligning the text block more closely with the diagram would create a cleaner look and improve the flow of information.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide contains necessary information, the inclusion of detailed graphs might be overwhelming for some audiences. Consider summarizing the graph data into key takeaways or providing a simplified version of the graphs to maintain clarity without losing essential insights.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The line graphs showing loss and accuracy per epoch do not seem to correspond well with the expected performance of a pre-trained ResNet50 model. The average accuracy mentioned is quite low at 7%, which might not reflect the true capability of the model unless there are specific reasons discussed.: Consider adding more context or explanation regarding why the accuracy is so low and what factors might be influencing this result. If this is expected behavior, clarify it in the text. Otherwise, investigate potential issues in the implementation or dataset that could be causing such low performance.",
+            "ai_comments": [
+                "Нет пояснения к информации, отображенной на слайде. В частности, какую роль играют признаки и графики."
+            ],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The flowchart visually represents the process described in the text, but it doesn't explicitly link back to the list of features used for cell factorization.: It would be beneficial to add arrows or labels connecting the flowchart to the relevant features listed on the left side of the slide. This would help viewers understand how each feature contributes to the PCA and ResNet50 steps.",
+            "ai_comments": [
+                "Нет пояснения к информации, отображенной на слайде. В частности, какую роль играют признаки и графики."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text within the flowchart and some labels appears quite small, making it challenging to read. Consider increasing the font size for these elements to ensure clarity.",
+            "ai_comments": [
+                "Ничего вообще не видно на схеме"
+            ],
+            "judgement": false,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The flowchart occupies a large portion of the slide, but there's a lack of clear spacing between different sections of the chart. Adding more space around each component could improve the visual separation and make the slide less cluttered.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide contains necessary information, the flowchart is quite detailed. Consider breaking down complex parts into separate slides if the audience might find it overwhelming.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Terminology mismatch between text and diagram: The text mentions 'metadata cell collection,' but the diagram uses terms like 'Classification' and 'Regression of bounding boxes.' To improve clarity, the text should either explain these terms or the diagram should use consistent terminology with the text.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Unexplained acronym in the diagram: The term 'NMS' is used in the diagram but not mentioned in the text. It would be beneficial to either explain what NMS stands for in the text or remove it from the diagram if it's not crucial for understanding.",
+            "ai_comments": [
+                "Нет пояснения к схеме, приведенной на слайде."
+            ],
+            "judgement": true,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The visualization does not clearly correspond to the text content regarding the proposal of areas and their balancing.: Add a brief explanation above or below the tables that clarifies how the financial data presented in Tables 1 and 2 relates to the concept of proposing areas and their balancing. For example, specify which columns or rows in the tables represent the areas being proposed and how the values indicate the process of balancing.",
+            "ai_comments": [
+                "не хватает сопровождающих описаний"
+            ],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "It is not immediately clear from the text content how to interpret the visualization.: Include a legend or key within the tables that explains the meaning of abbreviations and terms used, such as 'Net Sales,' 'Net Purchases,' 'Enron’s Net Exposure,' etc., to help the audience understand the data more easily.",
+            "ai_comments": [
+                "не хватает сопровождающих описаний"
+            ],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The legend uses terms like 'small,' 'medium,' and 'large' without defining what these categories mean.: Add a definition or explanation for the categories 'small,' 'medium,' and 'large' in the context of the dataset to clarify what these terms represent.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 9
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text size for the mathematical formula and the paragraph below it appears slightly small. Increasing the font size would improve readability.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The two bar charts at the bottom are placed close together, which may cause some viewers to perceive them as a single unit. Adding more space between the charts could help distinguish them clearly.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide contains necessary information, the inclusion of detailed mathematical notation and two separate graphs might be overwhelming for some audiences. Consider summarizing the key points or providing a simplified version of the graphs if the audience is not deeply technical.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt. The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides. To improve this, consider adding a slide that explicitly connects the identified problems with the chosen solution approach.",
+            "ai_comments": [
+                "На слайде 6 не отображена связь решения с обозначенными целью и задачами исследования",
+                "Цель плохо связана с проблемой. В частности, контекст и атрибуты табулярных данных не были введены ранеею"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Clear cause-and-effect relationships between ideas: There are missing clear cause-and-effect relationships between some ideas. For example, the slide 'Proposal of regions and their balancing' seems out of place and does not clearly connect to the rest of the narrative. It would be beneficial to either remove this slide if it is not essential or integrate it more seamlessly by explaining how it relates to the overall goal of the research.",
+            "ai_comments": [
+                "На слайде 6 не отображена связь решения с обозначенными целью и задачами исследования"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Smooth transitions between related topics: The transitions between some slides could be smoother. For instance, moving from the 'Current State' slide to the 'Proposed Solution' slide feels disjointed. Adding transitional phrases or sentences that highlight the connection between these topics would enhance the flow. Consider phrases like 'Given the challenges outlined, our proposed solution involves...' to bridge the gap.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Each slide should be a part of coherent overall story: Some slides appear disconnected from the overall story. The slide 'Proposal of regions and their balancing' does not seem to contribute to the main narrative about developing intelligent methods for tabular data. If this slide is necessary, it should be integrated more clearly into the storyline. Otherwise, it should be removed to maintain a coherent flow.",
+            "ai_comments": [
+                "На слайде 6 не отображена связь решения с обозначенными целью и задачами исследования"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "The title of the whole presentation should be a good reflection of the content of the presentation: The title slide does not have a clear title that reflects the content of the presentation. Adding a concise and descriptive title that encapsulates the main focus of the research, such as 'Intelligent Methods for Automatic Identification of Tabular Data Context and Attributes,' would help set the right expectations for the audience.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Clarity of Proposed Solution: On Slide 5, the proposed solution is somewhat unclear. While the slide describes an algorithm based on a pre-trained ResNet50 model, it lacks a comprehensive overview of how this approach addresses the problem of automatic identification of context and attributes of tabular data. It would be beneficial to add a dedicated slide that clearly outlines the overall proposed method, emphasizing how it improves upon the current state.",
+            "ai_comments": [
+                "На слайде 6 совершенно не понятно, что оригинального было предложено студентом в качестве решения"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Experimental Design: On Slide 8, the experimental metrics are discussed using IoU and BDI. However, the sample size and justification for the chosen metrics could be further explained. Adding details about why these specific metrics were chosen and how they relate to the research question would strengthen the scientific rigor of the study.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Analysis of Current State: On Slide 4, the analysis of existing methods is presented. While it provides a comparison of Computer Vision, Deep Learning (RNNs, LSTMs), and Table Transformer, it does not clearly justify why these methods are not suitable for handling Excel documents. A more detailed explanation of the limitations of these methods in the context of the research problem would enhance the analysis.",
+            "ai_comments": [
+                "На слайде 4 ужасное деление на методы - это не ортогональные классы"
+            ],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Future Research Directions: The presentation does not explicitly mention future research directions. Including a slide that suggests logical extensions of the current findings would provide a more complete picture of the research and demonstrate foresight in addressing potential gaps or new opportunities.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Place (city) and year of the presentation: Please specify the city and the year of the presentation clearly. For example, 'Saint Petersburg, December 18th, 2023'. The current text 'December 18th, Birzhevaya line,4' does not provide the necessary information.",
+            "ai_comments": [
+                "Нет года на титульном слайде, кто такой \"scientific diector\""
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text within the legend of Picture 1 is quite small and may be hard to read for some viewers. Consider increasing the font size slightly to improve readability.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The map in Picture 2 has a pop-up window with additional information that partially overlaps the map itself. This could be confusing for viewers. Consider repositioning the pop-up window so that it doesn't obscure important parts of the map.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide contains two distinct images, there is a lot of information packed into each picture. Consider breaking down the information further or providing a brief explanation next to each picture to help guide the viewer's understanding.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: Increase the size of the text labels within the flowchart elements such as 'semi semantic text', 'text with NER', and others to ensure they are easily readable from a distance.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: Adjust the spacing around the flowchart elements to create a more balanced layout. For example, there is less space around the 'Regular Expression' diamond compared to other elements, which can make the slide appear uneven.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: Consider breaking down the complex flowchart into multiple slides if necessary to avoid overwhelming the audience. Alternatively, use tooltips or interactive elements to reveal additional details upon hovering over certain parts of the flowchart.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The legend explaining the color coding is placed at the bottom left corner, which might not be immediately noticeable.: Move the legend to a more prominent position near the top of the slide or integrate it directly into the workflow diagram for better visibility.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The term 'semi semantic text' is used in the diagram without a clear explanation in the text content.: Add a brief explanation of what 'semi semantic text' means within the text content or label the corresponding box in the diagram more descriptively.",
+            "ai_comments": [
+                "Схема не снабжена пояснениями ни тут, ни далее - что такое Regular Expression и какова его роль, что такое semi semantic text и text with NER"
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The final output labeled 'Topic with Sentiment prediction' lacks a direct connection to the 'Visualization (Qgis)' step in the diagram.: Draw a line connecting the 'Topic with Sentiment prediction' box to the 'Visualization (Qgis)' step to clearly show the flow of data to the final visualization.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_content_match",
+            "expert_comment": "The title 'How?' is too abstract and does not clearly indicate the content of the slide, which is a detailed workflow diagram involving data processing steps from social networks through various analytical techniques.: Change the title to something more specific such as 'Workflow for Analyzing Social Network Data' or 'Data Processing Steps for Topic and Sentiment Analysis'.",
+            "ai_comments": [
+                "неудачное наименование слайда \"How?\""
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text within the green boxes and the orange box at the bottom is quite small and may be hard to read for some viewers. Consider increasing the font size for better readability.",
+            "ai_comments": [
+                "ничего не видно на схеме - мелкий шрифт, плохая контрастность;"
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The layout is generally well-organized with clear alignment and spacing. However, the text block on the left side could be slightly more integrated into the flow of the diagram. Perhaps aligning it with the top edge of the diagram would improve the visual connection.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide contains a good amount of information, it might benefit from breaking down the content further. For instance, the repeated phrase 'mixed data for assessors' could be simplified or represented visually to reduce redundancy.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "The visualization does not correspond to the text content.: The text discusses the accuracy of the model, mentioning that the best model is wrong in 17% of cases and gives good predictions in 58% of cases. However, the visualization focuses on the structure and components of the topic modeling process without any reference to these performance metrics. To improve the slide, consider adding a section in the visualization that illustrates the model's performance, such as a bar chart showing the percentage of correct and incorrect predictions. This would help establish a clear connection between the text and the visualization.",
+            "ai_comments": [
+                "нужен отдельный слайд с результатами экспериментов - таблица или графики с цифрами"
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text readability: The text within the 'Better Language Models and Their Implications' box appears slightly small, making it harder to read at a distance. Consider increasing the font size for better readability.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Layout organization: The alignment of the text 'Better Language Models and Their Implications' could be improved. The left-aligned text next to the image creates an uneven look. Centering the text or aligning it more closely with the image would create a cleaner layout.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Information density: While the slide contains a reasonable amount of information, the description under 'Better Language Models and Their Implications' is quite dense. Consider breaking it down into bullet points or simplifying the language for easier comprehension.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the title slide sets up the topic, subsequent slides jump between the current state, target audience, and proposed solutions without establishing a clear connection. For instance, the slide titled 'What is it?' introduces the current state but does not clearly link it to the motivation or goal. The slide titled 'For whom?' introduces stakeholders but does not explain how they relate to the goal or proposed solution. To improve this, consider reorganizing the slides to follow a more linear narrative structure, starting with the motivation, then the goal, followed by the proposed solution, and finally the results.",
+            "ai_comments": [
+                "Не понятно о чем слайд 2, неудачное название \"What is it?\". Скорее всего это мотивация, но не хватает сопроводительного текста о том, какие проблемы будут решаться в исследовании и почему."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Clear cause-and-effect relationships between ideas: There are no clear cause-and-effect relationships established between the ideas presented. For example, the slide titled 'What is it?' shows maps of urban issues but does not explain how these issues motivate the goal or how the proposed solution addresses them. Similarly, the slide titled 'For whom?' lists stakeholders but does not clarify how the proposed solution benefits them. To enhance the storytelling, ensure each idea logically follows from the previous one and clearly demonstrates its relevance to the overall narrative.",
+            "ai_comments": [
+                "Не понятно о чем слайд 2, неудачное название \"What is it?\". Скорее всего это мотивация, но не хватает сопроводительного текста о том, какие проблемы будут решаться в исследовании и почему."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Smooth transitions between related topics: The transitions between related topics are abrupt and lack smoothness. For instance, the transition from the current state ('What is it?') to the target audience ('For whom?') is not well-explained. Adding transitional phrases or sentences that connect these ideas would help create a more cohesive flow. Consider adding a sentence at the end of each slide that previews the next slide's content, ensuring a seamless transition.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Proper topic separation when switching between different topics: Some slides mix different topics without clear separation, leading to confusion. For example, the slide titled 'Topic Modeling' combines elements of the proposed solution and experimental results. This mixing makes it difficult to understand the distinct contributions of each component. To resolve this, separate the proposed solution and experimental results into distinct slides, ensuring each topic is clearly defined and discussed independently.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Each slide should be a part of coherent overall story: Several slides appear disconnected from the overall story. For instance, the slide titled 'Related works' discusses other research but does not explicitly show how it relates to the current project. Similarly, the slide titled 'What could be more?' introduces advanced language models but does not explain their relevance to the project's goals. To maintain coherence, ensure each slide contributes to the overarching narrative and clearly links back to the main storyline.",
+            "ai_comments": [
+                "Обзор литературы не описывает как предлагаемое студентом решение отличается от уже существующих. Обзор должен сравнивать между собой решения.",
+                "Не понятно о чем слайд 7"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "No contradictions or conflicting information: There are potential contradictions in the presentation. For example, the slide titled 'Topic Modeling' mentions a 'best model' but does not clearly define what constitutes the 'best' model or how it compares to other models. This ambiguity can lead to confusion. To avoid contradictions, ensure all claims are well-supported and clearly explained, providing context and comparisons where necessary.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "The title of the whole presentation should be a good reflection of the content of the presentation: The title 'Extracting aspects of socio-economic life and the accompanying emotional coloring (Spatial Urban Topics)' is somewhat vague and does not fully capture the content of the presentation. The slides cover a range of topics, including urban issues, stakeholder analysis, and topic modeling, but the title does not clearly reflect these elements. Consider revising the title to more accurately represent the key aspects of the presentation, making it easier for the audience to grasp the main focus.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Motivation: The presentation lacks a clear motivation slide. Adding a slide that explains why this research is important and what problem it aims to solve would greatly enhance the presentation's clarity and impact.",
+            "ai_comments": [
+                "нет описания важности устранения проблемы"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Goals and Tasks: There is no dedicated slide outlining the goals and tasks of the project. Including a slide that clearly defines the objectives and tasks would help the audience understand the direction and scope of the work.",
+            "ai_comments": [
+                "нет целей и задач исследования"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Experiment Settings: The presentation does not contain a slide describing the experiment settings. Adding a slide that details the methodology, tools, and setup used in the experiments would provide necessary context for understanding the experimental results.",
+            "ai_comments": [
+                "нет описания экспериментального сетапа"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Conclusion: A conclusion slide is missing. Adding a slide that summarizes the findings, highlights the significance of the results, and discusses future directions would effectively wrap up the presentation.",
+            "ai_comments": [
+                "нет выводов"
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Order of Structural Elements: The current state is introduced before the proposed solution, which is not the ideal order. It is recommended to rearrange the slides so that the proposed solution comes after the current state to maintain logical flow.",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        }
+    ]
+}

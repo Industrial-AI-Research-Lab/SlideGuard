@@ -28,7 +28,7 @@ evaluation:
     - slide_id: 8
       criteria: slide_visual_arrangement
       comment: "плохо видимые подписи осей"
-    - slide: 11
+    - slide_id: 11
       criteria: slide_graphic_content_match
       comment: "не хватает процентных соотношений в выводах"
 
