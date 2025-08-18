@@ -217,6 +217,7 @@ resources/slidedecks/**
 !resources/slidedecks/.gitkeep
 resources/test_folder
 resources/slidedecks_pdf
+resources/slidedecks_*
 
 # Cache folders
 .slideguard_cache
