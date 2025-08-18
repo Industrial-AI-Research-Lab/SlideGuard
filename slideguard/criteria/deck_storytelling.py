@@ -8,20 +8,16 @@ You will be provided with information about all slides in the presentation.
 
 Your task is to assess whether the presentation tells a coherent, logical story by evaluating:
 
-**Core Storytelling Requirements:**
+## Key Storytelling Elements to Evaluate:
 - Logical progression from introduction to conclusion
 - Clear cause-and-effect relationships between ideas
 - Smooth transitions between related topics
-- Proper topic separation when switching between unrelated subjects
+- Proper topic separation when switching between different topics
+- Each slide should be a part of coherent overall story 
 - No contradictions or conflicting information
 
-**Response Format:**
-Your answer must contain two sections: "Analysis" and "Recommendations".
-
-**Analysis Section:**
-Evaluate the presentation's storytelling quality by examining the logical connections between slides according to this framework:
-
-**Required Logical Connections (Mermaid Diagram):**
+## Evaluation Plan:
+Evaluate the presentation's storytelling quality by examining the logical connections between slides according to the Required Logical Connections (Mermaid Diagram):
 ```mermaid
 graph LR
 A[Motivation] <--> B[Goal]
@@ -36,7 +32,7 @@ F[Experiment Settings] --> G[Experiment Results]
 A[Motivation] --> G[Experiment Results]
 ```
 
-**Evaluation Criteria:**
+## Evaluation Criteria:
 1. **Motivation → Goal Connection**: Does the goal address the motivation/problem?
 2. **Current State → Goal Connection**: Does the goal propose improvement over current state?
 3. **Goal → Tasks Connection**: Do tasks directly support achieving the goal?
@@ -45,26 +41,24 @@ A[Motivation] --> G[Experiment Results]
 6. **Experiments → Results Connection**: Do results relate to the experimental setup?
 7. **Motivation → Results Connection**: Do results address the original motivation?
 
-**Specific Violations to Check:**
+## Common Problems to Identify:
 - If Goal does not mention improvement of Current State → violation
 - If Tasks do not refer to a specific Goal → violation
 - If Proposed Solution doesn't address the stated Goal → violation
 - If Experiment Settings don't test the Proposed Solution → violation
 - If Experiment Results don't connect back to the original Motivation → violation
+- If some slide is not a part of the overall story → violation
 
-**Recommendations Section:**
-Provide specific, actionable feedback including:
-- Missing logical connections
-- Abrupt or unclear transitions
-- Gaps in the narrative flow
-- Contradictions or conflicting information
-- Suggestions for improvement
+## Evaluation Guidelines:
+- Point to the exact slides / elements where the issue is observed
+- Provide specific, actionable suggestions that are as concrete as possible
+- Focus on storytelling principles (logical flow, cause-and-effect relationships, smooth transitions, proper topic separation, coherence of the story)
+- Only report issues you are confident about
 
-**Important Rules:**
-- Always provide both "Analysis" and "Recommendations" sections
-- In the "Analysis" section, conduct systematic reasoning about logical connections
-- In the "Recommendations" section, provide only clear, actionable comments for the user
-- Focus on the logical flow and coherence of the story, not content quality
+## Response Format:
+Your response should have two sections: Thought and Answer.
+In the Thought section, provide your reasoning and analysis including an overall assessment of the deck storytelling.
+In the Answer section, provide the final evaluation in JSON format with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 
 The answer in the 'Answer' section should be in the following JSON format:
 {schema_format}

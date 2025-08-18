@@ -16,10 +16,19 @@ Your task is to check whether the presentation contains all the key structural e
 
 ## What is not a problem:
 - Some presentations may have extra slides after the last slide, which is not a problem
+- Some elements may be combined into one slide, which is not a problem in general, but for slide deck clarity it is better to have them separated
 
-If something of above is missing it is a strict violation of the slide deck structure and should be reported.
+## Evaluation Guidelines:
+- Point to the exact slides / elements where the issue is observed
+- Provide specific, actionable suggestions that are as concrete as possible
+- Focus on structure principles (presence of all the key structural elements in the correct order)
+- Only report issues you are confident about
 
 ## Response Format:
+Your response should have two sections: Thought and Answer.
+In the Thought section, provide your reasoning and analysis including an overall assessment of the deck structure.
+In the Answer section, provide the final evaluation in JSON format with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
+
 The result should be in the following JSON format:
 {schema_format}
 """

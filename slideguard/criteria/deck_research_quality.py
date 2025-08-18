@@ -17,6 +17,14 @@ Your task is to assess whether the presentation demonstrates a strong research f
 - Are the experiments, datasets, or analyses adequate in number and depth for the research question?
 - Future research directions (if available) are suggested and logically flow from the findings
 
+## Common Problems to Identify:
+- Abscence of a slide with overall proposed approach / method / solution that can ease the understanding of what exactly was done
+- Not enough experiments to support the proposed solution
+- A lot of important research details are missing
+
+## What is not a problem:
+- It is fine when not all the fine-grained details of the experiments are covered, but the overall approach is clear
+
 ## Evaluation Guidelines:
 - Always point to the exact slide where the issue or strength is observed
 - Provide specific, actionable suggestions (e.g., “On Slide 5, the methodology is vague; specify the sample size and justify why it is sufficient”)
