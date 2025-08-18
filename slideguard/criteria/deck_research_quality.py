@@ -12,6 +12,7 @@ Your task is to assess whether the presentation demonstrates a strong research f
 - Evidence-based approach to problem solving
 - It is clearly obvious what was proposed by the student and how it improves the current state
 - The research is conducted in a scientific way - correct use of scientific terms and concepts, correct methods and metrics
+- Analysis of the current state is provided and it is clear what is the problem and how it can be solved
 - Experimental design (sample size, control groups, metrics, datasets) is adequate and justified
 - Statistical or analytical techniques are used appropriately (e.g., significance testing, error margins)
 - Are the experiments, datasets, or analyses adequate in number and depth for the research question?
@@ -19,6 +20,7 @@ Your task is to assess whether the presentation demonstrates a strong research f
 
 ## Common Problems to Identify:
 - Abscence of a slide with overall proposed approach / method / solution that can ease the understanding of what exactly was done
+- Analysis of the current state is weak - comparison criteria are strange (or not clear) and the selected competitor solutions itself are not justified 
 - Not enough experiments to support the proposed solution
 - A lot of important research details are missing
 

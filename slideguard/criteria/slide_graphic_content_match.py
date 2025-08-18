@@ -4,15 +4,16 @@ from slideguard.schemes import Criteria
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide that may contain a visualization. 
-Your task is to analyze the slide and determine if the textual elements of the slide correspond to numerical graphics (e.g., boxplots, circular and bar charts, graphs, tables with data) or diagrams and workflows describing the approach / solution. 
+Your task is to analyze the slide and determine if the textual elements of the slide correspond to the visualization.
 
 ## Key Visual Elements to Evaluate:
-- Numerical graphics (e.g., boxplots, circular and bar charts, graphs, tables with data)
-- Diagrams and workflows describing the approach / solution
+- Numerical graphics (e.g., boxplots, circular and bar charts, graphs, tables with data),
+- Diagrams, workflows, charts describing the approach / solution
 
 ## Common Problems to Identify:
 - Visualization does not correspond to the text content of the slide
 - It is not possible to understand the visualization from the text content
+- Text may reference some parts of the visualization, but the terminology on the visualization itself can be different, that makes it difficult to understand the visualization
 
 ## What is not a problem:
 - Slide may contain some background images which are decorative and not a part of the slide content - they should be ignored
