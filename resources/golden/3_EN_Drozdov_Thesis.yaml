@@ -7,7 +7,7 @@ evaluation:
         deck_storytelling:
         - Motivation is arguable and does not provide insight into problem
         - There are too much slides (4 slides) on current solutions and they does not have any connection to the problem
-        - "Text augmentation" slide (slide 8) is out of context
+        - "'Text augmentation' slide (slide 8) is out of context"
         deck_research_quality:
         - Goal quality is low - it is no specifics about this research
         - Objectives (or tasks) are also very unspecific
