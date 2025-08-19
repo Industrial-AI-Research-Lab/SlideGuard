@@ -12,8 +12,11 @@ Your task is to analyze the slide and determine if the textual elements of the s
 
 ## Common Problems to Identify:
 - Visualization does not correspond to the text content of the slide
+- Figures should not be numbered in the presentation, e.g. "Figure 1" or "Fig.1" - it is a violation of slide design principles
 - It is not possible to understand the visualization from the text content
 - Text may reference some parts of the visualization, but the terminology on the visualization itself can be different, that makes it difficult to understand the visualization
+- When slide describe experimental results with numerical charts or tables the surrounding text should contain some numerical analysis of the results (e.g. "The results show that the proposed approach recall is 20 percent better on average compared to approach X")
+- Numerical graphics axis does not have a name and measure units, e.g. "Amount of money (USD)" - it is a strict violation of chart design principles
 
 ## What is not a problem:
 - Slide may contain some background images which are decorative and not a part of the slide content - they should be ignored
@@ -37,7 +40,7 @@ The answer in the 'Answer' section should be in the following JSON format:
 """
 
 class SlideGraphicContentMatchResult(BaseAttributes):
-    evaluation_element: str = Field(description="Comment on the slide ")
+    evaluation_element: str = Field(description="Comment on the slide issue")
     evaluation_suggestion: str = Field(description="Suggestion for the slide")
 
 class SlideGraphicContentMatch(BaseModel):

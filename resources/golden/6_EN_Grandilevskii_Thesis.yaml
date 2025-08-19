@@ -6,7 +6,7 @@ evaluation:
         - There is no motivation and clear problem that research is solving
         - There is no slide that outline the proposed approach
         deck_storytelling:
-        - "'Encoder layer' slide is out of coherent story - there is no clear purpose of the slide"
+        - "Encoder layer" slide is out of coherent story - there is no clear purpose of the slide
         deck_research_quality:
         - There is no explicit reason to show graphic of the loss
         - there should be only one goal of the research
