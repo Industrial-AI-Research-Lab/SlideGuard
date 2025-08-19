@@ -9,6 +9,7 @@ You will be provided with information about all slides in the presentation.
 Your task is to assess whether the presentation demonstrates a strong research foundation by carefully analyzing the content slide by slide.
 
 ## Core Research Requirements:
+- The goal of the research is clear and justified, there should be only one goal for the research
 - Evidence-based approach to problem solving
 - It is clearly obvious what was proposed by the student and how it improves the current state
 - The research is conducted in a scientific way - correct use of scientific terms and concepts, correct methods and metrics

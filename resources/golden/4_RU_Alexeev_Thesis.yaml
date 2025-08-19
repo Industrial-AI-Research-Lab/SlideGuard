@@ -1,0 +1,46 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - Motivation (in the form of problem) is combined with goal and tasks which is not a preferrable combination
+        - Motivation is spread over 5 slides and no clear problem is defined - there should be one slide with explicit motivation
+        - There is no slide with clear motivation of the research
+        deck_storytelling:
+        - There is no scheme of the proposed approach
+        - Experimental study is weak - where is no clear comparison with existing solutions
+        - Conclusion does not correspond to stated tasks
+        deck_research_quality:
+        - Goal of the research is very weak - what does it mean "similar to existing"
+
+    slides:
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: no city and year on the title slide
+    - slide_id: 2
+      criteria: slide_visual_arrangement
+      comment: text on the images is too small
+    - slide_id: 2
+      criteria: slide_graphic_content_match
+      comment: there is no clear description of what is the purpose of the presented images
+    - slide_id: 3
+      criteria: slide_graphic_content_match
+      comment: Author state that current datasets have not enough data but does not provide info on how much data should be
+    - slide_id: 3
+      criteria: slide_fact_link_availability
+      comment: There are no links to data sources
+    - slide_id: 4
+      criteria: slide_graphic_content_match
+      comment: There is no clear problem stated on the slide
+    - slide_id: 5
+      criteria: slide_visual_arrangement
+      comment: Font size is too small
+    - slide_id: 5
+      criteria: slide_graphic_content_match
+      comment: no clear description of the table is provided on the slide
+    - slide_id: 8
+      criteria: slide_graphic_content_match
+      comment: inforgaphics does not correspond to provided text description
+    - slide_id: 9
+      criteria: slide_graphic_content_match
+      comment: inforgaphics does not correspond to provided text description
+

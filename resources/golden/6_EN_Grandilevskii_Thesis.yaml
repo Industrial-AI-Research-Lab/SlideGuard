@@ -1,0 +1,59 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - There is no description of current state
+        - There is no motivation and clear problem that research is solving
+        - There is no slide that outline the proposed approach
+        deck_storytelling:
+        - "Encoder layer" slide is out of coherent story - there is no clear purpose of the slide
+        deck_research_quality:
+        - There is no explicit reason to show graphic of the loss
+        - there should be only one goal of the research
+
+    slides:
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: no city and year on the title slide
+    - slide_id: 2
+      criteria: slide_color_and_fonts
+      comment: different fonts
+    - slide_id: 2
+      criteria: slide_visual_arrangement
+      comment: Text is very crowdy and should be reduced
+    - slide_id: 2
+      criteria: slide_visual_arrangement
+      comment: text size is very small
+    - slide_id: 3
+      criteria: slide_visual_arrangement
+      comment: test size is too small
+    - slide_id: 5
+      criteria: slide_visual_arrangement
+      comment: illustration is badly cropped and misses some letters
+    - slide_id: 8
+      criteria: slide_visual_arrangement
+      comment: it is impossible to see what is depicted on FRES chart as the font is too small
+    - slide_id: 8
+      criteria: slide_graphic_content_match
+      comment: it is hard to understand why fres image is shown there is no explicit explanation
+    - slide_id: 10
+      criteria: slide_visual_arrangement
+      comment: template with markers in the right corner that have undefined purpose is not good
+    - slide_id: 10
+      criteria: slide_visual_arrangement
+      comment: BLEU formula is too small
+    - slide_id: 11
+      criteria: slide_color_and_fonts
+      comment: Colors are not completely comprehensible, please give a legend
+    - slide_id: 11
+      criteria: slide_color_and_fonts
+      comment: too much colors
+    - slide_id: 14
+      criteria: slide_visual_arrangement
+      comment: pie chart is too small
+    - slide_id: 14
+      criteria: slide_color_and_fonts
+      comment: text does not have enough contrast
+    - slide_id: 17
+      criteria: slide_visual_arrangement
+      comment: the size of elements is too small

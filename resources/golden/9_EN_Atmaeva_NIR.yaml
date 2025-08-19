@@ -1,0 +1,38 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - No experimental setting
+        - No experimental results
+        deck_storytelling:
+        - There is no clear problem is stated in motivation
+        - How related works (current state) are connected to the goal and problem - seems like connection is weak
+        deck_research_quality:
+        - Research goal is not specific
+        - Research goal is too vague and not specific - there are a lot of methods to solve the task why do we need a new one
+        
+    slides:
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: no city and year on the title slide
+    - slide_id: 5
+      criteria: slide_visual_arrangement
+      comment: Overlapping elements of the table and template violet frame
+    - slide_id: 6
+      criteria: slide_fact_link_availability
+      comment: link to the information source is abscente
+    - slide_id: 6
+      criteria: slide_graphic_content_match
+      comment: there is no clear text description of the provided scheme - where the information was collected?
+    - slide_id: 7
+      criteria: slide_visual_arrangement
+      comment: font is too small
+    - slide_id: 7
+      criteria: slide_visual_arrangement
+      comment: slide is overwhelming with information, text amount should be reduced
+    - slide_id: 8
+      criteria: slide_visual_arrangement
+      comment: very low quality of the image
+    - slide_id: 9
+      criteria: slide_visual_arrangement
+      comment: text is hard to read

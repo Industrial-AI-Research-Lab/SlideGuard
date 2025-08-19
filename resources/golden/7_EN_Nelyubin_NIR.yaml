@@ -1,0 +1,79 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - there is no problem statement
+        - There is no clear understanding and describing pipeline of what was done by the student
+        - There is no goal and tasks of the research
+        - There is no motivation
+        - There is no current state
+        - Ending slide does not contain "thank you"
+        deck_storytelling:
+        - There is no clear understanding and describing pipeline of what was done by the student
+        - Experimental results are not convincing and does not correspond to any problem or goal
+        - Conclusion does not correspond to any tasks and is very generic
+        deck_research_quality:
+        - title of the presentation does not provide specifics about the research
+        - Experimental setting is very weak and not explained
+        
+    slides:
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: no year on the title slide
+    - slide_id: 2
+      criteria: slide_graphic_content_match
+      comment: there is no description of what is provided on the visualizations at all
+    - slide_id: 2
+      criteria: slide_title_content_match
+      comment: title "used cars" does not highlight the main idea of the slide
+    - slide_id: 2
+      criteria: slide_graphic_content_match
+      comment: figures should not be numbered at presentations
+    - slide_id: 3
+      criteria: slide_graphic_content_match
+      comment: there is no description of what is provided on the visualizations at all
+    - slide_id: 3
+      criteria: slide_title_content_match
+      comment: title "past works" does not highlight the main idea of the slide
+    - slide_id: 3
+      criteria: slide_graphic_content_match
+      comment: figures should not be numbered at presentations
+    - slide_id: 4
+      criteria: slide_graphic_content_match
+      comment: there is no explicit description of the provided pipeline
+    - slide_id: 4
+      criteria: slide_graphic_content_match
+      comment: figures should not be numbered at presentations
+    - slide_id: 4
+      criteria: slide_visual_arrangement
+      comment: the font size on the image is too small
+    - slide_id: 6
+      criteria: slide_visual_arrangement
+      comment: font size is too small on visualizations
+    - slide_id: 6
+      criteria: slide_graphic_content_match
+      comment: there is no text explanation of what is provided on the visualizations
+    - slide_id: 7
+      criteria: slide_graphic_content_match
+      comment: figures should not be numbered at presentations
+    - slide_id: 7
+      criteria: slide_graphic_content_match
+      comment: there is no text explanation of the visualization
+    - slide_id: 8
+      criteria: slide_graphic_content_match
+      comment: there is no text explanation of the visualization
+    - slide_id: 8
+      criteria: slide_graphic_content_match
+      comment: figures should not be numbered at presentations
+    - slide_id: 8
+      criteria: slide_visual_arrangement
+      comment: font size is too small on visualizations
+    - slide_id: 8
+      criteria: slide_color_and_fonts
+      comment: contrast is low for gray text
+    - slide_id: 9
+      criteria: slide_graphic_content_match
+      comment: there is no discussion of the graphics
+    - slide_id: 9
+      criteria: slide_graphic_content_match
+      comment: there is no names for the axis and measuring units
