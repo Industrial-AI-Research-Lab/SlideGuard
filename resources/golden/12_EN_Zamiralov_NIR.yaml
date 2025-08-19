@@ -1,0 +1,57 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - нет проблемы, которую нужно решить 
+        - нет описания важности устранения проблемы
+        - непонятен объект и субъект исследования
+        - нет целей и задач исследования
+        - обзор литературы находится не на своем месте, он должен стоять после целей и задач
+        - нет описания экспериментального сетапа 
+        - нет выводов
+        deck_storytelling:
+        - Нет полноценного интро в решаемую проблему
+        - Непонятно, приведенные на слайде 4 и 5 схемы описывают предложенный студентом метод или существующий
+        - Обзор литературы не описывает как предлагаемое студентом решение отличается от уже существующих. Обзор должен сравнивать между собой решения.
+        - Слайд 3 тоже мотивация, нужно объединить со слайдом 2
+        - Не понятно о чем слайд 2, неудачное название "What is it?". Скорее всего это мотивация, но не хватает сопроводительного текста о том, какие проблемы будут решаться в исследовании и почему.
+        - Не понятно о чем слайд 7
+
+    slides:
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: Нет года на титульном слайде, кто такой "scientific diector"
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: непонятно кто такой "scientific diector"
+    - slide_id: 2
+      criteria: slide_visual_arrangement
+      comment: Здесь и далее рисунки не нужно нумеровать в презентации
+    - slide_id: 4
+      criteria: slide_graphic_content_match
+      comment: нет пояснения относительно того, что изображено на слайде
+    - slide_id: 4
+      criteria: slide_visual_arrangement
+      comment: плохая практика показывать график с сеткой
+    - slide_id: 4
+      criteria: slide_graphic_content_match
+      comment: Слишком мелкий шрифт
+    - slide_id: 4
+      criteria: slide_title_content_match
+      comment: неудачное наименование слайда "How?"
+    - slide_id: 4
+      criteria: slide_graphic_content_match
+      comment: Схема не снабжена пояснениями ни тут, ни далее - что такое Regular Expression и какова его роль, что такое semi semantic text и text with NER
+    - slide_id: 5
+      criteria: slide_visual_arrangement
+      comment: ничего не видно на схеме - мелкий шрифт, плохая контрастность; 
+    - slide_id: 5
+      criteria: slide_graphic_content_match
+      comment: нет пояснения относительно того, что изображено на слайде, необходимо текстовое описание процесса
+    - slide_id: 5
+      criteria: slide_graphic_content_match
+      comment: нужен отдельный слайд с результатами экспериментов - таблица или графики с цифрами
+    - slide_id: 7
+      criteria: slide_visual_arrangement
+      comment: не пронумерован
+

@@ -1,0 +1,34 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - "Отсутствует обзор литературы (альтернативные подходы)"
+        - "Не хватает слайда с обзором конкурирующих решений"
+        deck_storytelling:
+        - "Неочевидно как цель и задачи связаны с проблемой метрик"
+        - "Intro есть, но нет описание почему topic modelling важен и для чего нужен"
+        - "выводы на слайде 12 должны совпадать с задачами со слайда 3"
+    
+    slides:
+    - slide_id: 2
+      criteria: slide_visual_arrangement
+      comment: "увеличить шрифт на схеме и сделать его более контрастным"
+    - slide_id: 4
+      criteria: slide_visual_arrangement
+      comment: "увеличить шрифт в зеленых блоках"
+    - slide_id: 7
+      criteria: slide_visual_arrangement
+      comment: "плохо видимые подписи осей"
+    - slide_id: 7
+      criteria: slide_visual_arrangement
+      comment: "слишком мелкий шрифт, особенно на графике"
+    - slide_id: 7
+      criteria: slide_visual_arrangement
+      comment: "много текста, желательно сократить"
+    - slide_id: 8
+      criteria: slide_visual_arrangement
+      comment: "плохо видимые подписи осей"
+    - slide_id: 11
+      criteria: slide_graphic_content_match
+      comment: "не хватает процентных соотношений в выводах"
+

@@ -1,0 +1,1202 @@
+{
+    "records": [
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "no city and year on the title slide",
+            "ai_comments": [
+                "The city and year of the presentation are missing.: Add the city and year at the bottom of the slide. For example, 'Санкт-Петербург, 2023'."
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "text on the images is too small",
+            "ai_comments": [
+                "Text readability: The text within the diagrams appears to be quite small, especially the labels for tasks such as 'Задачи Блока 1 (дорога)' and others. Increasing the font size would improve readability."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "there is no clear description of what is the purpose of the presented images",
+            "ai_comments": [
+                "The map at the bottom left does not directly correspond to the scheduling theory being explained.: Consider removing the map or integrating it better with the scheduling theory to ensure all visual elements support the textual content."
+            ],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_fact_link_availability",
+            "expert_comment": "There are no links to data sources",
+            "ai_comments": [
+                "Numerical data in the table lacks explicit sources.: Consider adding references or sources for the numerical data in the table, especially if it is not based on the student's own experiments or widely known within the field."
+            ],
+            "judgement": true,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Author state that current datasets have not enough data but does not provide info on how much data should be",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "There is no clear problem stated on the slide",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Font size is too small",
+            "ai_comments": [
+                "Text readability: The text within the table and the mathematical formulas at the bottom are relatively small, which may make it difficult for viewers to read from a distance. Consider increasing the font size of the table content and the formulas for better readability."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "no clear description of the table is provided on the slide",
+            "ai_comments": [
+                "The slide does not explain the meaning of the highlighted values.: Include a note explaining that the green highlights indicate the optimal values for each metric according to the JSD measure, assuming this is the intended meaning."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "inforgaphics does not correspond to provided text description",
+            "ai_comments": [
+                "The visualization does not clearly correspond to the text content. The graph shown lacks explicit labels or annotations that directly link it to the steps described in the text."
+            ],
+            "judgement": true,
+            "slide_id": 8
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "inforgaphics does not correspond to provided text description",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 9
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "There is no scheme of the proposed approach",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the first slide introduces the project, the subsequent slides jump between discussing the current state, proposed solutions, and experimental results without a clear narrative thread."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Experimental study is weak - where is no clear comparison with existing solutions",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the first slide introduces the project, the subsequent slides jump between discussing the current state, proposed solutions, and experimental results without a clear narrative thread. To improve this, reorganize the slides to follow a logical sequence: start with the motivation and problem, then introduce the goal and tasks, followed by the proposed solution, experiment settings, results, and finally the conclusion."
+            ],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Conclusion does not correspond to stated tasks",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Motivation (in the form of problem) is combined with goal and tasks which is not a preferrable combination",
+            "ai_comments": [
+                "Combination of Structural Elements: The slides titled 'Наборы данных для RCPSP' and 'Реальные и синтетические наборы данных' combine 'Current State' and 'Experiment Settings'. While this is not necessarily problematic, it might be clearer to separate these elements into distinct slides for better organization and clarity."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Motivation is spread over 5 slides and no clear problem is defined - there should be one slide with explicit motivation",
+            "ai_comments": [
+                "Motivation: The presentation lacks a dedicated slide for motivation. It would be beneficial to add a slide that clearly explains why this research is important and what problems it aims to solve. This will help engage the audience and provide context for the rest of the presentation."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "There is no slide with clear motivation of the research",
+            "ai_comments": [
+                "Motivation: The presentation lacks a dedicated slide for motivation. It would be beneficial to add a slide that clearly explains why this research is important and what problems it aims to solve. This will help engage the audience and provide context for the rest of the presentation."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "4_RU_Alexeev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Goal of the research is very weak - what does it mean \"similar to existing\"",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "no city and year on the title slide",
+            "ai_comments": [
+                "Place (city) and year of the presentation are missing."
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_fact_link_availability",
+            "expert_comment": "it is better to provide links to the evidence",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "slide template is not great as there are meanless elements that eat space",
+            "ai_comments": [
+                "Layout organization: The icons next to the bullet points are slightly misaligned and could be better integrated into the design. Consider aligning them consistently or removing them if they do not add value."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "nothing can be seen on the workflow scheme - weak contrast and small font",
+            "ai_comments": [
+                "Text readability: The text size for the bullet points under each task seems appropriate for reading at a distance. However, the text within the diagram's boxes, especially 'Task Prompt', 'Instruction', 'Prompt', etc., appears slightly smaller and may be challenging to read from a distance. Consider increasing the font size for these labels."
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_title_content_match",
+            "expert_comment": "title is fine but it is better to highlight that it is a proposed methodology",
+            "ai_comments": [
+                "To better align the title with the content, consider a more specific title such as 'Methodology for Creativity and Stability Evaluation'."
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "font size is small, especially on the image",
+            "ai_comments": [
+                "Text readability: The text size for the formula and the description below it appears slightly smaller compared to the main bullet points. Increasing the font size for these elements would improve readability."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "does not contain analysis with difference in percentages",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 9
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "does not contain analysis with difference in percentages",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "deck_storytelling",
+            "expert_comment": "It is not completely clear what was proposed by the student",
+            "ai_comments": [
+                "The proposed solution involves developing a benchmark for Russian language models, but the experiment settings do not clearly demonstrate how this benchmark is tested against the current state."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "There is no current state research",
+            "ai_comments": [
+                "Current State: The presentation lacks a slide dedicated to the current state of research or technology related to Russian language models."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Goal is too general and not specific",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Tasks are too general and not specific",
+            "ai_comments": [
+                "Experimental design: On Slide 5, the methodology for creativity evaluation is explained, but it does not specify the sample size or justify why the chosen number of tasks (20) is sufficient. The student should clarify the sample size and provide justification for its adequacy."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "deck_research_quality",
+            "expert_comment": "It is not completely clear what was proposed by the student",
+            "ai_comments": [
+                "On Slide 2, the motivation for the research is well-articulated, but it lacks a detailed analysis of the current state of Russian language models."
+            ],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "5_EN_Abdurakhimov_Paper",
+            "criteria": "deck_research_quality",
+            "expert_comment": "terminology is not stable around the proposed solution - all the component names should corespond to the main methodology scheme",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "На титульном слайде не указано место и год защиты",
+            "ai_comments": [
+                "Place (city) and year of the presentation are missing.: Add the city and year at the bottom of the slide. For example: 'Санкт-Петербург, 2023'."
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Точки в названиях не ставятся",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Место работы руководителя и консультата отсутствуют",
+            "ai_comments": [
+                "Supervisor's place of work is missing.: Include the supervisor's place of work after their name. For example: 'Руководитель: Насонов Денис Александрович, к.т.н., ITMO University'."
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Произвольная постановка точек",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Тексты на графиках не видны совсем",
+            "ai_comments": [
+                "Text readability: The text size in the bar chart labels at the bottom is quite small, making it hard to read. Consider increasing the font size for better readability."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Здесь и далее - ОЧЕНЬ мелкая нумерация слайдов",
+            "ai_comments": [
+                "Text readability: The text size in the bar chart labels at the bottom is quite small, making it hard to read. Consider increasing the font size for better readability."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Неаккуратное форматирование - задачи не выделены маркерами",
+            "ai_comments": [
+                "Layout organization: The second blue box contains multiple lines of text without clear separation between different tasks. Adding bullet points or numbered lists could improve clarity and make each task stand out more distinctly."
+            ],
+            "judgement": true,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Подписи к графикам плохо видны.",
+            "ai_comments": [
+                "Text readability: The text size for the numbered list items appears to be quite small, making it challenging for viewers to read comfortably, especially from a distance. Consider increasing the font size for better readability."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Нет пояснения к информации, отображенной на слайде. В частности, какую роль играют признаки и графики.",
+            "ai_comments": [
+                "The flowchart visually represents the process described in the text, but it doesn't explicitly link back to the list of features used for cell factorization.: It would be beneficial to add arrows or labels connecting the flowchart to the relevant features listed on the left side of the slide. This would help viewers understand how each feature contributes to the PCA and ResNet50 steps."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Ничего вообще не видно на схеме",
+            "ai_comments": [
+                "Text readability: The text within the flowchart and some labels appears quite small, making it challenging to read. Consider increasing the font size for these elements to ensure clarity."
+            ],
+            "judgement": true,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Нет пояснения к схеме, приведенной на слайде.",
+            "ai_comments": [
+                "Unexplained acronym in the diagram: The term 'NMS' is used in the diagram but not mentioned in the text. It would be beneficial to either explain what NMS stands for in the text or remove it from the diagram if it's not crucial for understanding."
+            ],
+            "judgement": false,
+            "slide_id": 6
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "не хватает сопровождающих описаний",
+            "ai_comments": [
+                "The visualization does not clearly correspond to the text content regarding the proposal of areas and their balancing.: Add a brief explanation above or below the tables that clarifies how the financial data presented in Tables 1 and 2 relates to the concept of proposing areas and their balancing. For example, specify which columns or rows in the tables represent the areas being proposed and how the values indicate the process of balancing."
+            ],
+            "judgement": true,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "график не понятен, нужно изменить визуализацию",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 9
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "неудачная визуализация",
+            "ai_comments": [
+                "Information density: While the slide contains necessary information, the inclusion of detailed mathematical notation and two separate graphs might be overwhelming for some audiences. Consider summarizing the key points or providing a simplified version of the graphs if the audience is not deeply technical."
+            ],
+            "judgement": true,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Непонятно Как перечисленные проблемы на слайде соотносятся с настоящей работой, т.е. как 'автоматическая идентификация контекста и атрибутов табулярных данных' поможет и какую мы вообще решаем проблему",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt. The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides. To improve this, consider adding a slide that explicitly connects the identified problems with the chosen solution approach."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Описание проблемы не достаточно четкое: непонятно, какие конкретно задачи мешают решать указанные сложности. Нужен либо пример задачи, либо конкретизация сложностей.",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt. The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides. To improve this, consider adding a slide that explicitly connects the identified problems with the chosen solution approach."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Цель плохо связана с проблемой. В частности, контекст и атрибуты табулярных данных не были введены ранеею",
+            "ai_comments": [
+                "Each slide should be a part of coherent overall story: Some slides appear disconnected from the overall story. The slide 'Proposal of regions and their balancing' does not seem to contribute to the main narrative about developing intelligent methods for tabular data. If this slide is necessary, it should be integrated more clearly into the storyline. Otherwise, it should be removed to maintain a coherent flow."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Первые три задачи на слайде с целями и задачами слишком размытые и не достаточно конкретные. Указан термин изоморфизм, понятие которого не было обозначено ранее.",
+            "ai_comments": [
+                "The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides."
+            ],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "непонятно как проведенный обзор литературы, указанный на слайде 4, связан с поставленной целью и решаемыми задачами",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt. The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides. To improve this, consider adding a slide that explicitly connects the identified problems with the chosen solution approach."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "На слайде 6 не отображена связь решения с обозначенными целью и задачами исследования",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt. The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides. To improve this, consider adding a slide that explicitly connects the identified problems with the chosen solution approach."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Выводы в заключении неконкретные.",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "На слайде 5 непонятно чей это алгоритм и почему мы его рассматриваем",
+            "ai_comments": [
+                "The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "На слайде 4 критерии в таблице не продуманы - не видно проблемы",
+            "ai_comments": [
+                "Each slide should be a part of coherent overall story: Some slides appear disconnected from the overall story. The slide 'Proposal of regions and their balancing' does not seem to contribute to the main narrative about developing intelligent methods for tabular data. If this slide is necessary, it should be integrated more clearly into the storyline. Otherwise, it should be removed to maintain a coherent flow."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "На слайде 4 ужасное деление на методы - это не ортогональные классы",
+            "ai_comments": [
+                "On Slide 4, the analysis of existing methods is presented. While it provides a comparison of Computer Vision, Deep Learning (RNNs, LSTMs), and Table Transformer, it does not clearly justify why these methods are not suitable for handling Excel documents. A more detailed explanation of the limitations of these methods in the context of the research problem would enhance the analysis."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "15_RU_Basilaev_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "На слайде 6 совершенно не понятно, что оригинального было предложено студентом в качестве решения",
+            "ai_comments": [
+                "Clarity of Proposed Solution: On Slide 5, the proposed solution is somewhat unclear. While the slide describes an algorithm based on a pre-trained ResNet50 model, it lacks a comprehensive overview of how this approach addresses the problem of automatic identification of context and attributes of tabular data. It would be beneficial to add a dedicated slide that clearly outlines the overall proposed method, emphasizing how it improves upon the current state."
+            ],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "no city and year on the title slide",
+            "ai_comments": [
+                "Missing place (city) and year of the presentation: Add the city and year of the presentation at the bottom of the slide. For example, 'Saint Petersburg, 2023'"
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_color_and_fonts",
+            "expert_comment": "different fonts",
+            "ai_comments": [
+                "Too many fonts on the slide: Limit the number of fonts to one or two for consistency. Consider using a single font for all text and another for headings if necessary."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Text is very crowdy and should be reduced",
+            "ai_comments": [
+                "Information density: The slide contains a significant amount of detailed information under 'Research tasks', which might overwhelm the audience. Consider breaking down the tasks into multiple slides or using a visual aid such as icons or images to represent each task, making the slide less text-heavy."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "text size is very small",
+            "ai_comments": [
+                "Text readability: The text size for the main body content appears to be quite small, especially for the research tasks listed. Increasing the font size would enhance readability and ensure that all audience members can easily follow along."
+            ],
+            "judgement": true,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "test size is too small",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "illustration is badly cropped and misses some letters",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "it is impossible to see what is depicted on FRES chart as the font is too small",
+            "ai_comments": [
+                "Text readability: The text size in the 'Readability Chart' section appears smaller compared to the main body text. Increasing the font size would improve readability."
+            ],
+            "judgement": true,
+            "slide_id": 8
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "it is hard to understand why fres image is shown there is no explicit explanation",
+            "ai_comments": [
+                "The Readability Chart does not correspond to the text content.: The Readability Chart should either be removed if it's not relevant to the context analysis and text preprocessing discussion, or additional text should be added to explain its relevance and how it connects to the Flesch Reading Ease Scale mentioned."
+            ],
+            "judgement": true,
+            "slide_id": 8
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "template with markers in the right corner that have undefined purpose is not good",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "BLEU formula is too small",
+            "ai_comments": [
+                "Text readability: The text within the table and the mathematical formulas appears quite small, making it challenging to read from a distance. Consider increasing the font size for better readability."
+            ],
+            "judgement": true,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_color_and_fonts",
+            "expert_comment": "Colors are not completely comprehensible, please give a legend",
+            "ai_comments": [
+                "Too many colors on the slide: Limit the number of colors to no more than five. Consider using shades of blue for the word blocks and a single contrasting color for the table cells."
+            ],
+            "judgement": true,
+            "slide_id": 11
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_color_and_fonts",
+            "expert_comment": "too much colors",
+            "ai_comments": [
+                "Too many colors on the slide: Limit the number of colors to no more than five. Consider using shades of blue for the word blocks and a single contrasting color for the table cells."
+            ],
+            "judgement": true,
+            "slide_id": 11
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_color_and_fonts",
+            "expert_comment": "text does not have enough contrast",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 14
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "pie chart is too small",
+            "ai_comments": [
+                "Text readability: The text within the graphs and the pie chart is quite small, making it hard to read. Consider increasing the font size of these labels and values to ensure they are easily readable by the audience."
+            ],
+            "judgement": true,
+            "slide_id": 14
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "the size of elements is too small",
+            "ai_comments": [
+                "Text readability: The text within the graphs and table is quite small, making it difficult to read. Consider increasing the font size for labels, legends, and table entries to ensure clarity."
+            ],
+            "judgement": true,
+            "slide_id": 17
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "'Encoder layer' slide is out of coherent story - there is no clear purpose of the slide",
+            "ai_comments": [
+                "The proposed solution in the 'Encoder layer' slide (slide 3) and 'Dataset preprocessing' slide (slide 4) should be more directly linked to the research goals. The presenter needs to explicitly state how the combined emotion- and topic-aware layer addresses the goals of proving effectiveness and increasing personalization."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "There is no description of current state",
+            "ai_comments": [
+                "Current State: The current state of the research or field is not adequately covered in a dedicated slide. Although some slides mention the current state indirectly, having a specific slide that summarizes the existing approaches and their limitations would provide a clearer context. Add a slide that focuses solely on the current state of the field before introducing the proposed solution."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "There is no motivation and clear problem that research is solving",
+            "ai_comments": [
+                "Motivation: The motivation slide is not clearly present. While some slides touch upon the rationale and current state, there is no dedicated slide that explicitly outlines why this research is necessary. Consider adding a clear motivation slide early in the presentation to set the stage for the rest of the content."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "There is no slide that outline the proposed approach",
+            "ai_comments": [
+                "Current State: The current state of the research or field is not adequately covered in a dedicated slide. Although some slides mention the current state indirectly, having a specific slide that summarizes the existing approaches and their limitations would provide a clearer context. Add a slide that focuses solely on the current state of the field before introducing the proposed solution."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "There is no explicit reason to show graphic of the loss",
+            "ai_comments": [
+                "Statistical techniques: On Slide 11, statistical techniques are used appropriately, but the slide could benefit from more detailed explanations. The table comparing models based on ACC, MRR, Loss, and BLEU is informative, but including a brief explanation of how these metrics were calculated and why they are relevant would enhance the presentation. Additionally, discussing the significance of the differences between the models would add value."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "6_EN_Grandilevskii_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "there should be only one goal of the research",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "Нет года на титульном слайде, кто такой \"scientific diector\"",
+            "ai_comments": [
+                "Place (city) and year of the presentation: Please specify the city and the year of the presentation clearly."
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "непонятно кто такой \"scientific diector\"",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "Здесь и далее рисунки не нужно нумеровать в презентации",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "плохая практика показывать график с сеткой",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "нет пояснения относительно того, что изображено на слайде",
+            "ai_comments": [
+                "The term 'semi semantic text' is used in the diagram without a clear explanation in the text content.: Add a brief explanation of what 'semi semantic text' means within the text content or label the corresponding box in the diagram more descriptively."
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Слишком мелкий шрифт",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Схема не снабжена пояснениями ни тут, ни далее - что такое Regular Expression и какова его роль, что такое semi semantic text и text with NER",
+            "ai_comments": [
+                "The term 'semi semantic text' is used in the diagram without a clear explanation in the text content.: Add a brief explanation of what 'semi semantic text' means within the text content or label the corresponding box in the diagram more descriptively."
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_title_content_match",
+            "expert_comment": "неудачное наименование слайда \"How?\"",
+            "ai_comments": [
+                "The title 'How?' is too abstract and does not clearly indicate the content of the slide, which is a detailed workflow diagram involving data processing steps from social networks through various analytical techniques."
+            ],
+            "judgement": true,
+            "slide_id": 4
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "ничего не видно на схеме - мелкий шрифт, плохая контрастность;",
+            "ai_comments": [
+                "Text readability: The text within the green boxes and the orange box at the bottom is quite small and may be hard to read for some viewers. Consider increasing the font size for better readability."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "нет пояснения относительно того, что изображено на слайде, необходимо текстовое описание процесса",
+            "ai_comments": [
+                "The visualization does not correspond to the text content.: The text discusses the accuracy of the model, mentioning that the best model is wrong in 17% of cases and gives good predictions in 58% of cases. However, the visualization focuses on the structure and components of the topic modeling process without any reference to these performance metrics. To improve the slide, consider adding a section in the visualization that illustrates the model's performance, such as a bar chart showing the percentage of correct and incorrect predictions. This would help establish a clear connection between the text and the visualization."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "нужен отдельный слайд с результатами экспериментов - таблица или графики с цифрами",
+            "ai_comments": [
+                "To improve the slide, consider adding a section in the visualization that illustrates the model's performance, such as a bar chart showing the percentage of correct and incorrect predictions."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "не пронумерован",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Нет полноценного интро в решаемую проблему",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Непонятно, приведенные на слайде 4 и 5 схемы описывают предложенный студентом метод или существующий",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Обзор литературы не описывает как предлагаемое студентом решение отличается от уже существующих. Обзор должен сравнивать между собой решения.",
+            "ai_comments": [
+                "Several slides appear disconnected from the overall story. For instance, the slide titled 'Related works' discusses other research but does not explicitly show how it relates to the current project."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Слайд 3 тоже мотивация, нужно объединить со слайдом 2",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the title slide sets up the topic, subsequent slides jump between the current state, target audience, and proposed solutions without establishing a clear connection. For instance, the slide titled 'What is it?' introduces the current state but does not clearly link it to the motivation or goal. The slide titled 'For whom?' introduces stakeholders but does not explain how they relate to the goal or proposed solution. To improve this, consider reorganizing the slides to follow a more linear narrative structure, starting with the motivation, then the goal, followed by the proposed solution, and finally the results."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Не понятно о чем слайд 2, неудачное название \"What is it?\". Скорее всего это мотивация, но не хватает сопроводительного текста о том, какие проблемы будут решаться в исследовании и почему.",
+            "ai_comments": [
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the title slide sets up the topic, subsequent slides jump between the current state, target audience, and proposed solutions without establishing a clear connection. For instance, the slide titled 'What is it?' introduces the current state but does not clearly link it to the motivation or goal. The slide titled 'For whom?' introduces stakeholders but does not explain how they relate to the goal or proposed solution. To improve this, consider reorganizing the slides to follow a more linear narrative structure, starting with the motivation, then the goal, followed by the proposed solution, and finally the results."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Не понятно о чем слайд 7",
+            "ai_comments": [
+                "Several slides appear disconnected from the overall story. For instance, the slide titled 'Related works' discusses other research but does not explicitly show how it relates to the current project. Similarly, the slide titled 'What could be more?' introduces advanced language models but does not explain their relevance to the project's goals. To maintain coherence, ensure each slide contributes to the overarching narrative and clearly links back to the main storyline."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет проблемы, которую нужно решить",
+            "ai_comments": [
+                "Motivation: The presentation lacks a clear motivation slide. Adding a slide that explains why this research is important and what problem it aims to solve would greatly enhance the presentation's clarity and impact."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет описания важности устранения проблемы",
+            "ai_comments": [
+                "Motivation: The presentation lacks a clear motivation slide. Adding a slide that explains why this research is important and what problem it aims to solve would greatly enhance the presentation's clarity and impact."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "непонятен объект и субъект исследования",
+            "ai_comments": [
+                "Motivation: The presentation lacks a clear motivation slide. Adding a slide that explains why this research is important and what problem it aims to solve would greatly enhance the presentation's clarity and impact."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет целей и задач исследования",
+            "ai_comments": [
+                "There is no dedicated slide outlining the goals and tasks of the project. Including a slide that clearly defines the objectives and tasks would help the audience understand the direction and scope of the work."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "обзор литературы находится не на своем месте, он должен стоять после целей и задач",
+            "ai_comments": [
+                "Order of Structural Elements: The current state is introduced before the proposed solution, which is not the ideal order. It is recommended to rearrange the slides so that the proposed solution comes after the current state to maintain logical flow."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет описания экспериментального сетапа",
+            "ai_comments": [
+                "Experiment Settings: The presentation does not contain a slide describing the experiment settings. Adding a slide that details the methodology, tools, and setup used in the experiments would provide necessary context for understanding the experimental results."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "12_EN_Zamiralov_NIR",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "нет выводов",
+            "ai_comments": [
+                "Conclusion: A conclusion slide is missing. Adding a slide that summarizes the findings, highlights the significance of the results, and discusses future directions would effectively wrap up the presentation."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_title_slide_quality",
+            "expert_comment": "City is abscent on title slide",
+            "ai_comments": [
+                "Place (city) and year of the presentation: While the year is present, the city of the presentation should be explicitly stated if different from the university's location. Consider adding 'Saint Petersburg, Russia, 2022' at the bottom of the slide."
+            ],
+            "judgement": true,
+            "slide_id": 1
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_title_content_match",
+            "expert_comment": "The naming should be \"goal and tasks\" as \"goals and objectives\" is generally the same",
+            "ai_comments": [
+                "The title 'Goal and objectives' is slightly more general than the content, which focuses specifically on developing a few-shot method based on data augmentation for intent classification.: Consider refining the title to 'Developing Few-Shot Method for Intent Classification via Data Augmentation' to better align with the specific focus of the slide."
+            ],
+            "judgement": false,
+            "slide_id": 2
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "Definition of intent classification is not full",
+            "ai_comments": [
+                "The visualization shows clusters of intents but does not explicitly connect them to the text content."
+            ],
+            "judgement": false,
+            "slide_id": 3
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_fact_link_availability",
+            "expert_comment": "No source of information",
+            "ai_comments": [
+                "The diagram of the model-agnostic meta-learning algorithm lacks a source citation.: Add a reference or citation to the original research or a relevant academic paper where the MAML algorithm is described."
+            ],
+            "judgement": true,
+            "slide_id": 5
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_fact_link_availability",
+            "expert_comment": "No source of information",
+            "ai_comments": [
+                "No numerical data or empirical findings are presented on the slide."
+            ],
+            "judgement": true,
+            "slide_id": 7
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "there is no text description for the pipeline",
+            "ai_comments": [
+                "The slide lacks detailed textual explanations for each module and their interactions."
+            ],
+            "judgement": true,
+            "slide_id": 9
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "workflow image is very small, should be increased",
+            "ai_comments": [
+                "Layout organization: The diagram on the right side of the slide is relatively small and placed far from the related text. Aligning the diagram closer to the relevant text or enlarging it would improve the connection between the textual and visual information."
+            ],
+            "judgement": true,
+            "slide_id": 10
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "workflow image is very small, should be increased",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 11
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "workflow image is very small, should be increased",
+            "ai_comments": [
+                "Text readability: The mathematical formula at the bottom left is quite small and may be hard to read for some viewers. Consider increasing the font size of this text to ensure better readability."
+            ],
+            "judgement": false,
+            "slide_id": 12
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "one image overlap with another one - concider adding more space",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 12
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "workflow image is very small, should be increased",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 13
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_visual_arrangement",
+            "expert_comment": "font size is too small",
+            "ai_comments": [
+                "Text readability: The text size for the numbered list items and their sub-bullets appears slightly small, which may make it challenging for viewers at the back of the room to read comfortably. Consider increasing the font size by a few points to ensure better readability."
+            ],
+            "judgement": true,
+            "slide_id": 14
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "no discussion of the results in the table",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 15
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "no discussion of the results in the table",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": 18
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "slide_graphic_content_match",
+            "expert_comment": "no discussion of the results in the table",
+            "ai_comments": [
+                "The slide lacks additional context or explanation regarding the models and the significance of the accuracy values."
+            ],
+            "judgement": true,
+            "slide_id": 19
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "Motivation is arguable and does not provide insight into problem",
+            "ai_comments": [
+                "Motivation → Results Connection: The results slides ('Comparison results' and 'Results') do not explicitly address the original motivation of solving the problem of insufficient data and high markup costs. While the results show improvements in accuracy, they do not directly link back to addressing the initial problems. Adding a section in the results slides that discusses how the improvements in accuracy contribute to solving the original problems would strengthen this connection."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "There are too much slides (4 slides) on current solutions and they does not have any connection to the problem",
+            "ai_comments": [
+                "Solution → Experiments Connection: The connection between the proposed solutions and the experiment settings could be clearer. While the slides cover various aspects of the proposed solution, the transition to the experiment settings does not explicitly show how the experiments test the proposed solution. Adding a slide that bridges the gap between the proposed solution and the experiment settings would help clarify this connection."
+            ],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_storytelling",
+            "expert_comment": "'Text augmentation' slide (slide 8) is out of context",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "Motivation is not in a right place",
+            "ai_comments": [
+                "Motivation: The motivation for the project is not clearly presented in a dedicated slide. While some motivational aspects are included in the 'Intent classification' slide, it would be beneficial to have a separate slide explicitly outlining why this research is important and what problems it aims to solve."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_structure_analysis",
+            "expert_comment": "The naming should be \"goal and tasks\" as \"goals and objectives\" is generally the same",
+            "ai_comments": [
+                "Order of slides: The 'Meta-learning' slide includes elements of both the proposed solution and goals, which could lead to confusion. It is suggested to reorganize the content so that the proposed solution is clearly separated from the goals and tasks."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Goal quality is low - it is no specifics about this research",
+            "ai_comments": [
+                "Analysis of current state: On Slide 3, the problems related to intent classification are mentioned, but there is no in-depth analysis of the current state. Providing a more comprehensive review of existing methods and their limitations would strengthen the motivation for the proposed solution."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Objectives (or tasks) are also very unspecific",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "There is no specifics on what is proposed by the student in proposed solution - scheme seems very generic",
+            "ai_comments": [
+                "Clarity of proposed solution: On Slide 9, the proposed approach is illustrated with a flowchart. While the flowchart is helpful, it lacks detailed explanations of each module. Adding a brief description of the function and purpose of each module would improve the clarity of the proposed solution."
+            ],
+            "judgement": true,
+            "slide_id": null
+        },
+        {
+            "deck_name": "3_EN_Drozdov_Thesis",
+            "criteria": "deck_research_quality",
+            "expert_comment": "Conclusion does not correspond to tasks",
+            "ai_comments": [],
+            "judgement": false,
+            "slide_id": null
+        }
+    ]
+}
