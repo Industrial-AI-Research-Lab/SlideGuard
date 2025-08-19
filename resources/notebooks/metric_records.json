@@ -441,9 +441,9 @@
             "criteria": "deck_storytelling",
             "expert_comment": "Описание проблемы не достаточно четкое: непонятно, какие конкретно задачи мешают решать указанные сложности. Нужен либо пример задачи, либо конкретизация сложностей.",
             "ai_comments": [
-                "The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt."
+                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt. The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides. To improve this, consider adding a slide that explicitly connects the identified problems with the chosen solution approach."
             ],
-            "judgement": false,
+            "judgement": true,
             "slide_id": null
         },
         {
@@ -939,7 +939,7 @@
             "criteria": "deck_structure_analysis",
             "expert_comment": "нет целей и задач исследования",
             "ai_comments": [
-                "Goals and Tasks: There is no dedicated slide outlining the goals and tasks of the project. Including a slide that clearly defines the objectives and tasks would help the audience understand the direction and scope of the work."
+                "There is no dedicated slide outlining the goals and tasks of the project. Including a slide that clearly defines the objectives and tasks would help the audience understand the direction and scope of the work."
             ],
             "judgement": true,
             "slide_id": null
@@ -1048,9 +1048,7 @@
             "deck_name": "3_EN_Drozdov_Thesis",
             "criteria": "slide_visual_arrangement",
             "expert_comment": "workflow image is very small, should be increased",
-            "ai_comments": [
-                "Text readability: The text size for the bullet points under each numbered list item appears slightly small. Increasing the font size would enhance readability."
-            ],
+            "ai_comments": [],
             "judgement": false,
             "slide_id": 11
         },
