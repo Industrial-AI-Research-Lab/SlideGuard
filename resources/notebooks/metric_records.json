@@ -260,7 +260,9 @@
             "deck_name": "5_EN_Abdurakhimov_Paper",
             "criteria": "deck_research_quality",
             "expert_comment": "Goal is too general and not specific",
-            "ai_comments": [],
+            "ai_comments": [
+                "The presentation does not explicitly suggest future research directions. To improve this, the student should include a slide dedicated to future work, outlining potential areas for further investigation."
+            ],
             "judgement": false,
             "slide_id": null
         },
@@ -269,7 +271,7 @@
             "criteria": "deck_research_quality",
             "expert_comment": "Tasks are too general and not specific",
             "ai_comments": [
-                "Experimental design: On Slide 5, the methodology for creativity evaluation is explained, but it does not specify the sample size or justify why the chosen number of tasks (20) is sufficient. The student should clarify the sample size and provide justification for its adequacy."
+                "On Slide 5, the methodology for evaluating creativity is explained, but it does not specify the sample size or justify why the chosen tasks are representative."
             ],
             "judgement": true,
             "slide_id": null
@@ -281,15 +283,17 @@
             "ai_comments": [
                 "On Slide 2, the motivation for the research is well-articulated, but it lacks a detailed analysis of the current state of Russian language models."
             ],
-            "judgement": false,
+            "judgement": true,
             "slide_id": null
         },
         {
             "deck_name": "5_EN_Abdurakhimov_Paper",
             "criteria": "deck_research_quality",
             "expert_comment": "terminology is not stable around the proposed solution - all the component names should corespond to the main methodology scheme",
-            "ai_comments": [],
-            "judgement": false,
+            "ai_comments": [
+                "Statistical or analytical techniques: On Slide 6, the stability score is calculated using cosine similarity, but the slide does not explain how the probability P is determined or why this method is appropriate for measuring stability. The student should provide more details on the statistical techniques used to calculate the stability score and justify why cosine similarity is a suitable metric for this purpose. Including references to relevant literature or studies that support the choice of this method would strengthen the research."
+            ],
+            "judgement": true,
             "slide_id": null
         },
         {
@@ -441,9 +445,9 @@
             "criteria": "deck_storytelling",
             "expert_comment": "Описание проблемы не достаточно четкое: непонятно, какие конкретно задачи мешают решать указанные сложности. Нужен либо пример задачи, либо конкретизация сложностей.",
             "ai_comments": [
-                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt. The slide titled 'Algorithm based on pre-trained ResNet50' introduces a new concept without adequately linking it back to the earlier slides. To improve this, consider adding a slide that explicitly connects the identified problems with the chosen solution approach."
+                "The presentation lacks a clear logical progression from the introduction to the conclusion. While the initial slides establish the motivation and current state, the transition to the proposed solution and experimental results is abrupt."
             ],
-            "judgement": true,
+            "judgement": false,
             "slide_id": null
         },
         {
@@ -520,10 +524,8 @@
             "deck_name": "15_RU_Basilaev_Thesis",
             "criteria": "deck_research_quality",
             "expert_comment": "На слайде 4 ужасное деление на методы - это не ортогональные классы",
-            "ai_comments": [
-                "On Slide 4, the analysis of existing methods is presented. While it provides a comparison of Computer Vision, Deep Learning (RNNs, LSTMs), and Table Transformer, it does not clearly justify why these methods are not suitable for handling Excel documents. A more detailed explanation of the limitations of these methods in the context of the research problem would enhance the analysis."
-            ],
-            "judgement": true,
+            "ai_comments": [],
+            "judgement": false,
             "slide_id": null
         },
         {
@@ -531,7 +533,7 @@
             "criteria": "deck_research_quality",
             "expert_comment": "На слайде 6 совершенно не понятно, что оригинального было предложено студентом в качестве решения",
             "ai_comments": [
-                "Clarity of Proposed Solution: On Slide 5, the proposed solution is somewhat unclear. While the slide describes an algorithm based on a pre-trained ResNet50 model, it lacks a comprehensive overview of how this approach addresses the problem of automatic identification of context and attributes of tabular data. It would be beneficial to add a dedicated slide that clearly outlines the overall proposed method, emphasizing how it improves upon the current state."
+                "Clarity of the Proposed Solution: On Slide 5, the proposed solution is somewhat unclear. While the slide describes an algorithm based on pre-trained ResNet50, it lacks a comprehensive overview of how this approach addresses the research goal. It would be beneficial to add a dedicated slide that clearly outlines the overall proposed method, emphasizing how it improves upon the current state and solves the identified problem."
             ],
             "judgement": false,
             "slide_id": null
@@ -723,9 +725,9 @@
             "criteria": "deck_research_quality",
             "expert_comment": "There is no explicit reason to show graphic of the loss",
             "ai_comments": [
-                "Statistical techniques: On Slide 11, statistical techniques are used appropriately, but the slide could benefit from more detailed explanations. The table comparing models based on ACC, MRR, Loss, and BLEU is informative, but including a brief explanation of how these metrics were calculated and why they are relevant would enhance the presentation. Additionally, discussing the significance of the differences between the models would add value."
+                "The presentation does not explicitly mention future research directions. Including a slide that logically flows from the findings and suggests potential areas for further investigation would provide a more complete picture of the research's implications."
             ],
-            "judgement": true,
+            "judgement": false,
             "slide_id": null
         },
         {
@@ -878,10 +880,8 @@
             "deck_name": "12_EN_Zamiralov_NIR",
             "criteria": "deck_storytelling",
             "expert_comment": "Слайд 3 тоже мотивация, нужно объединить со слайдом 2",
-            "ai_comments": [
-                "Logical progression from introduction to conclusion: The presentation lacks a clear logical progression from the introduction to the conclusion. While the title slide sets up the topic, subsequent slides jump between the current state, target audience, and proposed solutions without establishing a clear connection. For instance, the slide titled 'What is it?' introduces the current state but does not clearly link it to the motivation or goal. The slide titled 'For whom?' introduces stakeholders but does not explain how they relate to the goal or proposed solution. To improve this, consider reorganizing the slides to follow a more linear narrative structure, starting with the motivation, then the goal, followed by the proposed solution, and finally the results."
-            ],
-            "judgement": true,
+            "ai_comments": [],
+            "judgement": false,
             "slide_id": null
         },
         {
@@ -1167,16 +1167,18 @@
             "criteria": "deck_research_quality",
             "expert_comment": "Goal quality is low - it is no specifics about this research",
             "ai_comments": [
-                "Analysis of current state: On Slide 3, the problems related to intent classification are mentioned, but there is no in-depth analysis of the current state. Providing a more comprehensive review of existing methods and their limitations would strengthen the motivation for the proposed solution."
+                "There is no dedicated slide for future research directions. Including a slide that suggests potential areas for further investigation would provide a logical flow from the current findings and demonstrate the broader implications of the research. Consider adding a slide that outlines possible extensions or improvements to the proposed framework."
             ],
-            "judgement": true,
+            "judgement": false,
             "slide_id": null
         },
         {
             "deck_name": "3_EN_Drozdov_Thesis",
             "criteria": "deck_research_quality",
             "expert_comment": "Objectives (or tasks) are also very unspecific",
-            "ai_comments": [],
+            "ai_comments": [
+                "Objectives (or tasks) are also very unspecific"
+            ],
             "judgement": false,
             "slide_id": null
         },
@@ -1185,7 +1187,7 @@
             "criteria": "deck_research_quality",
             "expert_comment": "There is no specifics on what is proposed by the student in proposed solution - scheme seems very generic",
             "ai_comments": [
-                "Clarity of proposed solution: On Slide 9, the proposed approach is illustrated with a flowchart. While the flowchart is helpful, it lacks detailed explanations of each module. Adding a brief description of the function and purpose of each module would improve the clarity of the proposed solution."
+                "Clarity of the proposed solution: On Slide 9, the proposed approach is presented as a flowchart. While the flowchart provides a general overview, it lacks detailed explanations of how each module interacts and contributes to the overall solution. To improve clarity, consider adding brief descriptions or annotations to each module, explaining their functions and how they integrate with the rest of the framework."
             ],
             "judgement": true,
             "slide_id": null
