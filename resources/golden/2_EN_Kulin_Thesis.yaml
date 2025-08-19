@@ -2,45 +2,51 @@
 evaluation:
     deck:
         deck_structure_analysis:
-        - 
+        - Order of slides is not fine - datasets description should be after the proposed solution
+        - No problem with current solution is clearly stated in the presentation
+        - future work is not stated
         deck_storytelling:
-        - 
+        - Data creation pipeline pops up and does not fit into coherent story
+        - Cross CBR is an existing architecture and should be a part of current state
+        - It is not evident how proposed modification connected with problem
+        deck_research_quality:
+        - title of the whole presentation is not good as it does not introduce specifics of the work
 
     slides:
-    - slide_id: 1
-      criteria: 
-      comment: 
-    - slide_id: 1
-      criteria: slide_title_slide_quality
-      comment: непонятно кто такой "scientific diector"
+    - slide_id: 2
+      criteria: slide_fact_link_availability
+      comment: No links to the data sources are provided
     - slide_id: 2
       criteria: slide_visual_arrangement
-      comment: Здесь и далее рисунки не нужно нумеровать в презентации
-    - slide_id: 4
-      criteria: slide_graphic_content_match
-      comment: нет пояснения относительно того, что изображено на слайде
-    - slide_id: 4
+      comment: Text is overlaping the violet frame
+    - slide_id: 2
       criteria: slide_visual_arrangement
-      comment: плохая практика показывать график с сеткой
-    - slide_id: 4
-      criteria: slide_graphic_content_match
-      comment: Слишком мелкий шрифт
-    - slide_id: 4
+      comment: Size of the font should be increased
+    - slide_id: 3
       criteria: slide_title_content_match
-      comment: неудачное наименование слайда "How?"
-    - slide_id: 4
-      criteria: slide_graphic_content_match
-      comment: Схема не снабжена пояснениями ни тут, ни далее - что такое Regular Expression и какова его роль, что такое semi semantic text и text with NER
-    - slide_id: 5
+      comment: Title should be more specific, at least - "goal and tasks"
+    - slide_id: 3
       criteria: slide_visual_arrangement
-      comment: ничего не видно на схеме - мелкий шрифт, плохая контрастность; 
+      comment: Size of the font should be increased
+    - slide_id: 4
+      criteria: slide_visual_arrangement
+      comment: Size of the font should be increased
     - slide_id: 5
       criteria: slide_graphic_content_match
-      comment: нет пояснения относительно того, что изображено на слайде, необходимо текстовое описание процесса
-    - slide_id: 5
-      criteria: slide_graphic_content_match
-      comment: нужен отдельный слайд с результатами экспериментов - таблица или графики с цифрами
+      comment: In general data pipeline purpose is not clearly stated
     - slide_id: 7
       criteria: slide_visual_arrangement
-      comment: не пронумерован
+      comment: Size of the font should be increased
+    - slide_id: 8
+      criteria: slide_fact_link_availability
+      comment: link to the information source is not provided;
+    - slide_id: 8
+      criteria: slide_visual_arrangement
+      comment: font size is too small
+    - slide_id: 10
+      criteria: slide_visual_arrangement
+      comment: font size is too small
+    - slide_id: 11
+      criteria: slide_visual_arrangement
+      comment: formula can not be clearly seen due to small size
 

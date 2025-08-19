@@ -1,0 +1,38 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - There is no current state research
+        deck_storytelling:
+        - It is not completely clear what was proposed by the student
+        deck_research_quality:
+        - Goal is too general and not specific
+        - Tasks are too general and not specific
+        - It is not completely clear what was proposed by the student
+        - terminology is not stable around the proposed solution - all the component names should corespond to the main methodology scheme
+
+    slides:
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: no city and year on the title slide
+    - slide_id: 2
+      criteria: slide_fact_link_availability
+      comment: it is better to provide links to the evidence
+    - slide_id: 2
+      criteria: slide_visual_arrangement
+      comment: slide template is not great as there are meanless elements that eat space
+    - slide_id: 4
+      criteria: slide_visual_arrangement
+      comment: nothing can be seen on the workflow scheme - weak contrast and small font
+    - slide_id: 4
+      criteria: slide_title_content_match
+      comment: title is fine but it is better to highlight that it is a proposed methodology
+    - slide_id: 5
+      criteria: slide_visual_arrangement
+      comment: font size is small, especially on the image
+    - slide_id: 9
+      criteria: slide_graphic_content_match
+      comment: does not contain analysis with difference in percentages
+    - slide_id: 10
+      criteria: slide_graphic_content_match
+      comment: does not contain analysis with difference in percentages

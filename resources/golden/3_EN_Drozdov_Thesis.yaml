@@ -1,0 +1,63 @@
+---
+evaluation:
+    deck:
+        deck_structure_analysis:
+        - Motivation is not in a right place
+        - The naming should be "goal and tasks" as "goals and objectives" is generally the same
+        deck_storytelling:
+        - Motivation is arguable and does not provide insight into problem
+        - There are too much slides (4 slides) on current solutions and they does not have any connection to the problem
+        - "Text augmentation" slide (slide 8) is out of context
+        deck_research_quality:
+        - Goal quality is low - it is no specifics about this research
+        - Objectives (or tasks) are also very unspecific
+        - There is no specifics on what is proposed by the student in proposed solution - scheme seems very generic
+        - Conclusion does not correspond to tasks
+
+    slides:
+    - slide_id: 1
+      criteria: slide_title_slide_quality
+      comment: City is abscent on title slide
+    - slide_id: 2
+      criteria: slide_title_content_match
+      comment: The naming should be "goal and tasks" as "goals and objectives" is generally the same
+    - slide_id: 3
+      criteria: slide_graphic_content_match
+      comment: Definition of intent classification is not full
+    - slide_id: 5
+      criteria: slide_fact_link_availability
+      comment: No source of information
+    - slide_id: 7
+      criteria: slide_fact_link_availability
+      comment: No source of information
+    - slide_id: 9
+      criteria: slide_graphic_content_match
+      comment: there is no text description for the pipeline
+    - slide_id: 10
+      criteria: slide_visual_arrangement
+      comment: workflow image is very small, should be increased
+    - slide_id: 11
+      criteria: slide_visual_arrangement
+      comment: workflow image is very small, should be increased
+    - slide_id: 12
+      criteria: slide_visual_arrangement
+      comment: workflow image is very small, should be increased
+    - slide_id: 12
+      criteria: slide_visual_arrangement
+      comment: one image overlap with another one - concider adding more space
+    - slide_id: 13
+      criteria: slide_visual_arrangement
+      comment: workflow image is very small, should be increased
+    - slide_id: 14
+      criteria: slide_visual_arrangement
+      comment: font size is too small
+    - slide_id: 15
+      criteria: slide_graphic_content_match
+      comment: no discussion of the results in the table
+    - slide_id: 18
+      criteria: slide_graphic_content_match
+      comment: no discussion of the results in the table
+    - slide_id: 19
+      criteria: slide_graphic_content_match
+      comment: no discussion of the results in the table
+
