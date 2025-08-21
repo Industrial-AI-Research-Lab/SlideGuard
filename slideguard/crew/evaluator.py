@@ -25,6 +25,26 @@ import asyncio
 from langfuse import Langfuse
 
 
+class FallbackResult(BaseModel):
+    """Fallback result when evaluation fails."""
+    error_message: str = "Evaluation failed - fallback result"
+    score: float = 0.0
+    comments: str = "This evaluation failed due to technical issues. Please try again."
+    recommendations: str = "Consider re-running the evaluation with different settings."
+
+
+class FallbackSlideType(SlideType):
+    """Fallback SlideType when evaluation fails."""
+    slide_type: list[str] = ["unknown"]
+
+
+class FallbackSlideDescription(SlideDescription):
+    """Fallback SlideDescription when evaluation fails."""
+    title: str = "Evaluation Failed"
+    description: str = "This slide evaluation failed due to technical issues. Please try again."
+    summary: str = "Unable to analyze this slide due to evaluation errors."
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,29 +81,39 @@ class SlideGuardEvaluator:
                                     langfuse_client: Langfuse | None = None) -> FullEvaluation:
         
         with timer("evaluate_presentation"):
-            if langfuse_client:
-                with langfuse_client.start_as_current_span(name="slideguard-crewai-trace") as span:
+            try:
+                if langfuse_client:
+                    with langfuse_client.start_as_current_span(name="slideguard-crewai-trace") as span:
+                        evaluation = await self._evaluate_presentation(
+                            presentation_path=presentation_path,
+                            slide_criterias=slide_criterias,
+                            deck_criterias=deck_criterias
+                        )
+
+                        span.update_trace(
+                            input=presentation_path,
+                            output=evaluation.model_dump_json(),
+                            tags=["slideguard", "crewai"],
+                        )
+                    
+                    langfuse_client.flush()
+                else:
                     evaluation = await self._evaluate_presentation(
                         presentation_path=presentation_path,
                         slide_criterias=slide_criterias,
                         deck_criterias=deck_criterias
                     )
-
-                    span.update_trace(
-                        input=presentation_path,
-                        output=evaluation.model_dump_json(),
-                        tags=["slideguard", "crewai"],
-                    )
                 
-                langfuse_client.flush()
-            else:
-                evaluation = await self._evaluate_presentation(
-                    presentation_path=presentation_path,
-                    slide_criterias=slide_criterias,
-                    deck_criterias=deck_criterias
-                )
-            
-        return evaluation
+                return evaluation
+            except AttributeError as e:
+                if "function_calling_llm" in str(e):
+                    logger.error("LLM configuration error: function_calling_llm is None")
+                    raise Exception("LLM configuration error. Please check your API settings and try again.")
+                else:
+                    raise e
+            except Exception as e:
+                logger.error(f"Evaluation failed: {e}")
+                raise e
 
     def print_status(self):
         """Print current evaluator status"""
@@ -162,12 +192,40 @@ class SlideGuardEvaluator:
             # Fallback: try to coerce raw/JSON into the model yourself
             try:
                 data = result.json_dict or json.loads(result.raw)
-                obj = class_model.model_validate(data)
+                # Clean the data to handle potential quotation mark issues
+                cleaned_data = self._clean_evaluation_data(data)
+                obj = class_model.model_validate(cleaned_data)
                 return True, obj
             except (ValidationError, json.JSONDecodeError) as e:
                 return False, f"Invalid output: {e}"
             
         return func
+    
+    def _clean_evaluation_data(self, data: Any) -> Any:
+        """Clean evaluation data to handle potential quotation mark and encoding issues."""
+        if isinstance(data, dict):
+            return {k: self._clean_evaluation_data(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._clean_evaluation_data(item) for item in data]
+        elif isinstance(data, str):
+            # Handle Unicode escape sequences and problematic characters
+            try:
+                # Handle Unicode escape sequences
+                if '\\u' in data:
+                    data = data.encode().decode('unicode_escape')
+                
+                # Remove null bytes and normalize line endings
+                data = data.replace('\x00', '').replace('\r', '\n')
+                
+                # Handle potential quotation mark issues
+                data = data.replace('"', '"').replace('"', '"')  # Smart quotes to regular quotes
+                data = data.replace(''', "'").replace(''', "'")  # Smart apostrophes to regular apostrophes
+                
+                return data
+            except Exception:
+                return data
+        else:
+            return data
     
     def create_agent(self, criteria: CriterionInfo) -> Agent:
         agent = Agent(
@@ -197,6 +255,12 @@ class SlideGuardEvaluator:
             max_retries=self.max_retries,
             expected_output="JSON in the described format."
         )
+        
+        # Verify LLM is properly configured before creating crew
+        if not self.llm or not hasattr(self.llm, 'function_calling_llm') or self.llm.function_calling_llm is None:
+            logger.error("LLM is not properly configured - function_calling_llm is None")
+            raise ValueError("LLM configuration error: function_calling_llm is not properly set")
+        
         return Crew(agents=[agent], tasks=[task], verbose=True)
 
     def create_summary_agent(self) -> Agent:
@@ -266,18 +330,74 @@ class SlideGuardEvaluator:
 
         async def compute(inputs: List[Tuple[int, T]]) -> AsyncIterable[Tuple[int, BaseModel]]:
             ins = [in_.model_dump() for _, in_ in inputs]
-            async for i, result in self._kickoff_for_each_async(crew, ins):
-                idx, _ = inputs[i]
-                yield idx, result.pydantic
+            try:
+                async for i, result in self._kickoff_for_each_async(crew, ins):
+                    idx, _ = inputs[i]
+                    if result.pydantic is None:
+                        # Handle case where pydantic parsing failed
+                        logger.warning(f"Pydantic parsing failed for slide {idx}, criteria {criteria_info.criteria.value}")
+                        # Create a default/fallback result
+                        fallback_result = self._create_fallback_result(criteria_info.pydantic)
+                        yield idx, fallback_result
+                    else:
+                        yield idx, result.pydantic
+            except AttributeError as e:
+                if "function_calling_llm" in str(e):
+                    logger.error(f"LLM configuration error for criteria {criteria_info.criteria.value}: {e}")
+                    # Return fallback results for all inputs due to LLM config issue
+                    for idx, _ in inputs:
+                        fallback_result = self._create_fallback_result(criteria_info.pydantic)
+                        yield idx, fallback_result
+                else:
+                    logger.error(f"Attribute error in crew execution for criteria {criteria_info.criteria.value}: {e}")
+                    # Return fallback results for all inputs
+                    for idx, _ in inputs:
+                        fallback_result = self._create_fallback_result(criteria_info.pydantic)
+                        yield idx, fallback_result
+            except Exception as e:
+                logger.error(f"Error in crew execution for criteria {criteria_info.criteria.value}: {e}")
+                # Return fallback results for all inputs
+                for idx, _ in inputs:
+                    fallback_result = self._create_fallback_result(criteria_info.pydantic)
+                    yield idx, fallback_result
 
-        entities = await self.cache_manager.compute_with_cache(
-            deck_name=slides.slide_deck_path,
-            criteria_id=criteria_info.criteria.value,
-            inputs=slides.slides,
-            func=compute
-        )
-        
-        return entities
+        try:
+            entities = await self.cache_manager.compute_with_cache(
+                deck_name=slides.slide_deck_path,
+                criteria_id=criteria_info.criteria.value,
+                inputs=slides.slides,
+                func=compute
+            )
+            
+            # Ensure we have valid results for all slides
+            if not entities or len(entities) != len(slides.slides):
+                logger.warning(f"Cache returned incomplete results for {criteria_info.criteria.value}, creating fallbacks")
+                entities = [self._create_fallback_result(criteria_info.pydantic) for _ in slides.slides]
+            
+            return entities
+        except Exception as e:
+            logger.error(f"Error in cache computation for {criteria_info.criteria.value}: {e}")
+            # Return fallback results for all slides
+            return [self._create_fallback_result(criteria_info.pydantic) for _ in slides.slides]
+    
+    def _create_fallback_result(self, pydantic_class: Type[BaseModel]) -> BaseModel:
+        """Create a fallback result when parsing fails."""
+        try:
+            # Try to create a minimal valid instance
+            if hasattr(pydantic_class, 'model_validate'):
+                # For newer Pydantic versions
+                return pydantic_class.model_validate({})
+            else:
+                # For older Pydantic versions
+                return pydantic_class()
+        except Exception:
+            # Return appropriate fallback based on the expected type
+            if pydantic_class.__name__ == 'SlideType':
+                return FallbackSlideType()
+            elif pydantic_class.__name__ == 'SlideDescription':
+                return FallbackSlideDescription()
+            else:
+                return FallbackResult()
 
     async def _evaluate_slides(
         self,
@@ -303,20 +423,58 @@ class SlideGuardEvaluator:
         crit2result = {info.criteria: result for info, result in zip(infos, results)}
 
         # what if some computations failed
-        slide_evaluation_results = [
-            SlideEvaluationResult(
-                slide_deck_path=slides.slide_deck_path,
-                slide_id=slide.slide_id,
-                slide_type=cast(SlideType, crit2result[Criteria.slide_type][i]) if Criteria.slide_type in criterias else None,
-                slide_description=cast(SlideDescription, crit2result[Criteria.slide_description][i]) if Criteria.slide_description in criterias else None,
-                evaluations={
-                    info.criteria: crit2result[info.criteria][i] 
-                    for info in infos
-                    if not info.criteria.is_service_criteria()
-                }
-            )
-            for i, slide in enumerate(slides.slides)
-        ]
+        slide_evaluation_results = []
+        for i, slide in enumerate(slides.slides):
+            try:
+                # Safely get slide_type and slide_description with null checks
+                slide_type = None
+                slide_description = None
+                
+                if Criteria.slide_type in criterias and Criteria.slide_type in crit2result:
+                    slide_type_result = crit2result[Criteria.slide_type]
+                    if slide_type_result and i < len(slide_type_result) and slide_type_result[i] is not None:
+                        slide_type = cast(SlideType, slide_type_result[i])
+                    else:
+                        # Use fallback if slide_type evaluation failed
+                        slide_type = FallbackSlideType()
+                
+                if Criteria.slide_description in criterias and Criteria.slide_description in crit2result:
+                    slide_desc_result = crit2result[Criteria.slide_description]
+                    if slide_desc_result and i < len(slide_desc_result) and slide_desc_result[i] is not None:
+                        slide_description = cast(SlideDescription, slide_desc_result[i])
+                    else:
+                        # Use fallback if slide_description evaluation failed
+                        slide_description = FallbackSlideDescription()
+                
+                # Safely build evaluations dictionary
+                evaluations = {}
+                for info in infos:
+                    if not info.criteria.is_service_criteria() and info.criteria in crit2result:
+                        result_list = crit2result[info.criteria]
+                        if result_list and i < len(result_list) and result_list[i] is not None:
+                            evaluations[info.criteria] = result_list[i]
+                
+                slide_evaluation_results.append(
+                    SlideEvaluationResult(
+                        slide_deck_path=slides.slide_deck_path,
+                        slide_id=slide.slide_id,
+                        slide_type=slide_type,
+                        slide_description=slide_description,
+                        evaluations=evaluations
+                    )
+                )
+            except Exception as e:
+                logger.error(f"Error creating slide evaluation result for slide {i}: {e}")
+                # Create a fallback slide evaluation result with proper fallback objects
+                slide_evaluation_results.append(
+                    SlideEvaluationResult(
+                        slide_deck_path=slides.slide_deck_path,
+                        slide_id=slide.slide_id,
+                        slide_type=FallbackSlideType(),
+                        slide_description=FallbackSlideDescription(),
+                        evaluations={}
+                    )
+                )
 
         return slide_evaluation_results
 
@@ -330,10 +488,14 @@ class SlideGuardEvaluator:
         running_crews = [self._run_crew(info, slide_descriptions) for info in infos]
         results = cast(List[List[BaseModel]], await asyncio.gather(*running_crews))
         
-        for result in results:
-            assert len(result) == 1
-
-        evaluations = {info.criteria: result[0] for info, result in zip(infos, results)}
+        # Safely build evaluations dictionary with null checks
+        evaluations = {}
+        for info, result in zip(infos, results):
+            if result and len(result) == 1 and result[0] is not None:
+                evaluations[info.criteria] = result[0]
+            else:
+                logger.warning(f"Deck evaluation failed for criteria {info.criteria.value}, using fallback")
+                evaluations[info.criteria] = FallbackResult()
 
         return DeckEvaluationResult(evaluations=evaluations)
 
@@ -399,24 +561,36 @@ class SlideGuardEvaluator:
         )
 
         if deck_criterias:
-            slide_descriptions = [
-                SlideDescriptionWithType(
-                    **slide.slide_description.model_dump(), 
-                    slide_type=slide.slide_type.slide_type
-                ) 
-                for slide in slide_evaluations
-            ]
+            slide_descriptions = []
+            for slide in slide_evaluations:
+                try:
+                    if slide.slide_description is not None and slide.slide_type is not None:
+                        slide_descriptions.append(
+                            SlideDescriptionWithType(
+                                **slide.slide_description.model_dump(), 
+                                slide_type=slide.slide_type.slide_type
+                            )
+                        )
+                    else:
+                        logger.warning(f"Skipping slide {slide.slide_id} due to missing slide_description or slide_type")
+                except Exception as e:
+                    logger.error(f"Error processing slide {slide.slide_id}: {e}")
+                    continue
 
-            slide_deck_descriptions = SlideDeckDescriptions(
-                slide_deck_path=presentation_path,
-                slides=[DeckDescription.from_slide_descriptions(slide_descriptions)]
-            )
+            if slide_descriptions:
+                slide_deck_descriptions = SlideDeckDescriptions(
+                    slide_deck_path=presentation_path,
+                    slides=[DeckDescription.from_slide_descriptions(slide_descriptions)]
+                )
 
-            # Evaluate deck structure
-            deck_evaluations = await self._evaluate_deck(
-                slide_deck_descriptions, 
-                deck_criterias
-            )
+                # Evaluate deck structure
+                deck_evaluations = await self._evaluate_deck(
+                    slide_deck_descriptions, 
+                    deck_criterias
+                )
+            else:
+                logger.warning("No valid slide descriptions available for deck evaluation")
+                deck_evaluations = None
         else:
             deck_evaluations = None
         

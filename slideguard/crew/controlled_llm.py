@@ -81,6 +81,22 @@ class ControlledLLM(LLM):
         )
         self.max_concurrency = max_concurrency
         self._semaphore = Semaphore(max_concurrency) if max_concurrency and max_concurrency > 0 else None
+        
+        # Fix for CrewAI compatibility - ensure function_calling_llm is properly set
+        if not hasattr(self, 'function_calling_llm') or self.function_calling_llm is None:
+            self.function_calling_llm = self
+    
+    @property
+    def function_calling_llm(self):
+        """Ensure function_calling_llm is always available for CrewAI compatibility."""
+        if not hasattr(self, '_function_calling_llm') or self._function_calling_llm is None:
+            self._function_calling_llm = self
+        return self._function_calling_llm
+    
+    @function_calling_llm.setter
+    def function_calling_llm(self, value):
+        """Set the function_calling_llm attribute."""
+        self._function_calling_llm = value
 
     def call(
         self,
