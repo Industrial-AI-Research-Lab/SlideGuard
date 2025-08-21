@@ -277,6 +277,89 @@ async def filtered_evaluation():
     return result
 ```
 
+## Web UI
+
+SlideGuard includes a Gradio-based web interface for interactive presentation evaluation.
+
+### Features
+
+- **PDF Upload**: Drag and drop or select PDF files for evaluation
+- **Criteria Selection**: Choose which evaluation criteria to apply
+- **Deck-Level Results**: View overall presentation evaluation results
+- **Slide-Level Results**: See detailed feedback for each individual slide
+- **Interactive Presentation Viewer**: Navigate through slides with corresponding evaluations
+
+### Installation
+
+Install UI-specific dependencies:
+
+```bash
+# Using Poetry (recommended)
+poetry install
+
+# Or using pip
+pip install -r requirements-ui.txt
+```
+
+### Running the UI
+
+You can launch the UI in several ways:
+
+```bash
+# Using the Poetry script (recommended)
+poetry run slideguard-ui
+
+# Using the launcher script
+python slideguard/ui/launch.py
+
+# Direct execution
+python -m slideguard.ui.app
+
+# From Python
+python -c "from slideguard.ui.app import create_app; create_app().launch()"
+```
+
+The UI will be available at `http://localhost:7860`
+
+### UI Components
+
+1. **Upload Section**: Drag and drop or select a PDF file to upload
+2. **Criteria Selection**: Check/uncheck the criteria you want to evaluate
+3. **Results Tabs**:
+   - **Deck-Level Results**: Overall presentation evaluation
+   - **Slide-Level Results**: Detailed slide-by-slide feedback
+   - **Interactive Presentation Viewer**: Navigate slides with evaluations
+
+### Navigation
+
+In the Interactive Presentation Viewer:
+- Use the "Previous" and "Next" buttons to navigate between slides
+- The current slide number is displayed
+- Slide evaluations appear below the slide image
+- All slide images are extracted from the PDF for easy viewing
+
+### Configuration
+
+Before using the UI, make sure you have configured your environment variables or `.env` file with the necessary API keys and settings. See the Configuration section above for details.
+
+### Troubleshooting
+
+**Common UI Issues:**
+
+1. **"Evaluator not initialized"**: Check your configuration and API keys
+2. **PDF processing errors**: Ensure the PDF file is valid and not corrupted
+3. **Missing dependencies**: Install required packages with `pip install gradio PyMuPDF`
+
+**Demo and Testing:**
+
+```bash
+# Test UI setup
+python slideguard/ui/demo.py
+
+# Check if UI can be imported
+python -c "from slideguard.ui.app import create_app; print('UI ready')"
+```
+
 ## Available Criteria
 
 ### Slide-Level Criteria
