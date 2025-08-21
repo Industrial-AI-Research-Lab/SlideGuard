@@ -230,3 +230,7 @@ multirun_results
 
 # Meld files
 **/*.orig
+
+# macOS system files
+.DS_Store
+**/.DS_Store
