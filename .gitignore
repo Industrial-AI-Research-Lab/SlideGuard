@@ -218,6 +218,7 @@ resources/slidedecks/**
 resources/test_folder
 resources/slidedecks_pdf
 resources/slidedecks_*
+resources/outputs
 
 # Cache folders
 .slideguard_cache

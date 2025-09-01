@@ -41,6 +41,19 @@ def _initialize_logging() -> None:
     )
 
 
+def _setup_console_encoding() -> None:
+    """Setup console encoding to handle Unicode characters on Windows."""
+    try:
+        # Reconfigure stdout and stderr to use UTF-8 encoding
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        # This is a fallback for older Python versions
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+
 def _find_pdf_files(folder_path: str) -> List[Path]:
     """Recursively find all PDF files in the given folder."""
     folder = Path(folder_path)
@@ -141,16 +154,16 @@ async def _process_pdf_with_capture(
             stderr_content = stderr_capture.getvalue()
 
         if result_content is not None:
-            with open(json_filepath, "w") as f:
+            with open(json_filepath, "w", encoding="utf-8") as f:
                 f.write(result_content)
         else:
-            with open(error_filepath, "w") as f:
+            with open(error_filepath, "w", encoding="utf-8") as f:
                 f.write(full_error)
 
-        with open(stdout_filepath, "w") as f:
+        with open(stdout_filepath, "w", encoding="utf-8") as f:
             f.write(stdout_content)
 
-        with open(stderr_filepath, "w") as f:
+        with open(stderr_filepath, "w", encoding="utf-8") as f:
             f.write(stderr_content)
 
         return pdf_name, result_content is not None
@@ -165,6 +178,7 @@ app.add_typer(eval_app, name="eval")
 def main_callback() -> None:
     """Initialize logging when the root command is executed."""
     _initialize_logging()
+    _setup_console_encoding()
 
 
 @eval_app.command("list-criterias")
@@ -262,7 +276,7 @@ def eval_run(
 
     typer.echo(f"Writing results to {output_path}...")
 
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(evaluation.model_dump_json(indent=4))
 
     # Human-friendly summary
