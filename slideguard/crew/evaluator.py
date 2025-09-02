@@ -3,6 +3,7 @@ Agents for slides evaluation and presentation analysis on multiple criteria
 """
 
 import logging
+import re
 from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast
 
 from jsonschema import ValidationError
@@ -191,8 +192,19 @@ class SlideGuardEvaluator:
                 return True, result.pydantic
             # Fallback: try to coerce raw/JSON into the model yourself
             try:
-                data = result.json_dict or json.loads(result.raw)
-                # Clean the data to handle potential quotation mark issues
+                data = None
+                
+                if result.json_dict:
+                    data = result.json_dict
+                else:
+                    raw_content = result.raw
+                    if raw_content:
+                        json_content = self._extract_md_json(raw_content)
+                        data = json.loads(json_content)
+                
+                if data is None:
+                    return False, "No valid data found in result"
+                
                 cleaned_data = self._clean_evaluation_data(data)
                 obj = class_model.model_validate(cleaned_data)
                 return True, obj
@@ -200,6 +212,14 @@ class SlideGuardEvaluator:
                 return False, f"Invalid output: {e}"
             
         return func
+    
+    def _extract_md_json(self, text: str) -> str:
+        """Extract JSON content from markdown code blocks"""
+        match = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', text, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        
+        return text.strip()
     
     def _clean_evaluation_data(self, data: Any) -> Any:
         """Clean evaluation data to handle potential quotation mark and encoding issues."""
@@ -261,7 +281,7 @@ class SlideGuardEvaluator:
             logger.error("LLM is not properly configured - function_calling_llm is None")
             raise ValueError("LLM configuration error: function_calling_llm is not properly set")
         
-        return Crew(agents=[agent], tasks=[task], verbose=True)
+        return Crew(agents=[agent], tasks=[task], verbose=True, function_calling_llm=self.llm.function_calling_llm)
 
     def create_summary_agent(self) -> Agent:
         """Agent responsible for creating final evaluation summary"""
@@ -535,7 +555,8 @@ class SlideGuardEvaluator:
         crew = Crew(
             agents=[summary_agent],
             tasks=[task],
-            verbose=True
+            verbose=True,
+            function_calling_llm=self.llm.function_calling_llm
         )
         
         result = await crew.kickoff_async()
