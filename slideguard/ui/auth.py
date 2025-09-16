@@ -16,8 +16,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=ENGINE)
 Base = declarative_base()
 
 class Role(Enum):
-    ADMIN = "admin"
     USER = "user"
+    ADMIN = "admin"
 
 class User(Base):
     __tablename__ = "users"
@@ -64,11 +64,16 @@ def get_role(username: str) -> Role:
         return user.role
 
 def register_user(username: str, password: str, role: Role = Role.USER) -> bool: # admin functionality
+    uname = (username or "").strip()
+    if not uname:
+        return False
+    if not password or not password.strip():
+        return False
     with get_db() as db:
-        hashed_password = hash_password(password)
-        if get_user(db, username):
+        if get_user(db, uname):
             return False
-        new_user = User(username=username, password_hash=hashed_password, role=role)
+        hashed_password = hash_password(password)
+        new_user = User(username=uname, password_hash=hashed_password, role=role)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
@@ -77,3 +82,37 @@ def register_user(username: str, password: str, role: Role = Role.USER) -> bool:
 def verify_user_db(username: str, password: str) -> bool: # gradio auth wrapper
     with get_db() as db:
         return authenticate_user(db, username, password)
+
+def list_users() -> list[tuple[str, str]]:
+    with get_db() as db:
+        users = db.query(User).all()
+        return [(u.username, u.role.value) for u in users]
+
+def update_user_password(username: str, new_password: str) -> bool:
+    if not new_password or not new_password.strip():
+        return False
+    with get_db() as db:
+        user = get_user(db, username)
+        if not user:
+            return False
+        user.password_hash = hash_password(new_password)
+        db.commit()
+        return True
+
+def update_user_role(username: str, role: Role) -> bool:
+    with get_db() as db:
+        user = get_user(db, username)
+        if not user:
+            return False
+        user.role = role
+        db.commit()
+        return True
+
+def delete_user(username: str) -> bool:
+    with get_db() as db:
+        user = get_user(db, username)
+        if not user:
+            return False
+        db.delete(user)
+        db.commit()
+        return True
