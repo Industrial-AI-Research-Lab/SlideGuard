@@ -23,6 +23,7 @@ from slideguard.utils.cache_manager import CacheManager
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.config import load_langfuse_client
 from slideguard.ui.report_generator import SlideGuardReportGenerator
+from slideguard.ui.auth import verify_user_db, init_db, get_role, register_user, Role
 
 
 class SlideGuardUI:
@@ -634,13 +635,13 @@ class SlideGuardUI:
                         with gr.TabItem("🖼️ Interactive Presentation Viewer"):
                             with gr.Row():
                                 with gr.Column(scale=1):
-                                    slide_nav_btn = gr.Button("◀️ Previous", scale=0.5)
+                                    slide_nav_btn = gr.Button("◀️ Previous", scale=1)
                                     slide_number = gr.Textbox(
                                         label="Current Slide",
                                         value="1",
                                         interactive=False
                                     )
-                                    slide_nav_btn_next = gr.Button("Next ▶️", scale=0.5)
+                                    slide_nav_btn_next = gr.Button("Next ▶️", scale=1)
                                 
                                 with gr.Column(scale=3):
                                     slide_image = gr.Image(
@@ -653,6 +654,32 @@ class SlideGuardUI:
                         
                         with gr.TabItem("📋 Deck-Level Results"):
                             deck_results = gr.HTML("Upload a presentation and select criteria to see deck-level evaluation results.")
+
+                        with gr.TabItem("🔒 Admin Panel"): # admin functionality TODO: add RUD operations
+                            admin_panel = gr.Group(visible=False)
+                            with admin_panel:
+                                with gr.Row():
+                                    with gr.Column(scale=1):
+                                        username_input = gr.Textbox(label="Username")
+                                        password_input = gr.Textbox(label="Password", type="password")
+                                        role_input = gr.Dropdown(choices=[r.value for r in Role], label="Role")
+                                    with gr.Column(scale=1):
+                                        register_btn = gr.Button(label="Register User")
+                                        register_status = gr.Textbox(label="Status", interactive=False)
+
+                            def on_load(req: gr.Request):
+                                r = get_role(req.username) if req and req.username else None
+                                return gr.update(visible=r == Role.ADMIN)
+
+                            def admin_register(u, p, r, req: gr.Request):
+                                if get_role(req.username) != Role.ADMIN:
+                                    return "Not authorized"
+                                ok = register_user(u, p, r)
+                                return "User registered successfully" if ok else "User already exists"
+
+                            interface.load(on_load, outputs=[admin_panel])
+                            register_btn.click(admin_register, inputs=[username_input, password_input, role_input], outputs=[register_status])
+
             
             # Event handlers
             evaluate_btn.click(
@@ -719,10 +746,15 @@ class SlideGuardUI:
 
 def create_app():
     """Create and return the Gradio app."""
+    init_db()
     ui = SlideGuardUI()
     return ui.create_ui()
 
 
 if __name__ == "__main__":
     app = create_app()
-    app.launch(share=False, debug=True)
+    app.launch(
+        share=False, 
+        debug=True,
+        auth=verify_user_db
+    )
