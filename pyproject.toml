@@ -24,8 +24,6 @@ reportlab = "^4.4.3"
 
 [tool.poetry.scripts]
 slideguard = "slideguard.main:main"
-slideguard-ui = "slideguard.ui.launch:main"
-slideguard-admin = "slideguard.ui.admin_cli:main"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^9.4.0"

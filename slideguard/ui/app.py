@@ -25,7 +25,7 @@ from slideguard.utils.cache_manager import CacheManager
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.config import load_langfuse_client
 from slideguard.ui.report_generator import SlideGuardReportGenerator
-from slideguard.ui.auth import verify_user_db, init_db, get_role, register_user, Role, list_users, update_user_password, update_user_role, delete_user
+from slideguard.ui.auth import verify_user_db, get_role, register_user, Role, list_users, update_user_password, update_user_role, delete_user
 
 
 class SlideGuardUI:
@@ -825,9 +825,12 @@ class SlideGuardUI:
         return interface
 
 
-def create_app():
+def create_app(auth:bool = True):
     """Create and return the Gradio app."""
-    init_db()
+    if auth:
+        from slideguard.ui.auth import init_db
+        init_db()
+
     ui = SlideGuardUI()
     return ui.create_ui()
 

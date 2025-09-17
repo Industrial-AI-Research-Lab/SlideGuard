@@ -30,7 +30,17 @@ from slideguard.schemes import Criteria, FullEvaluation
 from slideguard.utils.config import load_langfuse_client
 from slideguard.utils.cache_manager import CacheManager
 from slideguard.utils.file_manager import FileManager
-
+from slideguard.ui.app import create_app
+from slideguard.ui.auth import (
+    verify_user_db,
+    init_db,
+    register_user,
+    Role,
+    update_user_password,
+    update_user_role,
+    delete_user,
+    list_users,
+)
 
 def _initialize_logging() -> None:
     """Initialize logging configuration for SlideGuard."""
@@ -171,7 +181,11 @@ async def _process_pdf_with_capture(
 
 app = typer.Typer(help="SlideGuard - Evaluate slide decks with AI")
 eval_app = typer.Typer(help="Run evaluations")
+ui_app = typer.Typer(help="Run Gradio UI")
+admin_app = typer.Typer(help="Run Admin CLI: manage user accounts and roles")
 app.add_typer(eval_app, name="eval")
+app.add_typer(ui_app, name="ui")
+app.add_typer(admin_app, name="admin")
 
 
 @app.callback()
@@ -401,6 +415,196 @@ def eval_multirun(
     typer.echo(f"  Failed: {failed_count} PDFs")
     typer.echo(f"  Total: {len(results)} PDFs")
     typer.echo(f"  Results written to: {output_path.absolute()}")
+
+
+@ui_app.command("run")
+def ui_run(
+    host: str = typer.Option(
+        "127.0.0.1",
+        "--host",
+        help="Host to run the UI on",
+    ),
+    port: int = typer.Option(
+        7860,
+        "--port",
+        help="Port to run the UI on",
+    ),
+    share: bool = typer.Option(
+        False,
+        "--share",
+        help="Share the UI: creates a public link via SSH tunnel",
+    ),
+    debug: bool = typer.Option(
+        False,
+        "--debug",
+        help="Enable Gradio debug mode: if True, blocks main thread",
+    ),
+    show_error: bool = typer.Option(
+        True,
+        "--show-error",
+        help="Show error messages in UI",
+    ),
+    quiet: bool = typer.Option(
+        True,
+        "--quiet",
+        help="Quiet mode: if True suppresses print statements",
+    ),
+    show_api: bool = typer.Option(
+        False,
+        "--show-api",
+        help="Show Gradio API docs in UI",
+    ),
+    theme: str = typer.Option(
+        "light",
+        "--theme",
+        help="Gradio starting theme: light or dark. Can be changed in UI",
+    ),
+    auth: bool = typer.Option(
+        True,
+        "--auth",
+        help="Enable authentication",
+    ),
+) -> None:
+    """Run the Gradio UI"""
+    header = "=" * 60
+    typer.echo(header)
+    typer.echo("🚀 Starting SlideGuard UI...")
+    typer.echo(header)
+    typer.echo("Ensure environment variables or .env are configured.")
+    typer.echo(f"Open: http://{host}:{port}?__theme={theme}")
+    typer.echo()
+    try:
+        app = create_app(auth=auth)
+        auth_func = verify_user_db if auth else None
+        app.launch(
+            server_name=host,
+            server_port=port,
+            share=share,
+            debug=debug,
+            show_error=show_error,
+            quiet=quiet,
+            show_api=show_api,
+            auth=auth_func
+        )
+    except Exception as e:
+        typer.echo(f"❌ Failed to start UI: {e}")
+        raise typer.Exit(code=5)
+
+
+@admin_app.command("create")
+def admin_create(
+    username: str = typer.Option(
+        ...,
+        "-u",
+        "--username",
+        help="Username for the new account",
+    ),
+    role: Role = typer.Option(
+        Role.USER,
+        "-r",
+        "--role",
+        help="Role for the new account",
+    ),
+) -> None:
+    uname = (username or "").strip()
+    if not uname:
+        typer.echo("Username cannot be empty")
+        raise typer.Exit(code=1)
+    init_db()
+    pw1 = typer.prompt("Password", hide_input=True)
+    pw2 = typer.prompt("Confirm", hide_input=True)
+    if pw1 != pw2:
+        typer.echo("Passwords do not match")
+        raise typer.Exit(code=1)
+    if not pw1 or not pw1.strip():
+        typer.echo("Password cannot be empty")
+        raise typer.Exit(code=1)
+    ok = register_user(uname, pw1, role)
+    typer.echo("Created" if ok else "Username already exists")
+    raise typer.Exit(code=0 if ok else 1)
+
+
+@admin_app.command("pwd")
+def admin_pwd(
+    username: str = typer.Option(
+        ...,
+        "-u",
+        "--username",
+        help="Username to change password for",
+    ),
+) -> None:
+    uname = (username or "").strip()
+    if not uname:
+        typer.echo("Username cannot be empty")
+        raise typer.Exit(code=1)
+    init_db()
+    pw1 = typer.prompt("New password", hide_input=True)
+    pw2 = typer.prompt("Confirm", hide_input=True)
+    if pw1 != pw2:
+        typer.echo("Passwords do not match")
+        raise typer.Exit(code=1)
+    if not pw1 or not pw1.strip():
+        typer.echo("Password cannot be empty")
+        raise typer.Exit(code=1)
+    ok = update_user_password(uname, pw1)
+    typer.echo("Password updated" if ok else "User not found")
+    raise typer.Exit(code=0 if ok else 1)
+
+
+@admin_app.command("role")
+def admin_role(
+    username: str = typer.Option(
+        ...,
+        "-u",
+        "--username",
+        help="Username to change role for",
+    ),
+    role: Role = typer.Option(
+        Role.USER,
+        "-r",
+        "--role",
+        help="New role to assign",
+    ),
+) -> None:
+    uname = (username or "").strip()
+    if not uname:
+        typer.echo("Username cannot be empty")
+        raise typer.Exit(code=1)
+    init_db()
+    ok = update_user_role(uname, role)
+    typer.echo("Role updated" if ok else "User not found")
+    raise typer.Exit(code=0 if ok else 1)
+
+
+@admin_app.command("delete")
+def admin_delete(
+    username: str = typer.Option(
+        ...,
+        "-u",
+        "--username",
+        help="Username to delete",
+    ),
+) -> None:
+    uname = (username or "").strip()
+    if not uname:
+        typer.echo("Username cannot be empty")
+        raise typer.Exit(code=1)
+    init_db()
+    ok = delete_user(uname)
+    typer.echo("Deleted" if ok else "User not found")
+    raise typer.Exit(code=0 if ok else 1)
+
+
+@admin_app.command("list")
+def admin_list() -> None:
+    init_db()
+    users = list_users()
+    if not users:
+        typer.echo("No users found in the database")
+        raise typer.Exit(code=0)
+    for uname, role in users:
+        typer.echo(f"{uname}\t{role}")
+    raise typer.Exit(code=0)
 
 
 def main() -> None:  # Console entrypoint
