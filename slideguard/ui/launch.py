@@ -10,6 +10,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from slideguard.ui.app import create_app
+from slideguard.ui.auth import verify_user_db
 
 
 def main():
@@ -28,7 +29,8 @@ def main():
             debug=True,
             show_error=True,
             quiet=True,
-            show_api=False
+            show_api=False,
+            auth=verify_user_db
         )
     except Exception as e:
         print(f"❌ Failed to start UI: {e}")

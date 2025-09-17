@@ -9,6 +9,8 @@ import os
 import tempfile
 import io
 from pathlib import Path
+from html import escape
+from textwrap import dedent
 from typing import Dict, List, Optional, Tuple
 import gradio as gr
 from PIL import Image
@@ -23,6 +25,7 @@ from slideguard.utils.cache_manager import CacheManager
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.config import load_langfuse_client
 from slideguard.ui.report_generator import SlideGuardReportGenerator
+from slideguard.ui.auth import verify_user_db, get_role, register_user, Role, list_users, update_user_password, update_user_role, delete_user
 
 
 class SlideGuardUI:
@@ -564,6 +567,20 @@ class SlideGuardUI:
         except Exception as e:
             self.logger.error(f"Failed to generate PDF report: {e}")
             return None, f"❌ Failed to generate PDF report: {str(e)}"
+
+    def render_profile_widget(self, username: str) -> str:
+        u = username or "Guest"
+        initial = (u[:1] or "?").upper()
+        safe_name = escape(u)
+        html = dedent("""
+                <div id='sgProfileContainer' style='position:fixed;top:12px;right:12px;z-index:2147483647;'>
+                <div id='sgProfileIcon' style='width:36px;height:36px;border-radius:50%;background:#1f6feb;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:600;' onclick="event.stopPropagation();var d=document.getElementById('sgProfileDropdown');if(d){d.style.display=(d.style.display==='block')?'none':'block';}">__INITIAL__</div>
+                <div id='sgProfileDropdown' style='display:none;position:absolute;right:0;top:44px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:2147483647;max-height:none;overflow:visible;'>
+                    <div style='padding:12px 16px;font-weight:600;border-bottom:1px solid #eee;' id='sgProfileName'>__SAFE_NAME__</div>
+                    <a href='/logout' id='sgLogoutLink' style='padding:10px 16px;display:block;text-decoration:none;color:#333;' onclick="(function(){var p=new URLSearchParams(window.location.search);var t=p.get('__theme')||localStorage.getItem('sg_theme')||'';if(t){localStorage.setItem('sg_theme',t);}fetch('/logout',{method:'GET',credentials:'include'}).finally(function(){window.top.location.href='/?__theme='+encodeURIComponent(t);});return false;})()">Logout</a>
+                </div>
+                </div>""")
+        return html.replace("__INITIAL__", initial).replace("__SAFE_NAME__", safe_name)
     
     def create_ui(self):
         """Create the Gradio interface."""
@@ -577,6 +594,7 @@ class SlideGuardUI:
             gr.Markdown("# 🎯 SlideGuard - AI-Powered Presentation Evaluation")
             gr.Markdown("Upload your presentation PDF, select evaluation criteria, and get detailed feedback on your slides.")
             gr.Markdown("---")
+            profile_html = gr.HTML(value="")
             
             with gr.Row():
                 with gr.Column(scale=1):
@@ -634,13 +652,13 @@ class SlideGuardUI:
                         with gr.TabItem("🖼️ Interactive Presentation Viewer"):
                             with gr.Row():
                                 with gr.Column(scale=1):
-                                    slide_nav_btn = gr.Button("◀️ Previous", scale=0.5)
+                                    slide_nav_btn = gr.Button("◀️ Previous", scale=1)
                                     slide_number = gr.Textbox(
                                         label="Current Slide",
                                         value="1",
                                         interactive=False
                                     )
-                                    slide_nav_btn_next = gr.Button("Next ▶️", scale=0.5)
+                                    slide_nav_btn_next = gr.Button("Next ▶️", scale=1)
                                 
                                 with gr.Column(scale=3):
                                     slide_image = gr.Image(
@@ -653,6 +671,96 @@ class SlideGuardUI:
                         
                         with gr.TabItem("📋 Deck-Level Results"):
                             deck_results = gr.HTML("Upload a presentation and select criteria to see deck-level evaluation results.")
+
+                        with gr.TabItem("🔒 Admin Panel", visible=False) as admin_tab:
+                            admin_panel = gr.Group()
+                            with admin_panel:
+                                with gr.Tabs():
+                                    with gr.TabItem("Users"):
+                                        with gr.Row():
+                                            with gr.Column(scale=1):
+                                                users_table = gr.Dataframe(headers=["Username", "Role"], interactive=False)
+                                                with gr.Row():
+                                                    refresh_users_btn = gr.Button(value="Refresh", variant="secondary")
+                                    with gr.TabItem("Create User"):
+                                        with gr.Column():
+                                            username_input = gr.Textbox(label="Username")
+                                            password_input = gr.Textbox(label="Password", type="password")
+                                            role_input = gr.Dropdown(choices=[r.value for r in Role], label="Role")
+                                            register_btn = gr.Button(value="Register User", variant="primary")
+                                            register_status = gr.Textbox(label="Status", interactive=False)
+                                    with gr.TabItem("Manage User"):
+                                        with gr.Column():
+                                            user_select = gr.Dropdown(choices=[], label="Select User")
+                                            new_role_input = gr.Dropdown(choices=[r.value for r in Role], label="New Role")
+                                            update_role_btn = gr.Button(value="Update Role", variant="primary")
+                                            new_password_input = gr.Textbox(label="New Password", type="password")
+                                            update_password_btn = gr.Button(value="Update Password", variant="primary")
+                                            delete_confirm = gr.Checkbox(label="Confirm Delete")
+                                            delete_btn = gr.Button(value="Delete User", variant="stop")
+                                            admin_action_status = gr.Textbox(label="Action Status", interactive=False)
+
+                            def on_load(req: gr.Request):
+                                u = req.username if req and req.username else "Guest"
+                                is_admin = (get_role(u) == Role.ADMIN) if u and u != "Guest" else False
+                                return self.render_profile_widget(u), gr.update(visible=is_admin)
+
+                            def admin_register(u, p, r, req: gr.Request):
+                                if get_role(req.username) != Role.ADMIN:
+                                    return "Not authorized"
+                                if not (u and u.strip() and p and p.strip()):
+                                    return "Username and password are required"
+                                ok = register_user(u, p, Role(r))
+                                return "User registered successfully" if ok else "User already exists"
+
+                            def admin_list(req: gr.Request):
+                                if get_role(req.username) != Role.ADMIN:
+                                    return [], gr.update(choices=[])
+                                data = list_users()
+                                data = [(u, role) for u, role in data if u and u.strip()]
+                                choices = [u for u, _ in data if u != req.username]
+                                return data, gr.update(choices=choices)
+
+                            def admin_update_role(u, r, req: gr.Request):
+                                if get_role(req.username) != Role.ADMIN:
+                                    return "Not authorized"
+                                if not u or not r:
+                                    return "Select user and role"
+                                if u == req.username:
+                                    return "Cannot change own role"
+                                ok = update_user_role(u, Role(r))
+                                return "Role updated" if ok else "User not found"
+
+                            def admin_update_password(u, p, req: gr.Request):
+                                if get_role(req.username) != Role.ADMIN:
+                                    return "Not authorized"
+                                if not u or not p:
+                                    return "Select user and set password"
+                                if not p or not p.strip():
+                                    return "Password cannot be empty"
+                                ok = update_user_password(u, p)
+                                return "Password updated" if ok else "User not found"
+
+                            def admin_delete_user(u, confirm, req: gr.Request):
+                                if get_role(req.username) != Role.ADMIN:
+                                    return "Not authorized"
+                                if not u:
+                                    return "Select user"
+                                if not confirm:
+                                    return "Confirm delete"
+                                if u == req.username:
+                                    return "Cannot delete self"
+                                ok = delete_user(u)
+                                return "User deleted" if ok else "User not found"
+
+                            interface.load(on_load, outputs=[profile_html, admin_tab])
+                            register_btn.click(admin_register, inputs=[username_input, password_input, role_input], outputs=[register_status])
+                            interface.load(admin_list, outputs=[users_table, user_select])
+                            refresh_users_btn.click(admin_list, outputs=[users_table, user_select])
+                            update_role_btn.click(admin_update_role, inputs=[user_select, new_role_input], outputs=[admin_action_status]).then(admin_list, outputs=[users_table, user_select])
+                            update_password_btn.click(admin_update_password, inputs=[user_select, new_password_input], outputs=[admin_action_status]).then(fn=lambda: "", outputs=[new_password_input])
+                            delete_btn.click(admin_delete_user, inputs=[user_select, delete_confirm], outputs=[admin_action_status]).then(admin_list, outputs=[users_table, user_select]).then(fn=lambda: False, outputs=[delete_confirm])
+
             
             # Event handlers
             evaluate_btn.click(
@@ -717,12 +825,20 @@ class SlideGuardUI:
         return interface
 
 
-def create_app():
+def create_app(auth:bool = True):
     """Create and return the Gradio app."""
+    if auth:
+        from slideguard.ui.auth import init_db
+        init_db()
+
     ui = SlideGuardUI()
     return ui.create_ui()
 
 
 if __name__ == "__main__":
     app = create_app()
-    app.launch(share=False, debug=True)
+    app.launch(
+        share=False, 
+        debug=True,
+        auth=verify_user_db
+    )

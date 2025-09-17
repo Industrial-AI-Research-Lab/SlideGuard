@@ -225,6 +225,7 @@ resources/outputs
 .file_cache
 evaluation.json
 multirun_results
+*.db
 
 # Env files
 .env

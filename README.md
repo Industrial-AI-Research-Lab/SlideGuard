@@ -303,20 +303,17 @@ pip install -r requirements-ui.txt
 
 ### Running the UI
 
-You can launch the UI in several ways:
+Launch the UI via the unified CLI:
 
 ```bash
-# Using the Poetry script (recommended)
-poetry run slideguard-ui
+# Using the unified CLI (recommended)
+slideguard ui run --host 127.0.0.1 --port 7860
 
-# Using the launcher script
-python slideguard/ui/launch.py
-
-# Direct execution
-python -m slideguard.ui.app
+# Or via module execution
+python -m slideguard.main ui run --host 127.0.0.1 --port 7860
 
 # From Python
-python -c "from slideguard.ui.app import create_app; create_app().launch()"
+python -c "from slideguard.ui.app import create_app; create_app().launch(server_name='127.0.0.1', server_port=7860)"
 ```
 
 The UI will be available at `http://localhost:7860`
@@ -353,11 +350,35 @@ Before using the UI, make sure you have configured your environment variables or
 **Demo and Testing:**
 
 ```bash
-# Test UI setup
-python slideguard/ui/demo.py
+# Verify CLI is available
+slideguard ui run --help
+
+# Quick local run
+slideguard ui run
 
 # Check if UI can be imported
 python -c "from slideguard.ui.app import create_app; print('UI ready')"
+```
+
+## Admin CLI
+
+Manage users and roles via the unified CLI:
+
+```bash
+# Create a user (interactive password prompts)
+slideguard admin create -u alice -r user
+
+# Change password
+slideguard admin pwd -u alice
+
+# Change role
+slideguard admin role -u alice -r admin
+
+# List users
+slideguard admin list
+
+# Delete user
+slideguard admin delete -u alice
 ```
 
 ## Available Criteria

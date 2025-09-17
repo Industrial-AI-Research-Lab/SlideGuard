@@ -31,7 +31,7 @@ def demo_ui():
     print("🚀 UI is ready to use!")
     print()
     print("To launch the UI, run one of the following commands:")
-    print("  poetry run slideguard-ui")
+    print("  poetry run slideguard ui run")
     print("  python slideguard/ui/launch.py")
     print("  python -c \"from slideguard.ui.app import create_app; create_app().launch()\"")
     print()
