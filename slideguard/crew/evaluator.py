@@ -4,21 +4,24 @@ Agents for slides evaluation and presentation analysis on multiple criteria
 
 import logging
 import re
-from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast
+from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast, Optional
 
 from jsonschema import ValidationError
 from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.criteria.base import CriterionInfo
-from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType
+from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType, Criteria
 from slideguard.schemes import DeckEvaluationResult
 from slideguard.schemes import SlideEvaluationResult
 from slideguard.schemes import FullEvaluation
+from slideguard.schemes import FinalSummaryOutput, SummaryOutput
 from slideguard.utils.base import timer
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
 
 from textwrap import dedent
+from statistics import mean
+from collections import Counter, defaultdict
 from crewai import Agent, Task, Crew, CrewOutput, TaskOutput
 from pydantic import BaseModel
 import json
@@ -521,47 +524,233 @@ class SlideGuardEvaluator:
 
     async def _create_final_summary(self, 
                                  slide_evaluations: List[SlideEvaluationResult],
-                                 deck_evaluations: List[DeckEvaluationResult]) -> FullEvaluation:
+                                 deck_evaluations: Optional[DeckEvaluationResult]) -> FinalSummaryOutput:
         """Create final comprehensive summary"""
         
         summary_agent = self.create_summary_agent()
+        summary_data = self._get_summary_payload_basic(slide_evaluations, deck_evaluations)
         
-        # Prepare summary data
-        summary_data = {
-            "slide_evaluations": [eval.dict() for eval in slide_evaluations],
-            "deck_evaluations": [eval.dict() for eval in deck_evaluations]
-        }
-        
-        task = Task(
+        summary_task = Task(
             description=dedent(f"""
-                Create a comprehensive summary of the presentation evaluation.
+                Create a comprehensive long-form summary of the presentation evaluation.
                 
                 Evaluation data:
                 {json.dumps(summary_data, indent=2)}
                 
+                Use the context to formulate the long-form summary.
                 Provide:
-                1. Overall assessment score (1-5)
-                2. Key strengths and weaknesses
-                3. Priority areas for improvement
-                4. Specific actionable recommendations
-                5. Summary of findings by slide type
+                - Short overview of the evaluation
+                - Main strengths
+                - Main problems
+                - Prioritized next steps with slide pointers
                 
-                Return the result in JSON format with overall_score and summary fields.
+                Return the result strictly as JSON with field: summary.
             """),
             agent=summary_agent,
-            expected_output="JSON with overall_score and summary fields"
+            expected_output="JSON in the described format.",
+            output_pydantic=SummaryOutput,
+            guardrail=self._make_pydantic_guardrail(SummaryOutput),
+            max_retries=self.max_retries
         )
         
+        tldr_task = Task(
+            description=dedent(f"""
+                Based on the previously generated long-form summary in context, write an actionable TL;DR of 2-4 sentences focusing on key issues and next actions.
+                Return the result strictly as JSON with fields: summary, tldr.
+                The summary field must contain the exact long-form summary you received in context.
+            """),
+            agent=summary_agent,
+            expected_output="JSON with fields: summary, tldr",
+            output_pydantic=FinalSummaryOutput,
+            guardrail=self._make_pydantic_guardrail(FinalSummaryOutput),
+            max_retries=self.max_retries,
+            context=[summary_task]
+        )
+
         crew = Crew(
             agents=[summary_agent],
-            tasks=[task],
+            tasks=[summary_task, tldr_task],
             verbose=True,
             function_calling_llm=self.llm.function_calling_llm
         )
-        
-        result = await crew.kickoff_async()
+        final_result = await crew.kickoff_async()
+        return final_result.pydantic
 
-        return result.pydantic
+    def _summary_cfg(self) -> Dict[str, Any]:
+        return {
+            "context_severity_threshold": 2,      # minimum severity for items to be included in the filtered context for LLM
+            "severity_threshold": 3,              # minimum severity for an issue to be counted as a problem (prevalence metric)
+            "max_problems": 10,                   # maximum number of problems to include in the summary
+            "max_strengths": 5,                   # maximum number of strengths to include in the summary
+            "strength_min_avg_score": 4           # minimum average score for a criterion to be considered a strength
+        }
+
+    def _get_dynamic_thresholds(self, slide_evaluations: List[SlideEvaluationResult], deck_evaluations: Optional[DeckEvaluationResult]) -> Dict[str, Any]:
+        cfg = self._summary_cfg()
+        
+        severities = [
+            item.severity for slide in slide_evaluations if slide.evaluations
+            for evaluation in slide.evaluations.values()
+            for item in getattr(evaluation, 'evaluation_results', [])
+        ]
+        
+        if deck_evaluations:
+            severities.extend([
+                item.severity for evaluation in deck_evaluations.evaluations.values()
+                for item in getattr(evaluation, 'evaluation_results', [])
+            ])
+        
+        if severities and sum(s >= cfg['severity_threshold'] for s in severities) / len(severities) < 0.1:
+            target_severity = sorted(severities, reverse=True)[int(len(severities) * 0.5) - 1]
+            cfg['severity_threshold'] = target_severity
+            cfg['context_severity_threshold'] = max(1, target_severity - 1)
+        
+        return cfg
+
+    def _filter_by_severity(self, items: List[Dict[str, Any]], min_severity: int) -> List[Dict[str, Any]]:
+        return [item for item in items if int(item.get('severity', 0)) >= min_severity]
+
+    def _get_summary_payload_basic(self, slide_evaluations: List[SlideEvaluationResult], deck_evaluations: Optional[DeckEvaluationResult]) -> Dict:
+        cfg = self._get_dynamic_thresholds(slide_evaluations, deck_evaluations)
+
+        def to_dict(obj: Any) -> Dict[str, Any]:
+            return obj.model_dump() if hasattr(obj, 'model_dump') else json.loads(json.dumps(obj, default=lambda o: getattr(o, '__dict__', str(o))))
+
+        def is_criterion_applicable(slide: SlideEvaluationResult, criterion: Criteria) -> bool:
+            if criterion == Criteria.slide_title_slide_quality:
+                return bool(slide.slide_type and slide.slide_type.slide_type and ('Title slide' in slide.slide_type.slide_type))
+            info = SLIDE_CRITERIA_INFO.get(criterion)
+            if not info or not getattr(info, 'applicable_slide_types', None):
+                return True
+            types = slide.slide_type.slide_type if (slide.slide_type and slide.slide_type.slide_type) else []
+            return any(t in info.applicable_slide_types for t in types)
+
+        def filter_slide_evaluations(slide: SlideEvaluationResult) -> Dict[str, Any]:
+            evals = {}
+            if slide.evaluations:
+                for crit, obj in slide.evaluations.items():
+                    if crit.is_service_criteria() or not is_criterion_applicable(slide, crit):
+                        continue
+                    d = to_dict(obj)
+                    if d.get('evaluation_results'):
+                        d['evaluation_results'] = self._filter_by_severity(d['evaluation_results'], cfg['context_severity_threshold'])
+                    if d.get('evaluation_results') or d.get('score'):
+                        evals[crit] = d
+            return {
+                "slide_id": slide.slide_id,
+                "slide_type": slide.slide_type.model_dump() if slide.slide_type else "unknown",
+                "slide_description": slide.slide_description.model_dump() if slide.slide_description else "not found",
+                "evaluations": evals
+            }
+
+        payload = {"slide_evaluations": [filter_slide_evaluations(s) for s in slide_evaluations]}
+        
+        if deck_evaluations:
+            deck_dump = deck_evaluations.model_dump()
+            for v in deck_dump.get('evaluations', {}).values():
+                if v.get('evaluation_results'):
+                    v['evaluation_results'] = self._filter_by_severity(v['evaluation_results'], cfg['context_severity_threshold'])
+            payload["deck_evaluations"] = deck_dump
+        
+        return payload
+
+    # NOTE: not used in current implementation, needs improvement
+    def _get_summary_payload_advanced(self, slide_evaluations: List[SlideEvaluationResult], deck_evaluations: Optional[DeckEvaluationResult]) -> Dict:
+        cfg = self._get_dynamic_thresholds(slide_evaluations, deck_evaluations)
+        basic_payload = self._get_summary_payload_basic(slide_evaluations, deck_evaluations)
+        
+        slide_types = [s['slide_type']['slide_type'][0] for s in basic_payload['slide_evaluations']]
+        type_counts = Counter(slide_types)
+        
+        score_lists = defaultdict(list)
+        for slide in basic_payload['slide_evaluations']:
+            for criterion_key, evaluation in slide['evaluations'].items():
+                key = criterion_key.value if hasattr(criterion_key, 'value') else str(criterion_key)
+                score_lists[key].append(evaluation['score'])
+        
+        if 'deck_evaluations' in basic_payload:
+            for criterion_key, evaluation in basic_payload['deck_evaluations']['evaluations'].items():
+                key = criterion_key.value if hasattr(criterion_key, 'value') else str(criterion_key)
+                score_lists[key].append(evaluation['score'])
+        
+        avg_scores = {key: round(mean(scores), 2) for key, scores in score_lists.items() if scores}
+        
+        sev_counts = Counter()
+        for slide in basic_payload['slide_evaluations']:
+            for evaluation in slide['evaluations'].values():
+                for item in evaluation['evaluation_results']:
+                    sev_counts[str(item['severity'])] += 1
+        
+        if 'deck_evaluations' in basic_payload:
+            for evaluation in basic_payload['deck_evaluations']['evaluations'].values():
+                for item in evaluation['evaluation_results']:
+                    sev_counts[str(item['severity'])] += 1
+        
+        sev_histogram = {str(i): sev_counts.get(str(i), 0) for i in range(1, 6)}
+        
+        problems = []
+        strengths = []
+        criteria_stoplist = {
+            "slide_title_content_match",
+            "slide_orphography_correctness",
+            "slide_title_slide_quality",
+            "slide_abbreviations"
+        }
+        threshold = int(cfg['severity_threshold'])
+        strengths = [{"criterion": k} for k, v in avg_scores.items() if v >= cfg['strength_min_avg_score'] and k not in criteria_stoplist]
+        def severes(items):
+            return [it.severity for it in items if it.severity >= threshold]
+        slide_stats: Dict[str, List[int]] = defaultdict(lambda: [0, 0, 0, 0])
+        for s in slide_evaluations:
+            for crit, ev in s.evaluations.items():
+                if hasattr(crit, 'is_service_criteria') and crit.is_service_criteria():
+                    continue
+                key = crit.value if hasattr(crit, 'value') else str(crit)
+                sev = severes(ev.evaluation_results)
+                slide_stats[key][0] += 1
+                if sev:
+                    slide_stats[key][1] += 1
+                    slide_stats[key][2] += sum(sev)
+                    slide_stats[key][3] += len(sev)
+        slide_problem_list = [{"criterion": k, "priority": int(100 * ((sm / n) / 5.0) * (p / max(1, c)))} for k, (c, p, sm, n) in slide_stats.items() if p and n]
+        slide_problem_list.sort(key=lambda x: x.get('priority', 0), reverse=True)
+        deck_problem_list = []
+        if deck_evaluations:
+            for crit, ev in deck_evaluations.evaluations.items():
+                sev = severes(ev.evaluation_results)
+                if sev:
+                    deck_problem_list.append({"criterion": crit.value if hasattr(crit, 'value') else str(crit), "priority": int(100 * ((sum(sev) / len(sev)) / 5.0))})
+        deck_problem_list.sort(key=lambda x: x.get('priority', 0), reverse=True)
+        m = int(cfg.get("max_problems", 10))
+        h = m // 2
+        problems = (slide_problem_list[:h] + deck_problem_list[:h])[:m]
+        r = m - len(problems)
+        if r > 0:
+            problems += (slide_problem_list[h:] + deck_problem_list[h:])[:r]
+        strengths = strengths[:cfg["max_strengths"]]
+        
+        overview = {
+                "total_slides": len(basic_payload['slide_evaluations']),
+                "slide_types_distribution": dict(type_counts),
+                "avg_scores": avg_scores,
+            "severity_histogram": sev_histogram
+        }
+        
+        return {"nav":{"overview": overview, "problems": problems, "strengths": strengths},**basic_payload}
+
+
+    def _calculate_overall_score(self, slide_evaluations: List[SlideEvaluationResult], deck_evaluations: Optional[DeckEvaluationResult]) -> int:
+        scores = []
+        for s in slide_evaluations:
+            if s.evaluations:
+                scores.extend(v.score for v in s.evaluations.values() if hasattr(v, 'score'))
+        if deck_evaluations and deck_evaluations.evaluations:
+            scores.extend(v.score for v in deck_evaluations.evaluations.values() if hasattr(v, 'score'))
+        if not scores:
+            return None
+        avg = sum(scores) / len(scores)
+        frac = avg % 1
+        return int(avg + (frac > 0.7)) # 0.7 is the threshold for rounding up
     
     
     async def _evaluate_presentation(self,
@@ -615,14 +804,17 @@ class SlideGuardEvaluator:
         else:
             deck_evaluations = None
         
-        # # Create final summary
-        # final_result = await self.create_final_summary(
-        #     slide_evaluations, 
-        #     deck_evaluations
-        # )
+        # tldr summary
+        final_summary = await self._create_final_summary(
+            slide_evaluations, 
+            deck_evaluations
+        )
         
         return FullEvaluation(
             slide_deck_path=presentation_path,
             slide_evaluations=slide_evaluations,
-            deck_evaluations=deck_evaluations
+            deck_evaluations=deck_evaluations,
+            overall_score=self._calculate_overall_score(slide_evaluations, deck_evaluations),
+            summary=final_summary.summary,
+            tldr=final_summary.tldr
         )

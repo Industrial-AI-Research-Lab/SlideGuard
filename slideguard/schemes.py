@@ -90,8 +90,18 @@ class FullEvaluation(BaseModel):
     slide_deck_path: str
     slide_evaluations: List[SlideEvaluationResult]
     deck_evaluations: Optional[DeckEvaluationResult] = None
-    overall_score: Optional[float] = None
+    overall_score: Optional[int] = None
     summary: Optional[str] = None
+    tldr: Optional[str] = None
+
+
+class FinalSummaryOutput(BaseModel):
+    summary: str
+    tldr: str
+
+
+class SummaryOutput(BaseModel):
+    summary: str
 
 
 class AbstractSlideDeck(ABC, BaseModel, Generic[T]):
@@ -105,4 +115,3 @@ class SlideDeckImages(AbstractSlideDeck[SlideImage]):
 
 class SlideDeckDescriptions(AbstractSlideDeck[DeckDescription]):
     pass
-
