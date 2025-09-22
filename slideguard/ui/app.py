@@ -1,9 +1,6 @@
 """
 Gradio UI for SlideGuard - Interactive presentation evaluation interface.
 """
-
-import asyncio
-import json
 import logging
 import os
 import tempfile
@@ -17,7 +14,7 @@ from PIL import Image
 import fitz  # PyMuPDF
 
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
-from slideguard.schemes import Criteria, FullEvaluation
+from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult
 from slideguard.utils.config import SlideGuardConfig, load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
@@ -109,13 +106,13 @@ class SlideGuardUI:
         
         return slide_criterias, deck_criterias
     
-    async def evaluate_presentation(self, pdf_file, selected_criteria) -> Tuple[str, Optional[str], str]:
+    async def evaluate_presentation(self, pdf_file, selected_criteria) -> UIEvaluationResult:
         """Evaluate a presentation and return results."""
         if not pdf_file:
-            return "Please upload a PDF file", None, "⚠️ Please upload a PDF file to start evaluation."
+            return UIEvaluationResult.error("Please upload a PDF file to start evaluation.")
         
         if not self.evaluator:
-            return "Evaluator not initialized. Please check your configuration.", None, "❌ Evaluator not initialized. Please check your configuration."
+            return UIEvaluationResult.error("Evaluator not initialized. Please check your configuration.")
         
         try:
             # Store presentation name for report generation
@@ -142,15 +139,41 @@ class SlideGuardUI:
             
             # Format results
             deck_summary = self._format_deck_results(evaluation)
+            tldr_text = evaluation.tldr or ""
+            tldr_html = (
+                f"<div style='background-color: #fffde7; padding: 16px; border-radius: 8px; margin: 8px 0; border-left: 4px solid #fbc02d; color: #333333;'>\n"
+                f"<h3 style='color: #333333; margin-top: 0;'>⚡ <strong>TL;DR</strong></h3>\n"
+                f"<p style='color: #333333; margin: 8px 0;'>{escape(tldr_text)}</p>\n"
+                f"</div>\n"
+            ) if tldr_text else ""
+
+            score_html = ""
+            if evaluation.overall_score is not None:
+                s = evaluation.overall_score
+                if s >= 4:
+                    icon, bg, brd, col = "🟢", "#e8f5e8", "#4caf50", "#2e7d32"
+                elif s >= 3:
+                    icon, bg, brd, col = "🟡", "#fffde7", "#fbc02d", "#8d6e63"
+                elif s >= 2:
+                    icon, bg, brd, col = "🟠", "#fff3e0", "#ff9800", "#e65100"
+                else:
+                    icon, bg, brd, col = "🔴", "#ffebee", "#f44336", "#b71c1c"
+                score_html = (
+                    f"<div style='margin: 4px 0 8px 0;'>"
+                    f"<span style='display:inline-block;padding:6px 10px;border-radius:14px;background:{bg};border:1px solid {brd};color:{col};font-weight:600;'>"
+                    f"{icon} Overall Score: {s}/5"
+                    f"</span>"
+                    f"</div>"
+                )
             
             # Return the first slide image if available, otherwise None
             first_slide_image = self.slide_images[0] if self.slide_images else None
             status_msg = f"✅ Evaluation completed successfully! Processed {len(self.slide_images)} slides with {len(slide_criterias)} slide criteria and {len(deck_criterias)} deck criteria."
-            return deck_summary, first_slide_image, status_msg
+            return UIEvaluationResult(deck_summary=deck_summary, first_slide_image=first_slide_image, tldr_html=tldr_html, score_html=score_html, status_msg=status_msg)
             
         except Exception as e:
             self.logger.error(f"Evaluation failed: {e}")
-            return f"❌ Evaluation failed: {str(e)}", None, f"❌ Evaluation failed: {str(e)}"
+            return UIEvaluationResult.error(f"Evaluation failed: {str(e)}")
     
     def _format_deck_results(self, evaluation: FullEvaluation) -> str:
         """Format deck-level evaluation results."""
@@ -303,7 +326,7 @@ class SlideGuardUI:
                     else:
                         result += f"{eval_result}\n\n"
             
-            result += "---\n\n"
+            result += "<hr/>\n\n"
         
         return result
     
@@ -325,7 +348,7 @@ class SlideGuardUI:
             for criteria, eval_result in slide_eval.evaluations.items():
                 criteria_name = criteria.value.replace('_', ' ').title()
                 result += f"<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n"
-                result += f"### 🎯 {criteria_name}\n"
+                result += f"<h3 style='color: #333333; margin-top: 0;'>🎯 {criteria_name}</h3>\n"
                 
                 # Handle both Pydantic objects and dictionaries
                 if hasattr(eval_result, 'evaluation_results'):
@@ -350,8 +373,8 @@ class SlideGuardUI:
                             score_text = "Needs Improvement"
                         
                         result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
-                        result += f"**📊 Score: {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)**\n"
-                        result += f"**Assessment:** {score_text}\n\n"
+                        result += f"<p><strong>📊 Score: {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
+                        result += f"<p><strong>Assessment:</strong> {score_text}</p>\n"
                         result += "</div>\n"
                 elif isinstance(eval_result, dict):
                     # Handle dictionary format
@@ -634,6 +657,9 @@ class SlideGuardUI:
                         lines=2,
                         max_lines=5
                     )
+                    tldr_output = gr.HTML("")
+                    overall_score_output = gr.HTML("")
+                    result_state = gr.State()
                     
                     # Report generation section
                     with gr.Row():
@@ -769,7 +795,11 @@ class SlideGuardUI:
             ).then(
                 fn=self.evaluate_presentation,
                 inputs=[pdf_input, criteria_input],
-                outputs=[deck_results, slide_image, status_output]
+                outputs=[result_state]
+            ).then( # workaround for unpacking dataclass in gradio chain
+                fn=lambda r: tuple(r),
+                inputs=[result_state],
+                outputs=[deck_results, slide_image, tldr_output, overall_score_output, status_output]
             )
             
             # Report generation handlers

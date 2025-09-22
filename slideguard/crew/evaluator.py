@@ -4,21 +4,25 @@ Agents for slides evaluation and presentation analysis on multiple criteria
 
 import logging
 import re
-from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast
+from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast, Optional
 
 from jsonschema import ValidationError
 from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.criteria.base import CriterionInfo
-from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType
+from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType, Criteria
 from slideguard.schemes import DeckEvaluationResult
 from slideguard.schemes import SlideEvaluationResult
 from slideguard.schemes import FullEvaluation
+from slideguard.schemes import FinalSummaryOutput, SummaryOutput
+from slideguard.crew.summary_processor import SummaryProcessor
 from slideguard.utils.base import timer
 from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
 
 from textwrap import dedent
+from statistics import mean
+from collections import Counter, defaultdict
 from crewai import Agent, Task, Crew, CrewOutput, TaskOutput
 from pydantic import BaseModel
 import json
@@ -74,6 +78,7 @@ class SlideGuardEvaluator:
         self.llm = llm
         self.tools = self._setup_tools()
         self.max_retries = max_retries
+        self.summary_processor = SummaryProcessor()
 
     async def evaluate_presentation(self,
                                     presentation_path: str,
@@ -521,47 +526,59 @@ class SlideGuardEvaluator:
 
     async def _create_final_summary(self, 
                                  slide_evaluations: List[SlideEvaluationResult],
-                                 deck_evaluations: List[DeckEvaluationResult]) -> FullEvaluation:
+                                 deck_evaluations: Optional[DeckEvaluationResult]) -> FinalSummaryOutput:
         """Create final comprehensive summary"""
         
         summary_agent = self.create_summary_agent()
+        summary_payload = self.summary_processor.get_summary_payload(slide_evaluations, deck_evaluations)
+        summary_data = summary_payload.model_dump()
         
-        # Prepare summary data
-        summary_data = {
-            "slide_evaluations": [eval.dict() for eval in slide_evaluations],
-            "deck_evaluations": [eval.dict() for eval in deck_evaluations]
-        }
-        
-        task = Task(
+        summary_task = Task(
             description=dedent(f"""
-                Create a comprehensive summary of the presentation evaluation.
+                Create a comprehensive long-form summary of the presentation evaluation.
                 
                 Evaluation data:
                 {json.dumps(summary_data, indent=2)}
                 
+                Use the context to formulate the long-form summary.
                 Provide:
-                1. Overall assessment score (1-5)
-                2. Key strengths and weaknesses
-                3. Priority areas for improvement
-                4. Specific actionable recommendations
-                5. Summary of findings by slide type
+                - Short overview of the evaluation
+                - Main strengths
+                - Main problems
+                - Prioritized next steps with slide pointers
                 
-                Return the result in JSON format with overall_score and summary fields.
+                Return the result strictly as JSON with field: summary.
             """),
             agent=summary_agent,
-            expected_output="JSON with overall_score and summary fields"
+            expected_output="JSON in the described format.",
+            output_pydantic=SummaryOutput,
+            guardrail=self._make_pydantic_guardrail(SummaryOutput),
+            max_retries=self.max_retries
         )
         
+        tldr_task = Task(
+            description=dedent(f"""
+                Based on the previously generated long-form summary in context, write an actionable TL;DR of 2-4 sentences focusing on key issues and next actions.
+                Return the result strictly as JSON with fields: summary, tldr.
+                The summary field must contain the exact long-form summary you received in context.
+            """),
+            agent=summary_agent,
+            expected_output="JSON with fields: summary, tldr",
+            output_pydantic=FinalSummaryOutput,
+            guardrail=self._make_pydantic_guardrail(FinalSummaryOutput),
+            max_retries=self.max_retries,
+            context=[summary_task]
+        )
+
         crew = Crew(
             agents=[summary_agent],
-            tasks=[task],
+            tasks=[summary_task, tldr_task],
             verbose=True,
             function_calling_llm=self.llm.function_calling_llm
         )
-        
-        result = await crew.kickoff_async()
+        final_result = await crew.kickoff_async()
+        return final_result.pydantic
 
-        return result.pydantic
     
     
     async def _evaluate_presentation(self,
@@ -615,14 +632,17 @@ class SlideGuardEvaluator:
         else:
             deck_evaluations = None
         
-        # # Create final summary
-        # final_result = await self.create_final_summary(
-        #     slide_evaluations, 
-        #     deck_evaluations
-        # )
+        # tldr summary
+        final_summary = await self._create_final_summary(
+            slide_evaluations, 
+            deck_evaluations
+        )
         
         return FullEvaluation(
             slide_deck_path=presentation_path,
             slide_evaluations=slide_evaluations,
-            deck_evaluations=deck_evaluations
+            deck_evaluations=deck_evaluations,
+            overall_score=self.summary_processor.calculate_overall_score(slide_evaluations, deck_evaluations),
+            summary=final_summary.summary,
+            tldr=final_summary.tldr
         )
