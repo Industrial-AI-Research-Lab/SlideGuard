@@ -1,9 +1,6 @@
 """
 Gradio UI for SlideGuard - Interactive presentation evaluation interface.
 """
-
-import asyncio
-import json
 import logging
 import os
 import tempfile
@@ -17,7 +14,7 @@ from PIL import Image
 import fitz  # PyMuPDF
 
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
-from slideguard.schemes import Criteria, FullEvaluation
+from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult
 from slideguard.utils.config import SlideGuardConfig, load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
@@ -109,13 +106,13 @@ class SlideGuardUI:
         
         return slide_criterias, deck_criterias
     
-    async def evaluate_presentation(self, pdf_file, selected_criteria) -> Tuple[str, Optional[str], str, str, str]:
+    async def evaluate_presentation(self, pdf_file, selected_criteria) -> UIEvaluationResult:
         """Evaluate a presentation and return results."""
         if not pdf_file:
-            return "Please upload a PDF file", None, "", "", "⚠️ Please upload a PDF file to start evaluation."
+            return UIEvaluationResult.error("Please upload a PDF file to start evaluation.")
         
         if not self.evaluator:
-            return "Evaluator not initialized. Please check your configuration.", None, "", "", "❌ Evaluator not initialized. Please check your configuration."
+            return UIEvaluationResult.error("Evaluator not initialized. Please check your configuration.")
         
         try:
             # Store presentation name for report generation
@@ -172,11 +169,11 @@ class SlideGuardUI:
             # Return the first slide image if available, otherwise None
             first_slide_image = self.slide_images[0] if self.slide_images else None
             status_msg = f"✅ Evaluation completed successfully! Processed {len(self.slide_images)} slides with {len(slide_criterias)} slide criteria and {len(deck_criterias)} deck criteria."
-            return deck_summary, first_slide_image, tldr_html, score_html, status_msg
+            return UIEvaluationResult(deck_summary=deck_summary, first_slide_image=first_slide_image, tldr_html=tldr_html, score_html=score_html, status_msg=status_msg)
             
         except Exception as e:
             self.logger.error(f"Evaluation failed: {e}")
-            return f"❌ Evaluation failed: {str(e)}", None, "", "", f"❌ Evaluation failed: {str(e)}"
+            return UIEvaluationResult.error(f"Evaluation failed: {str(e)}")
     
     def _format_deck_results(self, evaluation: FullEvaluation) -> str:
         """Format deck-level evaluation results."""
@@ -662,6 +659,7 @@ class SlideGuardUI:
                     )
                     tldr_output = gr.HTML("")
                     overall_score_output = gr.HTML("")
+                    result_state = gr.State()
                     
                     # Report generation section
                     with gr.Row():
@@ -797,6 +795,10 @@ class SlideGuardUI:
             ).then(
                 fn=self.evaluate_presentation,
                 inputs=[pdf_input, criteria_input],
+                outputs=[result_state]
+            ).then( # workaround for unpacking dataclass in gradio chain
+                fn=lambda r: tuple(r),
+                inputs=[result_state],
                 outputs=[deck_results, slide_image, tldr_output, overall_score_output, status_output]
             )
             
