@@ -31,7 +31,7 @@ class CriterionInfo(BaseModel):
         
 
 class BaseAttributes(BaseModel):
-        severity: int = Field(description="Severity of the issue: 1 - very minor, 2 - minor, 3 - serious, 4 - very serious, 5 - critical", ge=1, le=5)
+    severity: int = Field(description="Severity of the issue: 1 - minor, 2 - moderate, 3 - serious", ge=1, le=3)
 
 
 # Define criterion categories

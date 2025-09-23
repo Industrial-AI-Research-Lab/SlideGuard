@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
+from slideguard.criteria.slide_types import SlideType
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide that may contain a visualization. 
@@ -55,7 +56,7 @@ SLIDE_GRAPHIC_CONTENT_MATCH = CriterionInfo(
     agent_prompt_template=prompt,
     task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideGraphicContentMatch,
-    applicable_slide_types=["experiment_settings", "experimental_results"],
+    applicable_slide_types=None, #maybe best to add flag for graphic content?
     priority=4,
     requires_slide_type=True,
     category="visual"

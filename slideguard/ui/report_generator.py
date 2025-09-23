@@ -324,7 +324,7 @@ class SlideGuardReportGenerator:
                     fontName=self._font_bold
                 )
                 panel_items.append(Paragraph(f"<b>Overall Score: {score:.1f}/5.0 ({score_percentage:.0f}%)</b>", overall_style))
-            story.append(self.RoundedPanel(panel_items, bg_color="#ffffff", accent_color=score_color))
+            story.append(self.RoundedPanel(panel_items, bg_color="#ffffff", accent_color=severity_score_color))
                 
         elif isinstance(eval_result, dict):
             # Handle dictionary format

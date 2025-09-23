@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
+from slideguard.criteria.slide_types import SlideType
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide. 
@@ -48,7 +49,8 @@ SLIDE_FACT_LINK_AVAILABILITY = CriterionInfo(
     agent_prompt_template=prompt,
     task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideFactLinkAvailability,
-    applicable_slide_types=["current_state", "proposed_solution", "experimental_results"],
+    applicable_slide_types=[SlideType.CURRENT_STATE.value, SlideType.PROPOSED_SOLUTION.value,
+                            SlideType.EXPERIMENTAL_RESULTS.value, SlideType.EXPERIMENT_SETTINGS.value, SlideType.MOTIVATION.value],
     priority=4,
     requires_slide_type=True,
     category="visual"

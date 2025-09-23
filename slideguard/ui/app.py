@@ -832,6 +832,9 @@ class SlideGuardUI:
                 inputs=[result_state],
                 outputs=[deck_results, slide_image, tldr_output, overall_score_output, status_output]
             ).then(
+                fn=lambda: self.get_slide_evaluation(self.current_slide_index),
+                outputs=[slide_evaluation]
+            ).then(
                 fn=lambda: gr.update(interactive=True, value="🚀 Start Evaluation"),
                 outputs=[evaluate_btn]
             )
