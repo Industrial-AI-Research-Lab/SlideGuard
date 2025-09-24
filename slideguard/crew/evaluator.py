@@ -4,11 +4,12 @@ Agents for slides evaluation and presentation analysis on multiple criteria
 
 import logging
 import re
-from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast, Optional
+from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast, Optional, Protocol, runtime_checkable
 
 from jsonschema import ValidationError
 from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
+from slideguard.criteria.slide_abbreviations import SlideAbbreviations, SlideAbbreviationsResult, ABBREVIATIONS_WHITELIST
 from slideguard.criteria.base import CriterionInfo
 from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType, Criteria
 from slideguard.schemes import DeckEvaluationResult
@@ -28,6 +29,11 @@ from pydantic import BaseModel
 import json
 import asyncio
 from langfuse import Langfuse
+
+
+@runtime_checkable
+class HasEvaluationResults(Protocol):
+    evaluation_results: List[Any]
 
 
 class FallbackResult(BaseModel):
@@ -278,6 +284,36 @@ class SlideGuardEvaluator:
                 return True
         return False
 
+    def _sort_by_severity(self, obj: HasEvaluationResults) -> HasEvaluationResults:
+        def _severity_value(v: Any) -> int:
+            return int(getattr(v, 'severity', 1))
+        try:
+            items = sorted(getattr(obj, 'evaluation_results', []), key=_severity_value, reverse=True)
+            setattr(obj, 'evaluation_results', items)
+        except Exception:
+            pass
+        return obj
+
+    def _postprocess_result(self, criteria: Criteria, obj: BaseModel) -> BaseModel:
+        try:
+            if criteria == Criteria.slide_abbreviations and isinstance(obj, SlideAbbreviations):
+                filtered: List[SlideAbbreviationsResult] = []
+                wl = ABBREVIATIONS_WHITELIST
+                for item in obj.evaluation_results:
+                    try:
+                        token = str(getattr(item, 'evaluation_element', '')).strip().lower().replace('.', '')
+                        if token and token not in wl:
+                            filtered.append(item)
+                    except Exception:
+                        filtered.append(item)
+                obj.evaluation_results = filtered
+            if isinstance(obj, HasEvaluationResults):
+                obj = cast(HasEvaluationResults, obj)
+                obj = self._sort_by_severity(obj)
+        except Exception:
+            pass
+        return obj
+
     def create_crew(self, criteria: CriterionInfo) -> Crew:
         agent = self.create_agent(criteria)
         task = Task(
@@ -494,11 +530,11 @@ class SlideGuardEvaluator:
             results = await asyncio.gather(*runs)
             for (info, eligible, _), subset_results in zip(subsets, results):
                 if len(eligible) == len(slides.slides):
-                    crit2result[info.criteria] = subset_results
+                    crit2result[info.criteria] = [self._postprocess_result(info.criteria, r) for r in subset_results]
                 else:
                     merged: List[BaseModel] = [None] * len(slides.slides)
                     for j, idx in enumerate(eligible):
-                        merged[idx] = subset_results[j]
+                        merged[idx] = self._postprocess_result(info.criteria, subset_results[j])
                     crit2result[info.criteria] = merged
 
         # what if some computations failed
@@ -572,7 +608,7 @@ class SlideGuardEvaluator:
         evaluations = {}
         for info, result in zip(infos, results):
             if result and len(result) == 1 and result[0] is not None:
-                evaluations[info.criteria] = result[0]
+                evaluations[info.criteria] = self._postprocess_result(info.criteria, result[0])
             else:
                 logger.warning(f"Deck evaluation failed for criteria {info.criteria.value}, using fallback")
                 evaluations[info.criteria] = FallbackResult()
