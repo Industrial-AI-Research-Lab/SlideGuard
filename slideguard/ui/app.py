@@ -4,6 +4,7 @@ Gradio UI for SlideGuard - Interactive presentation evaluation interface.
 import logging
 import os
 import tempfile
+import re
 import io
 from pathlib import Path
 from html import escape
@@ -65,6 +66,31 @@ class SlideGuardUI:
         except Exception as e:
             self.logger.error(f"Failed to initialize evaluator: {e}")
     
+    def _clear_ui_state(self) -> Tuple[str, str, str, str]:
+        msg = "🔄 Processing evaluation... Please wait."
+        return (msg, "", "", msg)
+    
+    def _clear_slide_evaluation_display(self) -> str:
+        """Clear slide evaluation display during processing."""
+        if self.slide_images:
+            return "🔄 Processing evaluation... Please wait."
+        else:
+            return "Upload a presentation to see slide evaluations."
+    
+    def _clear_slide_navigation_state(self, pdf_input) -> Tuple[str, Optional[str], str]:
+        if not pdf_input:
+            # Keep existing state if no PDF provided
+            slide_idx = str(self.current_slide_index + 1) if self.slide_images else "1"
+            current_image = self.slide_images[self.current_slide_index] if self.slide_images else None
+            return (slide_idx, current_image, "Upload a presentation to launch evaluation.")
+        
+        self.current_presentation_name = Path(pdf_input.name).stem
+        self.slide_images = self._extract_slide_images(pdf_input.name)
+        self.current_slide_index = 0
+        first_image = self.slide_images[0] if self.slide_images else None
+        msg = "🔄 Processing evaluation... Please wait." if self.slide_images else "Failed to extract slides."
+        return ("1", first_image, msg)
+    
     def _extract_slide_images(self, pdf_path: str) -> List[str]:
         """Extract slide images from PDF for display."""
         try:
@@ -115,11 +141,7 @@ class SlideGuardUI:
             return UIEvaluationResult.error("Evaluator not initialized. Please check your configuration.")
         
         try:
-            # Store presentation name for report generation
-            self.current_presentation_name = Path(pdf_file.name).stem
-            
-            # Extract slide images
-            self.slide_images = self._extract_slide_images(pdf_file.name)
+            self.current_evaluation = None
             
             # Load criteria
             slide_criterias, deck_criterias = self._load_criteria(selected_criteria)
@@ -141,10 +163,10 @@ class SlideGuardUI:
             deck_summary = self._format_deck_results(evaluation)
             tldr_text = evaluation.tldr or ""
             tldr_html = (
-                f"<div style='background-color: #fffde7; padding: 16px; border-radius: 8px; margin: 8px 0; border-left: 4px solid #fbc02d; color: #333333;'>\n"
-                f"<h3 style='color: #333333; margin-top: 0;'>⚡ <strong>TL;DR</strong></h3>\n"
-                f"<p style='color: #333333; margin: 8px 0;'>{escape(tldr_text)}</p>\n"
-                f"</div>\n"
+                f"<div style='background-color: #fffde7; padding: 8px; border-radius: 8px; margin: 4px 0 4px 0; border-left: 4px solid #fbc02d; color: #333333;'>"
+                f"<h3 style='color: #333333; margin-top: 0; margin-bottom: 4px;'>⚡ <strong>TL;DR</strong></h3>"
+                f"<p style='color: #333333; margin: 4px 0;'>{escape(tldr_text)}</p>"
+                f"</div>"
             ) if tldr_text else ""
 
             score_html = ""
@@ -159,8 +181,8 @@ class SlideGuardUI:
                 else:
                     icon, bg, brd, col = "🔴", "#ffebee", "#f44336", "#b71c1c"
                 score_html = (
-                    f"<div style='margin: 4px 0 8px 0;'>"
-                    f"<span style='display:inline-block;padding:6px 10px;border-radius:14px;background:{bg};border:1px solid {brd};color:{col};font-weight:600;'>"
+                    f"<div style='margin: 2px 0 2px 0;'>"
+                    f"<span style='display:inline-block;padding:5px 10px;border-radius:14px;background:{bg};border:1px solid {brd};color:{col};font-weight:600;'>"
                     f"{icon} Overall Score: {s}/5"
                     f"</span>"
                     f"</div>"
@@ -180,7 +202,7 @@ class SlideGuardUI:
         if not evaluation or not evaluation.deck_evaluations:
             return "No deck-level evaluations available."
         
-        result = "## 📋 Deck-Level Evaluation Results\n\n"
+        result = "<h2 style='color: #333333;'>📋 Deck-Level Evaluation Results</h2>\n\n"
         
         for criteria, eval_result in evaluation.deck_evaluations.evaluations.items():
             criteria_name = criteria.value.replace('_', ' ').title()
@@ -431,8 +453,7 @@ class SlideGuardUI:
             return "No detailed evaluation results available.\n\n"
         
         result = ""
-        total_score = 0
-        max_severity = 0
+        total_severity = 0
         
         # Handle both list of dicts and list of Pydantic objects
         if hasattr(evaluation_results, '__iter__') and not isinstance(evaluation_results, str):
@@ -488,8 +509,7 @@ class SlideGuardUI:
                     continue
             
             # Update max severity and score
-            max_severity = max(max_severity, severity)
-            total_score += severity
+            total_severity += severity
             
             # Severity indicator with better styling and dark theme compatibility
             if severity == 1:
@@ -524,30 +544,28 @@ class SlideGuardUI:
             result += f"<p style='color: #333333; margin: 8px 0;'><strong>💡 Suggestion:</strong> {suggestion}</p>\n"
             result += "</div>\n\n"
         
-        # Calculate and display final score
-        avg_score = total_score / len(items) if items else 0
-        score_percentage = (avg_score / 3.0) * 100
-        
-        # Score indicator
-        if score_percentage >= 80:
-            score_icon = "🟢"
-            score_text = "Excellent"
-            score_color = "#4caf50"
-        elif score_percentage >= 60:
-            score_icon = "🟡"
-            score_text = "Good"
-            score_color = "#ff9800"
-        elif score_percentage >= 40:
-            score_icon = "🟠"
-            score_text = "Fair"
-            score_color = "#ff9800"
-        else:
+        severity_score = total_severity / len(items) if items else 0
+        severity_percentage = (severity_score / 3.0) * 100
+
+        if severity_percentage >= 80:
             score_icon = "🔴"
             score_text = "Needs Improvement"
             score_color = "#f44336"
-        
+        elif severity_percentage >= 60:
+            score_icon = "🟠"
+            score_text = "Fair"
+            score_color = "#ff9800"
+        elif severity_percentage >= 40:
+            score_icon = "🟡"
+            score_text = "Good"
+            score_color = "#ffeb3b"
+        else:
+            score_icon = "🟢"
+            score_text = "Excellent"
+            score_color = "#4caf50"
+
         result += f"<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid {score_color}; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #333333;'>\n"
-        result += f"<h3 style='color: #333333; margin-top: 0;'>📊 <strong>Final Score: {score_icon} {avg_score:.1f}/3.0 ({score_percentage:.0f}%)</strong></h3>\n"
+        result += f"<h3 style='color: #333333; margin-top: 0;'>📊 <strong>Total Severity: {score_icon} {severity_score:.1f}/3.0 ({severity_percentage:.0f}%)</strong></h3>\n"
         result += f"<p style='color: #333333; margin: 8px 0;'><strong>Overall Assessment:</strong> {score_text}</p>\n"
         result += "</div>\n\n"
         
@@ -570,25 +588,28 @@ class SlideGuardUI:
             return None, "❌ No evaluation available. Please run an evaluation first."
         
         try:
-            # Create temporary file for the PDF
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
-                pdf_path = tmp_file.name
+            base = self.current_presentation_name or "presentation"
+            # sanitize filename for Windows
+            safe = re.sub(r'[<>:"/\\|?*]+', '_', base).strip() or "presentation"
+            filename = f"{safe}_report.pdf"
+            temp_dir = tempfile.gettempdir()
+            pdf_path = os.path.join(temp_dir, filename)
+            if os.path.exists(pdf_path):
+                pdf_path = os.path.join(temp_dir, f"{safe}_report.pdf")
             
             # Generate the report
             self.report_generator.save_report(
                 evaluation=self.current_evaluation,
                 output_path=pdf_path,
-                presentation_name=self.current_presentation_name
+                presentation_name=self.current_presentation_name,
+                slide_images=self.slide_images
             )
             
             # Add to temp files for cleanup
             self.temp_files.append(pdf_path)
-            
-            self.logger.info(f"PDF report generated successfully: {pdf_path}")
             return pdf_path, "✅ PDF report generated successfully! Click the download button to save it."
             
         except Exception as e:
-            self.logger.error(f"Failed to generate PDF report: {e}")
             return None, f"❌ Failed to generate PDF report: {str(e)}"
 
     def render_profile_widget(self, username: str) -> str:
@@ -790,16 +811,32 @@ class SlideGuardUI:
             
             # Event handlers
             evaluate_btn.click(
-                fn=lambda: "🔄 Processing evaluation... Please wait.",
-                outputs=[status_output]
+                fn=self._clear_slide_navigation_state,
+                inputs=[pdf_input],
+                outputs=[slide_number, slide_image, slide_evaluation]
+            ).then(
+                fn=self._clear_ui_state,
+                outputs=[deck_results, tldr_output, overall_score_output, status_output]
+            ).then(
+                fn=lambda: gr.update(interactive=False, value="⏳ Evaluating..."),
+                outputs=[evaluate_btn]
+            ).then(
+                fn=self._clear_slide_evaluation_display,
+                outputs=[slide_evaluation]
             ).then(
                 fn=self.evaluate_presentation,
                 inputs=[pdf_input, criteria_input],
                 outputs=[result_state]
-            ).then( # workaround for unpacking dataclass in gradio chain
+            ).then(
                 fn=lambda r: tuple(r),
                 inputs=[result_state],
                 outputs=[deck_results, slide_image, tldr_output, overall_score_output, status_output]
+            ).then(
+                fn=lambda: self.get_slide_evaluation(self.current_slide_index),
+                outputs=[slide_evaluation]
+            ).then(
+                fn=lambda: gr.update(interactive=True, value="🚀 Start Evaluation"),
+                outputs=[evaluate_btn]
             )
             
             # Report generation handlers
@@ -808,6 +845,13 @@ class SlideGuardUI:
                 outputs=[download_report_btn, status_output]
             ).then(
                 fn=lambda x: gr.update(visible=True) if x else gr.update(visible=False),
+                inputs=[download_report_btn],
+                outputs=[download_report_btn]
+            )
+            
+            # Hide download component after file is downloaded/cleared
+            download_report_btn.change(
+                fn=lambda x: gr.update(visible=False) if not x else gr.update(),
                 inputs=[download_report_btn],
                 outputs=[download_report_btn]
             )

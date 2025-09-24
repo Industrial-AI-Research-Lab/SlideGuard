@@ -3,19 +3,19 @@ PDF Report Generator for SlideGuard evaluations.
 """
 
 import os
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Any, Optional
 from io import BytesIO
 
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib.colors import HexColor, black, white, blue, red, orange, green
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle, Image
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+from reportlab.lib.colors import HexColor, black, white
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle, Image, Flowable
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from slideguard.schemes import FullEvaluation, Criteria
 
@@ -25,7 +25,35 @@ class SlideGuardReportGenerator:
     
     def __init__(self):
         self.styles = getSampleStyleSheet()
+        self._register_fonts()
         self._setup_custom_styles()
+
+    def _register_fonts(self):
+        try:
+            base_dir = str(Path(__file__).resolve().parent.parent)
+            candidates = [
+                os.path.join(base_dir, "resources", "fonts", "DejaVuSans.ttf"),
+                os.path.join(base_dir, "resources", "fonts", "DejaVuSansCondensed.ttf"),
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "C:\\Windows\\Fonts\\DejaVuSans.ttf",
+                "C:\\Windows\\Fonts\\arial.ttf",
+            ]
+            chosen = None
+            for p in candidates:
+                if os.path.exists(p):
+                    chosen = p
+                    break
+            if chosen:
+                pdfmetrics.registerFont(TTFont("SGSans", chosen))
+                pdfmetrics.registerFont(TTFont("SGSans-Bold", chosen))
+                self._font_regular = "SGSans"
+                self._font_bold = "SGSans-Bold"
+            else:
+                self._font_regular = "Helvetica"
+                self._font_bold = "Helvetica-Bold"
+        except Exception:
+            self._font_regular = "Helvetica"
+            self._font_bold = "Helvetica-Bold"
     
     def _setup_custom_styles(self):
         """Setup custom paragraph styles for the report."""
@@ -36,7 +64,8 @@ class SlideGuardReportGenerator:
             fontSize=24,
             spaceAfter=30,
             alignment=TA_CENTER,
-            textColor=HexColor('#2E86AB')
+            textColor=HexColor('#2E86AB'),
+            fontName=self._font_bold
         )
         
         # Section header style
@@ -46,7 +75,8 @@ class SlideGuardReportGenerator:
             fontSize=16,
             spaceAfter=12,
             spaceBefore=20,
-            textColor=HexColor('#A23B72')
+            textColor=HexColor('#A23B72'),
+            fontName=self._font_bold
         )
         
         # Subsection style
@@ -56,7 +86,8 @@ class SlideGuardReportGenerator:
             fontSize=14,
             spaceAfter=8,
             spaceBefore=12,
-            textColor=HexColor('#F18F01')
+            textColor=HexColor('#F18F01'),
+            fontName=self._font_bold
         )
         
         # Normal text style
@@ -65,7 +96,8 @@ class SlideGuardReportGenerator:
             parent=self.styles['Normal'],
             fontSize=10,
             spaceAfter=6,
-            alignment=TA_JUSTIFY
+            alignment=TA_JUSTIFY,
+            fontName=self._font_regular
         )
         
         # Score style
@@ -76,8 +108,50 @@ class SlideGuardReportGenerator:
             spaceAfter=8,
             alignment=TA_CENTER,
             textColor=HexColor('#2E86AB'),
-            fontName='Helvetica-Bold'
+            fontName=self._font_bold
         )
+
+    class RoundedPanel(Flowable):
+        def __init__(self, inner_flowables: List[Any], bg_color: str, accent_color: str, padding: int = 8, radius: int = 6):
+            super().__init__()
+            self.children = inner_flowables
+            self.child_sizes: List[tuple[int, int]] = []
+            self.bg_color = HexColor(bg_color)
+            self.accent_color = HexColor(accent_color)
+            self.padding = padding
+            self.radius = radius
+            self._w = 0
+            self._h = 0
+
+        def wrap(self, availWidth, availHeight):
+            inner_w = max(10, availWidth - 2 * self.padding)
+            total_h = 0
+            max_w = 0
+            sizes: List[tuple[int, int]] = []
+            for child in self.children:
+                w, h = child.wrap(inner_w, availHeight)
+                sizes.append((w, h))
+                total_h += h
+                if w > max_w:
+                    max_w = w
+            self.child_sizes = sizes
+            self._w = min(availWidth, max_w + 2 * self.padding)
+            self._h = total_h + 2 * self.padding
+            return self._w, self._h
+
+        def draw(self):
+            c = self.canv
+            c.saveState()
+            c.setFillColor(self.bg_color)
+            c.roundRect(0, 0, self._w, self._h, self.radius, stroke=0, fill=1)
+            c.setFillColor(self.accent_color)
+            c.rect(0, 0, 4, self._h, stroke=0, fill=1)
+            c.restoreState()
+            y = self._h - self.padding
+            x = self.padding
+            for (child, (w, h)) in zip(self.children, self.child_sizes):
+                y -= h
+                child.drawOn(c, x, y)
     
     def _get_severity_color(self, severity: int) -> str:
         """Get color for severity level."""
@@ -90,30 +164,43 @@ class SlideGuardReportGenerator:
         else:
             return '#9E9E9E'  # Gray
     
-    def _get_score_color(self, score: float, max_score: float = 5.0) -> str:
-        """Get color for score level."""
+    def _get_score_color(self, score: float, max_score: float = 5.0, higher_better: bool = True) -> str:
         percentage = (score / max_score) * 100
-        if percentage >= 80:
-            return '#4CAF50'  # Green
-        elif percentage >= 60:
-            return '#FF9800'  # Orange
-        elif percentage >= 40:
-            return '#FFC107'  # Yellow
+        if higher_better:
+            if percentage >= 80:
+                return '#4CAF50'
+            elif percentage >= 60:
+                return '#FF9800'
+            elif percentage >= 40:
+                return '#FFC107'
+            else:
+                return '#F44336'
         else:
-            return '#F44336'  # Red
+            if percentage <= 20:
+                return '#4CAF50'
+            elif percentage <= 40:
+                return '#FF9800'
+            elif percentage <= 60:
+                return '#FFC107'
+            else:
+                return '#F44336'
     
-    def _create_header_footer(self, canvas_obj: canvas.Canvas, title: str):
-        """Create header and footer for each page."""
-        # Header
-        canvas_obj.setFont("Helvetica-Bold", 12)
+    def _create_header(self, canvas_obj: canvas.Canvas):
+        canvas_obj.saveState()
+        canvas_obj.setFont(self._font_bold, 11)
         canvas_obj.setFillColor(HexColor('#2E86AB'))
-        canvas_obj.drawString(50, 750, "SlideGuard AI Evaluation Report")
-        
-        # Footer
-        canvas_obj.setFont("Helvetica", 8)
+        width, height = A4
+        canvas_obj.drawString(50, height - 40, "SlideGuard AI Evaluation Report")
+        canvas_obj.restoreState()
+
+    def _create_footer(self, canvas_obj: canvas.Canvas):
+        canvas_obj.saveState()
+        canvas_obj.setFont(self._font_regular, 8)
         canvas_obj.setFillColor(black)
-        canvas_obj.drawString(50, 50, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        canvas_obj.drawRightString(550, 50, f"Page {canvas_obj.getPageNumber()}")
+        width, _ = A4
+        canvas_obj.drawString(50, 40, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        canvas_obj.drawRightString(width - 50, 40, f"Page {canvas_obj.getPageNumber()}")
+        canvas_obj.restoreState()
     
     def _add_evaluation_element(self, story: List, element: Any, index: int):
         """Add an evaluation element to the report."""
@@ -156,27 +243,35 @@ class SlideGuardReportGenerator:
         severity_color = self._get_severity_color(severity)
         severity_text = {1: "Low", 2: "Medium", 3: "High"}.get(severity, "Info")
         
-        # Create severity badge
-        severity_style = ParagraphStyle(
-            'SeverityBadge',
-            parent=self.styles['Normal'],
-            fontSize=9,
-            textColor=white,
-            alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
-        )
+        severity_label = f"{severity_text} Priority (Severity: {severity}/3)"
+        severity_table = Table([[severity_label]])
+        severity_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), HexColor(severity_color)),
+            ('TEXTCOLOR', (0, 0), (-1, -1), white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), self._font_bold),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
         
-        severity_badge = f'<span style="background-color: {severity_color}; color: white; padding: 2px 6px; border-radius: 3px;">{severity_text} Priority (Severity: {severity}/3)</span>'
-        
-        story.append(Paragraph(f"<b>{index}. {evaluation_element}</b>", self.subsection_style))
-        story.append(Paragraph(severity_badge, severity_style))
-        story.append(Paragraph(f"<b>Suggestion:</b> {suggestion}", self.normal_style))
-        story.append(Spacer(1, 12))
+        inner = [
+            Paragraph(f"<b>{index}. {evaluation_element}</b>", self.subsection_style),
+            Spacer(1, 4),
+            severity_table,
+            Spacer(1, 6),
+            Paragraph(f"<b>Suggestion:</b> {suggestion}", self.normal_style),
+        ]
+        story.append(self.RoundedPanel(inner, bg_color="#fff3f3" if severity==3 else ("#fff9e6" if severity==2 else "#eaf6ee"), accent_color=severity_color))
+        story.append(Spacer(1, 10))
     
-    def _add_criteria_evaluation(self, story: List, criteria: Criteria, eval_result: Any):
+    def _add_criteria_evaluation(self, story: List, criteria: Criteria, eval_result: Any, include_header: bool = True):
         """Add a criteria evaluation to the report."""
         criteria_name = criteria.value.replace('_', ' ').title()
-        story.append(Paragraph(f"<b>🎯 {criteria_name}</b>", self.section_style))
+        if include_header:
+            story.append(Paragraph(f"<b>{criteria_name}</b>", self.section_style))
         
         # Handle both Pydantic objects and dictionaries
         if hasattr(eval_result, 'evaluation_results'):
@@ -201,30 +296,35 @@ class SlideGuardReportGenerator:
                     except Exception:
                         total_severity += 1
             
-            avg_score = total_severity / len(evaluation_results) if evaluation_results else 0
-            score_percentage = (avg_score / 3.0) * 100
+            severity_score = total_severity / len(evaluation_results) if evaluation_results else 0
+            score_percentage = (severity_score / 3.0) * 100
             
-            score_color = self._get_score_color(avg_score, 3.0)
-            score_text = f"Final Score: {avg_score:.1f}/3.0 ({score_percentage:.0f}%)"
+            severity_score_color = self._get_score_color(severity_score, 3.0, False)
+            severity_score_text = f"Total Severity: {severity_score:.1f}/3.0 ({score_percentage:.0f}%)"
             
             score_style = ParagraphStyle(
                 'ScoreStyle',
                 parent=self.styles['Normal'],
                 fontSize=12,
-                textColor=HexColor(score_color),
+                textColor=HexColor(severity_score_color),
                 alignment=TA_CENTER,
-                fontName='Helvetica-Bold'
+                fontName=self._font_bold
             )
-            
-            story.append(Paragraph(f"<b>{score_text}</b>", score_style))
-            
-            # Add score from Pydantic object if available
+            panel_items: List[Any] = [Paragraph(f"<b>{severity_score_text}</b>", score_style)]
             if hasattr(eval_result, 'score'):
                 score = eval_result.score
                 score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
-                score_color = self._get_score_color(score, 5.0)
-                
-                story.append(Paragraph(f"<b>Overall Score: {score:.1f}/5.0 ({score_percentage:.0f}%)</b>", self.score_style))
+                overall_color = self._get_score_color(score, 5.0)
+                overall_style = ParagraphStyle(
+                    'ScoreStyleOverall',
+                    parent=self.styles['Normal'],
+                    fontSize=12,
+                    textColor=HexColor(overall_color),
+                    alignment=TA_CENTER,
+                    fontName=self._font_bold
+                )
+                panel_items.append(Paragraph(f"<b>Overall Score: {score:.1f}/5.0 ({score_percentage:.0f}%)</b>", overall_style))
+            story.append(self.RoundedPanel(panel_items, bg_color="#ffffff", accent_color=severity_score_color))
                 
         elif isinstance(eval_result, dict):
             # Handle dictionary format
@@ -249,29 +349,28 @@ class SlideGuardReportGenerator:
                         except Exception:
                             total_severity += 1
                 
-                avg_score = total_severity / len(evaluation_results) if evaluation_results else 0
-                score_percentage = (avg_score / 3.0) * 100
+                severity_score = total_severity / len(evaluation_results) if evaluation_results else 0
+                score_percentage = (severity_score / 3.0) * 100
                 
-                score_color = self._get_score_color(avg_score, 3.0)
-                score_text = f"Final Score: {avg_score:.1f}/3.0 ({score_percentage:.0f}%)"
+                severity_score_color = self._get_score_color(severity_score, 3.0, False)
+                severity_score_text = f"Total Severity: {severity_score:.1f}/3.0 ({score_percentage:.0f}%)"
                 
                 score_style = ParagraphStyle(
                     'ScoreStyle',
                     parent=self.styles['Normal'],
                     fontSize=12,
-                    textColor=HexColor(score_color),
+                    textColor=HexColor(severity_score_color),
                     alignment=TA_CENTER,
-                    fontName='Helvetica-Bold'
+                    fontName=self._font_bold
                 )
-                
-                story.append(Paragraph(f"<b>{score_text}</b>", score_style))
+                story.append(self.RoundedPanel([Paragraph(f"<b>{severity_score_text}</b>", score_style)], bg_color="#ffffff", accent_color=severity_score_color))
                 
             elif 'score' in eval_result:
                 score = eval_result['score']
                 score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                 score_color = self._get_score_color(score, 5.0)
                 
-                story.append(Paragraph(f"<b>Score: {score:.1f}/5.0 ({score_percentage:.0f}%)</b>", self.score_style))
+                story.append(self.RoundedPanel([Paragraph(f"<b>Score: {score:.1f}/5.0 ({score_percentage:.0f}%)</b>", self.score_style)], bg_color="#ffffff", accent_color=score_color))
                 
                 if 'comments' in eval_result:
                     story.append(Paragraph(f"<b>Comments:</b> {eval_result['comments']}", self.normal_style))
@@ -285,7 +384,7 @@ class SlideGuardReportGenerator:
         
         story.append(Spacer(1, 20))
     
-    def generate_report(self, evaluation: FullEvaluation, presentation_name: str = "Unknown") -> BytesIO:
+    def generate_report(self, evaluation: FullEvaluation, presentation_name: str = "Unknown", slide_images: Optional[List[str]] = None) -> BytesIO:
         """Generate a comprehensive PDF report for the evaluation."""
         buffer = BytesIO()
         doc = SimpleDocTemplate(
@@ -293,7 +392,7 @@ class SlideGuardReportGenerator:
             pagesize=A4,
             rightMargin=72,
             leftMargin=72,
-            topMargin=72,
+            topMargin=90,
             bottomMargin=72
         )
         
@@ -325,10 +424,16 @@ class SlideGuardReportGenerator:
         
         story.append(PageBreak())
         
-        # Executive Summary
+        # TL;DR
+        if evaluation.tldr:
+            story.append(Paragraph("TL;DR", self.section_style))
+            story.append(self.RoundedPanel([Paragraph(evaluation.tldr, self.normal_style)], bg_color="#fff7e0", accent_color="#ffb300"))
+            story.append(Spacer(1, 20))
+
+        # long summary
         if evaluation.summary:
-            story.append(Paragraph("Executive Summary", self.section_style))
-            story.append(Paragraph(evaluation.summary, self.normal_style))
+            story.append(Paragraph("Summary", self.section_style))
+            story.append(self.RoundedPanel([Paragraph(evaluation.summary, self.normal_style)], bg_color="#fffde7", accent_color="#fbc02d"))
             story.append(PageBreak())
         
         # Deck-Level Evaluations
@@ -340,31 +445,47 @@ class SlideGuardReportGenerator:
             
             story.append(PageBreak())
         
-        # Slide-Level Evaluations
+        # Slide-Level Evaluations with images
         if evaluation.slide_evaluations:
             story.append(Paragraph("Slide-Level Evaluation Results", self.section_style))
-            
             for slide_idx, slide_eval in enumerate(evaluation.slide_evaluations, 1):
                 story.append(Paragraph(f"Slide {slide_idx}", self.subsection_style))
-                
+                # Image below the title
+                img_flow = None
+                if slide_images and 0 <= slide_idx-1 < len(slide_images) and slide_images[slide_idx-1] and os.path.exists(slide_images[slide_idx-1]):
+                    try:
+                        img = Image(slide_images[slide_idx-1])
+                        img._restrictSize(420, 300)
+                        img_flow = img
+                    except Exception:
+                        img_flow = None
+                if img_flow:
+                    story.append(img_flow)
+                    story.append(Spacer(1, 10))
+                # Evaluations stacked below image
                 if slide_eval.evaluations:
                     for criteria, eval_result in slide_eval.evaluations.items():
-                        self._add_criteria_evaluation(story, criteria, eval_result)
+                        self._add_criteria_evaluation(story, criteria, eval_result, include_header=True)
                 else:
                     story.append(Paragraph("No evaluations available for this slide.", self.normal_style))
-                
                 story.append(Spacer(1, 20))
         
         # Build PDF
-        doc.build(story, onFirstPage=lambda canvas, doc: self._create_header_footer(canvas, presentation_name),
-                 onLaterPages=lambda canvas, doc: self._create_header_footer(canvas, presentation_name))
+        def first_page(c: canvas.Canvas, d):
+            self._create_footer(c)
+        
+        def later_pages(c: canvas.Canvas, d):
+            self._create_header(c)
+            self._create_footer(c)
+        
+        doc.build(story, onFirstPage=first_page, onLaterPages=later_pages)
         
         buffer.seek(0)
         return buffer
     
-    def save_report(self, evaluation: FullEvaluation, output_path: str, presentation_name: str = "Unknown") -> str:
+    def save_report(self, evaluation: FullEvaluation, output_path: str, presentation_name: str = "Unknown", slide_images: Optional[List[str]] = None) -> str:
         """Generate and save a PDF report to the specified path."""
-        buffer = self.generate_report(evaluation, presentation_name)
+        buffer = self.generate_report(evaluation, presentation_name, slide_images)
         
         with open(output_path, 'wb') as f:
             f.write(buffer.getvalue())

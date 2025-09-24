@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
+from slideguard.criteria.slide_types import SlideType
 
 prompt = """You are an expert in analyzing student presentations.
 You will be provided with a screenshot of the title slide of a presentation.
@@ -44,7 +45,7 @@ SLIDE_TITLE_SLIDE_QUALITY = CriterionInfo(
     agent_prompt_template=prompt,
     task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideTitleSlideQuality,
-    applicable_slide_types=["title_slide"],
+    applicable_slide_types=[SlideType.TITLE_SLIDE.value],
     priority=4,
     requires_slide_type=True,
     category="visual"

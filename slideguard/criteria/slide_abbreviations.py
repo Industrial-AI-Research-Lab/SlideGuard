@@ -50,3 +50,8 @@ SLIDE_ABBREVIATIONS = CriterionInfo(
     requires_slide_type=False,  # Can evaluate without knowing slide type
     category="visual"
 )
+
+# Whitelist of abbreviations that should be ignored in model's output
+ABBREVIATIONS_WHITELIST: set[str] = {
+    'itmo', 'vitmo', 'json', 'phd', 'ai'
+}

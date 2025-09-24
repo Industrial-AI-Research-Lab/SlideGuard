@@ -4,11 +4,12 @@ Agents for slides evaluation and presentation analysis on multiple criteria
 
 import logging
 import re
-from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast, Optional
+from typing import AsyncIterable, Callable, Dict, List, Any, Tuple, Type, TypeVar, cast, Optional, Protocol, runtime_checkable
 
 from jsonschema import ValidationError
 from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
+from slideguard.criteria.slide_abbreviations import SlideAbbreviations, SlideAbbreviationsResult, ABBREVIATIONS_WHITELIST
 from slideguard.criteria.base import CriterionInfo
 from slideguard.schemes import AbstractSlideDeck, Criteria, DeckDescription, SlideDeckDescriptions, SlideDeckImages, SlideDescription, SlideDescriptionWithType, SlideType, Criteria
 from slideguard.schemes import DeckEvaluationResult
@@ -28,6 +29,11 @@ from pydantic import BaseModel
 import json
 import asyncio
 from langfuse import Langfuse
+
+
+@runtime_checkable
+class HasEvaluationResults(Protocol):
+    evaluation_results: List[Any]
 
 
 class FallbackResult(BaseModel):
@@ -268,6 +274,46 @@ class SlideGuardEvaluator:
 
         return agent
     
+    def _criterion_applies(self, info: CriterionInfo, slide_types: List[str] | None) -> bool:
+        targets = getattr(info, 'applicable_slide_types', None)
+        if not targets:
+            return True
+        target_values = set(targets)
+        for st in (slide_types or []):
+            if st in target_values:
+                return True
+        return False
+
+    def _sort_by_severity(self, obj: HasEvaluationResults) -> HasEvaluationResults:
+        def _severity_value(v: Any) -> int:
+            return int(getattr(v, 'severity', 1))
+        try:
+            items = sorted(getattr(obj, 'evaluation_results', []), key=_severity_value, reverse=True)
+            setattr(obj, 'evaluation_results', items)
+        except Exception:
+            pass
+        return obj
+
+    def _postprocess_result(self, criteria: Criteria, obj: BaseModel) -> BaseModel:
+        try:
+            if criteria == Criteria.slide_abbreviations and isinstance(obj, SlideAbbreviations):
+                filtered: List[SlideAbbreviationsResult] = []
+                wl = ABBREVIATIONS_WHITELIST
+                for item in obj.evaluation_results:
+                    try:
+                        token = str(getattr(item, 'evaluation_element', '')).strip().lower().replace('.', '')
+                        if token and token not in wl:
+                            filtered.append(item)
+                    except Exception:
+                        filtered.append(item)
+                obj.evaluation_results = filtered
+            if isinstance(obj, HasEvaluationResults):
+                obj = cast(HasEvaluationResults, obj)
+                obj = self._sort_by_severity(obj)
+        except Exception:
+            pass
+        return obj
+
     def create_crew(self, criteria: CriterionInfo) -> Crew:
         agent = self.create_agent(criteria)
         task = Task(
@@ -439,23 +485,68 @@ class SlideGuardEvaluator:
         Returns:
             List of SlideEvaluationResult matching the input order.
         """
+        selected = set(criterias or SLIDE_CRITERIA_INFO.keys())
+        service_criteria = {c for c in SLIDE_CRITERIA_INFO if c.is_service_criteria()}
+        selected |= service_criteria
 
-        infos = self._get_slide_criterias_info(criterias)
+        infos = self._get_slide_criterias_info(list(selected))
+        service_infos = [i for i in infos if i.criteria.is_service_criteria()]
+        other_infos = sorted((i for i in infos if not i.criteria.is_service_criteria()), key=lambda x: getattr(x, 'priority', 100))
 
-        running_crews = [self._run_crew(info, slides) for info in infos]
-        results = await asyncio.gather(*running_crews)
+        crit2result: Dict[Criteria, List[BaseModel]] = {}
 
-        crit2result = {info.criteria: result for info, result in zip(infos, results)}
+        if service_infos:
+            service_runs = [self._run_crew(i, slides) for i in service_infos]
+            service_res = await asyncio.gather(*service_runs)
+            for info, res in zip(service_infos, service_res):
+                crit2result[info.criteria] = res
+
+        slide_types_per_idx: List[List[str]] = []
+        for i in range(len(slides.slides)):
+            if Criteria.slide_type in crit2result and i < len(crit2result[Criteria.slide_type]):
+                st_obj = cast(SlideType, crit2result[Criteria.slide_type][i])
+                slide_types_per_idx.append(list(getattr(st_obj, 'slide_type', []) or []))
+            else:
+                slide_types_per_idx.append([])
+
+        subsets: List[Tuple[CriterionInfo, List[int], SlideDeckImages]] = []
+        for info in other_infos:
+            if getattr(info, 'applicable_slide_types', None) or getattr(info, 'requires_slide_type', False):
+                eligible = [idx for idx, types in enumerate(slide_types_per_idx) if self._criterion_applies(info, types)]
+                if not eligible:
+                    continue
+                subset = SlideDeckImages(
+                    slide_deck_path=slides.slide_deck_path,
+                    png_dir=slides.png_dir,
+                    slides=[slides.slides[i] for i in eligible]
+                )
+                subsets.append((info, eligible, subset))
+            else:
+                eligible = list(range(len(slides.slides)))
+                subsets.append((info, eligible, slides))
+
+        if subsets:
+            runs = [self._run_crew(info, subset) for info, _, subset in subsets]
+            results = await asyncio.gather(*runs)
+            for (info, eligible, _), subset_results in zip(subsets, results):
+                if len(eligible) == len(slides.slides):
+                    crit2result[info.criteria] = [self._postprocess_result(info.criteria, r) for r in subset_results]
+                else:
+                    merged: List[BaseModel] = [None] * len(slides.slides)
+                    for j, idx in enumerate(eligible):
+                        merged[idx] = self._postprocess_result(info.criteria, subset_results[j])
+                    crit2result[info.criteria] = merged
 
         # what if some computations failed
         slide_evaluation_results = []
+        all_infos = service_infos + other_infos
         for i, slide in enumerate(slides.slides):
             try:
                 # Safely get slide_type and slide_description with null checks
                 slide_type = None
                 slide_description = None
                 
-                if Criteria.slide_type in criterias and Criteria.slide_type in crit2result:
+                if Criteria.slide_type in selected and Criteria.slide_type in crit2result:
                     slide_type_result = crit2result[Criteria.slide_type]
                     if slide_type_result and i < len(slide_type_result) and slide_type_result[i] is not None:
                         slide_type = cast(SlideType, slide_type_result[i])
@@ -463,7 +554,7 @@ class SlideGuardEvaluator:
                         # Use fallback if slide_type evaluation failed
                         slide_type = FallbackSlideType()
                 
-                if Criteria.slide_description in criterias and Criteria.slide_description in crit2result:
+                if Criteria.slide_description in selected and Criteria.slide_description in crit2result:
                     slide_desc_result = crit2result[Criteria.slide_description]
                     if slide_desc_result and i < len(slide_desc_result) and slide_desc_result[i] is not None:
                         slide_description = cast(SlideDescription, slide_desc_result[i])
@@ -473,7 +564,7 @@ class SlideGuardEvaluator:
                 
                 # Safely build evaluations dictionary
                 evaluations = {}
-                for info in infos:
+                for info in all_infos:
                     if not info.criteria.is_service_criteria() and info.criteria in crit2result:
                         result_list = crit2result[info.criteria]
                         if result_list and i < len(result_list) and result_list[i] is not None:
@@ -517,7 +608,7 @@ class SlideGuardEvaluator:
         evaluations = {}
         for info, result in zip(infos, results):
             if result and len(result) == 1 and result[0] is not None:
-                evaluations[info.criteria] = result[0]
+                evaluations[info.criteria] = self._postprocess_result(info.criteria, result[0])
             else:
                 logger.warning(f"Deck evaluation failed for criteria {info.criteria.value}, using fallback")
                 evaluations[info.criteria] = FallbackResult()
