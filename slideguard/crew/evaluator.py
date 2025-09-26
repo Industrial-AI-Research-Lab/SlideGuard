@@ -22,8 +22,6 @@ from slideguard.utils.file_manager import FileManager
 from slideguard.utils.cache_manager import CacheManager
 
 from textwrap import dedent
-from statistics import mean
-from collections import Counter, defaultdict
 from crewai import Agent, Task, Crew, CrewOutput, TaskOutput
 from pydantic import BaseModel
 import json
@@ -203,23 +201,11 @@ class SlideGuardEvaluator:
                 return True, result.pydantic
             # Fallback: try to coerce raw/JSON into the model yourself
             try:
-                data = None
-                
-                if result.json_dict:
-                    data = result.json_dict
-                else:
-                    raw_content = result.raw
-                    if raw_content:
-                        json_content = self._extract_md_json(raw_content)
-                        data = json.loads(json_content)
-                
-                if data is None:
-                    return False, "No valid data found in result"
-                
-                cleaned_data = self._clean_evaluation_data(data)
-                obj = class_model.model_validate(cleaned_data)
-                return True, obj
-            except (ValidationError, json.JSONDecodeError) as e:
+                coerced = self._coerce_task_output(result, class_model)
+                if coerced is not None:
+                    return True, coerced
+                return False, "No valid data found in result"
+            except Exception as e:
                 return False, f"Invalid output: {e}"
             
         return func
@@ -247,16 +233,50 @@ class SlideGuardEvaluator:
                 
                 # Remove null bytes and normalize line endings
                 data = data.replace('\x00', '').replace('\r', '\n')
-                
-                # Handle potential quotation mark issues
-                data = data.replace('"', '"').replace('"', '"')  # Smart quotes to regular quotes
-                data = data.replace(''', "'").replace(''', "'")  # Smart apostrophes to regular apostrophes
-                
+                # normalize quotes
+                data = data.replace('\u201c', '"').replace('\u201d', '"')
+                data = data.replace('\u2018', "'").replace('\u2019', "'")
+                # normalize backslashes
+                data = re.sub(r"\\+\(", "(", data)
+                data = re.sub(r"\\+\)", ")", data)
+                data = re.sub(r"\\+\[", "[", data)
+                data = re.sub(r"\\+\]", "]", data)
+                # remove stray backslashes not forming valid JSON escapes
+                data = re.sub(r"\\(?![\"\\/bfnrtu])", "", data)
                 return data
             except Exception:
                 return data
         else:
             return data
+
+    def _coerce_task_output(self, result: TaskOutput, class_model: Type[BaseModel]) -> Optional[BaseModel]:
+        try:
+            if result.json_dict:
+                obj = class_model.model_validate(self._clean_evaluation_data(result.json_dict))
+                return obj
+
+            raw = (result.raw or "").strip()
+            if not raw:
+                return None
+
+            text = self._extract_md_json(raw)
+            candidates: List[str] = [text]
+            first, last = text.find('{'), text.rfind('}')
+            if 0 <= first < last:
+                candidates.append(text[first:last + 1])
+
+            for cand in candidates:
+                cleaned_str = cast(str, self._clean_evaluation_data(cand))
+                for attempt in (cleaned_str, cleaned_str.replace('\n', ' ')):
+                    try:
+                        data_obj = json.loads(attempt)
+                        obj = class_model.model_validate(self._clean_evaluation_data(data_obj))
+                        return obj
+                    except Exception:
+                        pass
+        except Exception:
+            return None
+        return None
     
     def create_agent(self, criteria: CriterionInfo) -> Agent:
         agent = Agent(
@@ -269,7 +289,8 @@ class SlideGuardEvaluator:
             tools=self.tools,
             verbose=True,
             allow_delegation=False,
-            llm=self.llm
+            llm=self.llm,
+            max_retry_limit=1
         )
 
         return agent
@@ -323,7 +344,7 @@ class SlideGuardEvaluator:
             # output_json=criteria.pydantic,
             output_pydantic=criteria.pydantic,
             guardrail=self._make_pydantic_guardrail(criteria.pydantic),
-            max_retries=self.max_retries,
+            max_retries=1,
             expected_output="JSON in the described format."
         )
         
@@ -381,8 +402,11 @@ class SlideGuardEvaluator:
         crew_copies = [crew.copy() for _ in inputs]
 
         async def run_crew(crew, input_data, index):
-            result = await crew.kickoff_async(inputs=input_data)
-            return index, result
+            try:
+                result = await crew.kickoff_async(inputs=input_data)
+                return index, result
+            except Exception as e:
+                return index, e
 
         tasks = [
             asyncio.create_task(run_crew(crew_copies[i], inputs[i], i))
@@ -391,7 +415,12 @@ class SlideGuardEvaluator:
 
         # Process results as they complete, maintaining original order
         for coro in asyncio.as_completed(tasks):
-            index, result = await coro
+            try:
+                index, result = await coro
+            except Exception as e:
+                # Should not happen due to try in run_crew, but guard anyway
+                index = 0
+                result = e
             yield index, result
     
     async def _run_crew(self, 
@@ -401,36 +430,22 @@ class SlideGuardEvaluator:
 
         async def compute(inputs: List[Tuple[int, T]]) -> AsyncIterable[Tuple[int, BaseModel]]:
             ins = [in_.model_dump() for _, in_ in inputs]
-            try:
-                async for i, result in self._kickoff_for_each_async(crew, ins):
-                    idx, _ = inputs[i]
-                    if result.pydantic is None:
-                        # Handle case where pydantic parsing failed
-                        logger.warning(f"Pydantic parsing failed for slide {idx}, criteria {criteria_info.criteria.value}")
-                        # Create a default/fallback result
-                        fallback_result = self._create_fallback_result(criteria_info.pydantic)
-                        yield idx, fallback_result
-                    else:
+            async for i, result in self._kickoff_for_each_async(crew, ins):
+                idx, _ = inputs[i]
+                try:
+                    if isinstance(result, Exception) or result is None:
+                        yield idx, self._create_fallback_result(criteria_info.pydantic)
+                        continue
+                    if result.pydantic is not None:
                         yield idx, result.pydantic
-            except AttributeError as e:
-                if "function_calling_llm" in str(e):
-                    logger.error(f"LLM configuration error for criteria {criteria_info.criteria.value}: {e}")
-                    # Return fallback results for all inputs due to LLM config issue
-                    for idx, _ in inputs:
-                        fallback_result = self._create_fallback_result(criteria_info.pydantic)
-                        yield idx, fallback_result
-                else:
-                    logger.error(f"Attribute error in crew execution for criteria {criteria_info.criteria.value}: {e}")
-                    # Return fallback results for all inputs
-                    for idx, _ in inputs:
-                        fallback_result = self._create_fallback_result(criteria_info.pydantic)
-                        yield idx, fallback_result
-            except Exception as e:
-                logger.error(f"Error in crew execution for criteria {criteria_info.criteria.value}: {e}")
-                # Return fallback results for all inputs
-                for idx, _ in inputs:
-                    fallback_result = self._create_fallback_result(criteria_info.pydantic)
-                    yield idx, fallback_result
+                        continue
+                    coerced = self._coerce_task_output(result, criteria_info.pydantic)
+                    if coerced is not None:
+                        yield idx, coerced
+                    else:
+                        yield idx, self._create_fallback_result(criteria_info.pydantic)
+                except Exception:
+                    yield idx, self._create_fallback_result(criteria_info.pydantic)
 
         try:
             entities = await self.cache_manager.compute_with_cache(
@@ -485,11 +500,7 @@ class SlideGuardEvaluator:
         Returns:
             List of SlideEvaluationResult matching the input order.
         """
-        selected = set(criterias or SLIDE_CRITERIA_INFO.keys())
-        service_criteria = {c for c in SLIDE_CRITERIA_INFO if c.is_service_criteria()}
-        selected |= service_criteria
-
-        infos = self._get_slide_criterias_info(list(selected))
+        infos = self._get_slide_criterias_info(criterias)
         service_infos = [i for i in infos if i.criteria.is_service_criteria()]
         other_infos = sorted((i for i in infos if not i.criteria.is_service_criteria()), key=lambda x: getattr(x, 'priority', 100))
 
@@ -540,35 +551,35 @@ class SlideGuardEvaluator:
         # what if some computations failed
         slide_evaluation_results = []
         all_infos = service_infos + other_infos
+
+        def get_result(crit: Criteria, idx: int) -> Optional[BaseModel]:
+            lst = crit2result.get(crit)
+            if not lst or idx >= len(lst):
+                return None
+            return lst[idx]
+
         for i, slide in enumerate(slides.slides):
             try:
                 # Safely get slide_type and slide_description with null checks
                 slide_type = None
                 slide_description = None
                 
-                if Criteria.slide_type in selected and Criteria.slide_type in crit2result:
-                    slide_type_result = crit2result[Criteria.slide_type]
-                    if slide_type_result and i < len(slide_type_result) and slide_type_result[i] is not None:
-                        slide_type = cast(SlideType, slide_type_result[i])
-                    else:
-                        # Use fallback if slide_type evaluation failed
-                        slide_type = FallbackSlideType()
+                if Criteria.slide_type in criterias:
+                    st = get_result(Criteria.slide_type, i)
+                    slide_type = cast(SlideType, st) if st else FallbackSlideType()
                 
-                if Criteria.slide_description in selected and Criteria.slide_description in crit2result:
-                    slide_desc_result = crit2result[Criteria.slide_description]
-                    if slide_desc_result and i < len(slide_desc_result) and slide_desc_result[i] is not None:
-                        slide_description = cast(SlideDescription, slide_desc_result[i])
-                    else:
-                        # Use fallback if slide_description evaluation failed
-                        slide_description = FallbackSlideDescription()
+                if Criteria.slide_description in criterias:
+                    sd = get_result(Criteria.slide_description, i)
+                    slide_description = cast(SlideDescription, sd) if sd else FallbackSlideDescription()
                 
                 # Safely build evaluations dictionary
                 evaluations = {}
                 for info in all_infos:
-                    if not info.criteria.is_service_criteria() and info.criteria in crit2result:
-                        result_list = crit2result[info.criteria]
-                        if result_list and i < len(result_list) and result_list[i] is not None:
-                            evaluations[info.criteria] = result_list[i]
+                    if info.criteria.is_service_criteria():
+                        continue
+                    val = get_result(info.criteria, i)
+                    if val is not None:
+                        evaluations[info.criteria] = val
                 
                 slide_evaluation_results.append(
                     SlideEvaluationResult(
@@ -677,7 +688,6 @@ class SlideGuardEvaluator:
                                      slide_criterias: List[Criteria] = None,
                                      deck_criterias: List[Criteria] = None) -> FullEvaluation:
         """Main method to evaluate an entire presentation"""
-
         if deck_criterias:
             slide_criterias = list(set({Criteria.slide_type, Criteria.slide_description, *slide_criterias}))
         

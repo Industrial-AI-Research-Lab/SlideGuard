@@ -431,27 +431,27 @@ def ui_run(
     ),
     share: bool = typer.Option(
         False,
-        "--share",
+        "--share/--no-share",
         help="Share the UI: creates a public link via SSH tunnel",
     ),
     debug: bool = typer.Option(
         False,
-        "--debug",
+        "--debug/--no-debug",
         help="Enable Gradio debug mode: if True, blocks main thread",
     ),
     show_error: bool = typer.Option(
         True,
-        "--show-error",
-        help="Show error messages in UI",
+        "--show-error/--hide-error",
+        help="Show/hide error messages in UI",
     ),
     quiet: bool = typer.Option(
         True,
-        "--quiet",
+        "--quiet/--no-quiet",
         help="Quiet mode: if True suppresses print statements",
     ),
     show_api: bool = typer.Option(
         False,
-        "--show-api",
+        "--show-api/--hide-api",
         help="Show Gradio API docs in UI",
     ),
     theme: str = typer.Option(
@@ -461,8 +461,13 @@ def ui_run(
     ),
     auth: bool = typer.Option(
         True,
-        "--auth",
+        "--auth/--no-auth",
         help="Enable authentication",
+    ),
+    use_langfuse: bool = typer.Option(
+        False,
+        "--use-langfuse",
+        help="Use Langfuse for observability",
     ),
 ) -> None:
     """Run the Gradio UI"""
@@ -474,7 +479,7 @@ def ui_run(
     typer.echo(f"Open: http://{host}:{port}?__theme={theme}")
     typer.echo()
     try:
-        app = create_app(auth=auth)
+        app = create_app(auth=auth, use_langfuse=use_langfuse)
         auth_func = verify_user_db if auth else None
         app.launch(
             server_name=host,
