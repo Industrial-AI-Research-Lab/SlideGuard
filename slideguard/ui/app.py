@@ -29,7 +29,7 @@ from slideguard.ui.auth import verify_user_db, get_role, register_user, Role, li
 class SlideGuardUI:
     """Main UI class for SlideGuard application."""
     
-    def __init__(self):
+    def __init__(self, use_langfuse: bool = False):
         self.evaluator = None
         self.current_evaluation = None
         self.slide_images = []
@@ -43,7 +43,7 @@ class SlideGuardUI:
         
         # Load configuration
         self.config = load_config()
-        self.langfuse_client = load_langfuse_client(False)
+        self.langfuse_client = load_langfuse_client(use_langfuse)
         
         # Initialize evaluator and report generator
         self._initialize_evaluator()
@@ -899,13 +899,13 @@ class SlideGuardUI:
         return interface
 
 
-def create_app(auth:bool = True):
+def create_app(auth:bool = True, use_langfuse: bool = False):
     """Create and return the Gradio app."""
     if auth:
         from slideguard.ui.auth import init_db
         init_db()
 
-    ui = SlideGuardUI()
+    ui = SlideGuardUI(use_langfuse=use_langfuse)
     return ui.create_ui()
 
 
