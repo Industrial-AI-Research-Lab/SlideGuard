@@ -17,8 +17,7 @@ Describe the slide in maximum detail according to the following plan:
 - Give ONLY detailed description — without analysis and conclusions.
 - Structure the answer clearly and completely.
 
-Write the result in the following JSON format:
-{schema_format}
+Return the result in JSON as instructed by the format instructions.
 """
 
 SLIDE_HELPER_DESCRIPTION = CriterionInfo(

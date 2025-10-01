@@ -248,6 +248,11 @@ def eval_run(
         "--use-langfuse",
         help="Use Langfuse for observability",
     ),
+    raise_on_error: bool = typer.Option(
+        False,
+        "--raise-on-error",
+        help="Raise an exception if an error occurs",
+    ),
 ) -> None:
     """Start an evaluation for the given presentation."""
     typer.echo(f"Loading settings...")
@@ -285,6 +290,8 @@ def eval_run(
         typer.echo(str(e))
         raise typer.Exit(code=2)
     except Exception as e:
+        if raise_on_error:
+            raise e
         typer.echo(f"Evaluation failed: {e}")
         raise typer.Exit(code=3)
 
@@ -330,6 +337,11 @@ def eval_multirun(
         False,
         "--use-langfuse",
         help="Use Langfuse for observability",
+    ),  
+    raise_on_error: bool = typer.Option(
+        False,
+        "--raise-on-error",
+        help="Raise an exception if an error occurs",
     ),
 ) -> None:
     """Start evaluations for all PDF files in the given folder."""
@@ -399,6 +411,8 @@ def eval_multirun(
     try:
         results = asyncio.run(_run_multirun())
     except Exception as e:
+        if raise_on_error:
+            raise e
         typer.echo(f"Multirun failed: {e}")
         raise typer.Exit(code=4)
     

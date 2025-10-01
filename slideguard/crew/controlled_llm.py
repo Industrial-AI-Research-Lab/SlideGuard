@@ -1,220 +1,190 @@
 """
-Main evaluator for slide deck analysis using CrewAI agents
+LangChain-oriented LLM wrapper with error-aware structured output retries and image support
 """
 
 import base64
-import logging
+import json
 import re
-from threading import Semaphore
-from typing import List, Literal, Optional, Dict, Any, Type, Union
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Type
 
-from slideguard.utils.config import SlideGuardConfig
-from crewai.llm import LLM
 from pydantic import BaseModel
 
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompt_values import ChatPromptValue, PromptValue
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
+from langchain.output_parsers import RetryWithErrorOutputParser
+from langchain_openai.chat_models.base import ChatOpenAI
 
-logger = logging.getLogger(__name__)
+from slideguard.utils.config import SlideGuardConfig
 
 
-def encode_image_to_base64(image_path):
+def encode_image_to_base64(image_path: str) -> str:
     if image_path.startswith("data:") or image_path.startswith("http") or image_path.startswith("https"):
         return image_path
-
-    """Convert local image to base64 string"""
     with open(image_path, "rb") as image_file:
-        image_str = base64.b64encode(image_file.read()).decode('utf-8')
-    
+        image_str = base64.b64encode(image_file.read()).decode("utf-8")
     return f"data:image/png;base64,{image_str}"
 
-class ControlledLLM(LLM):
+
+def _ensure_image_messages(pv: PromptValue) -> PromptValue:
+    if not isinstance(pv, ChatPromptValue):
+        return pv
+    msgs: List[BaseMessage] = []
+    for m in pv.messages:
+        if isinstance(m, HumanMessage) and isinstance(m.content, str):
+            text = m.content
+            match = re.search(r"```image\s+(.*?)\s*```", text, re.DOTALL)
+            if match:
+                path = match.group(1).strip()
+                clean_text = re.sub(r"```image[\s\S]*?```", "", text)
+                image_url = encode_image_to_base64(path)
+                msgs.append(
+                    HumanMessage(
+                        content=[
+                            {"type": "text", "text": clean_text},
+                            {"type": "image_url", "image_url": {"url": image_url}},
+                        ]
+                    )
+                )
+                continue
+        msgs.append(m)
+    return ChatPromptValue(messages=msgs)
+
+
+def default_text_cleaner(s: str) -> str:
+    try:
+        s = s.replace("\x00", "").replace("\r", "\n")
+        s = s.replace("\u201c", '"').replace("\u201d", '"')
+        s = s.replace("\u2018", "'").replace("\u2019", "'")
+        s = re.sub(r"\\+\(", "(", s)
+        s = re.sub(r"\\+\)", ")", s)
+        s = re.sub(r"\\+\[", "[", s)
+        s = re.sub(r"\\+\]", "]", s)
+        s = re.sub(r"\\(?![\"\\/bfnrtu])", "", s)
+        return s
+    except Exception:
+        return s
+
+
+@dataclass
+class ControlledOutput:
+    raw: str
+    json: Optional[dict]
+    pydantic: Optional[BaseModel]
+
+
+class AppLanguage(str, Enum):
+    RU = "ru"
+    EN = "en"
+
+
+def get_language_instructions(language: AppLanguage) -> str: # can be set based on the presentation language
+    if language == AppLanguage.RU:
+        return "Заполняй значения в JSON схеме ТОЛЬКО на русском языке."
+    else:
+        return "Fill values of JSON schema ONLY in English."
+
+class ControlledLLM:
     def __init__(
         self,
-        model: str,
-        timeout: Optional[Union[float, int]] = None,
-        temperature: Optional[float] = None,
-        top_p: Optional[float] = None,
-        n: Optional[int] = None,
-        stop: Optional[Union[str, List[str]]] = None,
-        max_completion_tokens: Optional[int] = None,
-        max_tokens: Optional[int] = None,
-        presence_penalty: Optional[float] = None,
-        frequency_penalty: Optional[float] = None,
-        logit_bias: Optional[Dict[int, float]] = None,
-        response_format: Optional[Type[BaseModel]] = None,
-        seed: Optional[int] = None,
-        logprobs: Optional[int] = None,
-        top_logprobs: Optional[int] = None,
-        base_url: Optional[str] = None,
-        api_base: Optional[str] = None,
-        api_version: Optional[str] = None,
-        api_key: Optional[str] = None,
-        callbacks: List[Any] = [],
-        reasoning_effort: Optional[Literal["none", "low", "medium", "high"]] = None,
-        stream: bool = False,
-        max_concurrency: Optional[int] = None,
-        **kwargs,
-    ):
-        super().__init__(
-            model=model,
-            timeout=timeout,
-            temperature=temperature,
-            top_p=top_p,
-            n=n,
-            stop=stop,
-            max_completion_tokens=max_completion_tokens,
-            max_tokens=max_tokens,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
-            logit_bias=logit_bias,
-            response_format=response_format,
-            seed=seed,
-            logprobs=logprobs,
-            top_logprobs=top_logprobs,
-            base_url=base_url,
-            api_base=api_base,
-            api_version=api_version,
-            api_key=api_key,
-            callbacks=callbacks,
-            reasoning_effort=reasoning_effort,
-            stream=stream,
-            **kwargs
+        chat_model: Runnable[[PromptValue], ControlledOutput],
+        max_retries: int = 3,
+        retry_temperature: float = 0.01,
+        preprocessors: Optional[List[Callable[[str], str]]] = None,
+    ) -> None:
+        self.chat_model = chat_model
+        self.max_retries = max_retries
+        self.retry_temperature = retry_temperature
+        self.preprocessors = preprocessors or [default_text_cleaner]
+
+    def with_tools(self, tools: List[Any]) -> "ControlledLLM":
+        """Binds tools to the LLM"""
+        if not tools:
+            return self
+        if hasattr(self.chat_model, "bind_tools"):
+            bound = self.chat_model.bind_tools(tools)
+        else:
+            bound = self.chat_model.bind(tools=tools)
+        return ControlledLLM(
+            chat_model=bound,
+            max_retries=self.max_retries,
+            retry_temperature=self.retry_temperature,
+            preprocessors=self.preprocessors,
         )
-        self.max_concurrency = max_concurrency
-        self._semaphore = Semaphore(max_concurrency) if max_concurrency and max_concurrency > 0 else None
-        
-        # Fix for CrewAI compatibility - ensure function_calling_llm is properly set
-        # Initialize the private attribute directly to avoid circular dependency
-        self._function_calling_llm = self
-    
-    @property
-    def function_calling_llm(self):
-        """Ensure function_calling_llm is always available for CrewAI compatibility."""
-        if not hasattr(self, '_function_calling_llm') or self._function_calling_llm is None:
-            self._function_calling_llm = self
-        return self._function_calling_llm
-    
-    @function_calling_llm.setter
-    def function_calling_llm(self, value):
-        """Set the function_calling_llm attribute."""
-        self._function_calling_llm = value
 
-    def call(
-        self,
-        messages: Union[str, List[Dict[str, str]]],
-        tools: Optional[List[dict]] = None,
-        callbacks: Optional[List[Any]] = None,
-        available_functions: Optional[Dict[str, Any]] = None,
-        from_task: Optional[Any] = None,
-        from_agent: Optional[Any] = None,
-    ) -> Union[str, Any]:
-        def process_message_with_image(message: Dict[str, str]) -> str:
-            if not(message.get("role", None) == "user" and "content" in message):
-                return message
+    def with_structured_output_retry(self, output_model: Type[BaseModel]) -> Runnable:
+        """Runs prompt through the LLM and tries to parse the output using the output model.
+
+        Appends parser.get_format_instructions() to the prompt
+        """
+        parser = PydanticOutputParser(pydantic_object=output_model)
+        retry_llm = self.chat_model.bind(temperature=self.retry_temperature)
+        retry_parser = RetryWithErrorOutputParser.from_llm(parser=parser, llm=retry_llm)
+
+        async def _run(pv: PromptValue, config: Optional[RunnableConfig] = None) -> Dict[str, Any]:
+            prompt_value = _ensure_image_messages(pv)
+            try:
+                fmt = parser.get_format_instructions()
+                lang_instructions = get_language_instructions(AppLanguage.EN)
+                if isinstance(prompt_value, ChatPromptValue):
+                    extended_messages = list(prompt_value.messages) + [HumanMessage(content=f"{fmt}\n\n{lang_instructions}")]
+                    prompt_value = ChatPromptValue(messages=extended_messages)
+            except Exception:
+                pass
+
+            msg: BaseMessage = await self.chat_model.ainvoke(prompt_value, config)
+            text = getattr(msg, "content", str(msg))
+
+            parsed_obj: Optional[BaseModel] = None
+            raw_out: str = text
+            current_text: str = text
             
-            text = message["content"]
-            
-            m = re.search(r"```image\s+(.*?)\s*```", text, re.DOTALL)
-            content = m.group(1).strip() if m else None
+            # custom parse-retry loop
+            attempts = max(1, self.max_retries + 1)
+            for i in range(attempts):
+                cleaned = current_text
+                for fn in self.preprocessors:
+                    cleaned = fn(cleaned)
+                try:
+                    parsed_obj = await parser.aparse(cleaned)
+                    raw_out = cleaned
+                    break
+                except Exception as e:
+                    if i == attempts - 1:
+                        break
+                    try:
+                        parsed_obj = await retry_parser.aparse_with_prompt(cleaned, prompt_value)
+                        raw_out = json.dumps(parsed_obj.model_dump())
+                        break
+                    except Exception:
+                        current_text = cleaned
+                        continue
 
-            if content is None:
-                return message
-            
-            clean_text = re.sub(r"```image[\s\S]*?```", "", text)
-            
-            image_url = encode_image_to_base64(content)
-            
-            user_message = {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": clean_text
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_url
-                        }
-                    }
-                ]
-            }
+            if parsed_obj is None:
+                try:
+                    data = json.loads(default_text_cleaner(current_text))
+                    parsed_obj = output_model.model_validate(data)
+                    raw_out = current_text
+                except Exception:
+                    parsed_obj = None
+                    raw_out = current_text
 
-            return user_message
+            return ControlledOutput(raw=raw_out, json=parsed_obj.model_dump() if parsed_obj else None, pydantic=parsed_obj)
 
-        messages = [process_message_with_image(m) for m in messages]
+        return RunnableLambda(_run)
 
-        if self._semaphore:
-            with self._semaphore:
-                return super().call(
-                    messages=messages,  
-                    tools=tools,
-                    callbacks=callbacks,
-                    available_functions=available_functions,
-                    from_task=from_task,
-                    from_agent=from_agent
-                )
-        
-        return super().call(
-            messages=messages, 
-            tools=tools, 
-            callbacks=callbacks, 
-            available_functions=available_functions, 
-            from_task=from_task, 
-            from_agent=from_agent
-        )
-    
-    def _prepare_completion_params(
-        self,
-        messages: Union[str, List[Dict[str, str]]],
-        tools: Optional[List[dict]] = None,
-    ) -> Dict[str, Any]:
-        params = super()._prepare_completion_params(messages, tools)
-        
-        if "max_tokens" in params:
-            max_tokens = params["max_tokens"]
-            del params["max_tokens"]
-            params["max_completion_tokens"] = max_tokens
-        
-        return params
 
-def create_llm_from_config(config: SlideGuardConfig) -> ControlledLLM | None:
-    """
-    Create LLM instance from environment variables for CrewAI.
-    
-    Environment variables:
-    - SLIDEGUARD_LLM_API_KEY: API key for the LLM service
-    - SLIDEGUARD_LLM_API_BASE: Base URL for the LLM API (e.g., http://localhost:8000/v1)
-    - SLIDEGUARD_LLM_MODEL: Model name (defaults to '/model')
-    
-    Returns:
-        LLM instance compatible with CrewAI or None if environment variables are not set
-    """
+def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
     if not config.is_configured():
-        logger.warning("LLM environment variables not set")
-        logger.warning("Set SLIDEGUARD_LLM_API_KEY and SLIDEGUARD_LLM_API_BASE to enable full evaluation")
-        return None
-    
-    try:
-        temperature = 0.1
-        # temperature = 1
-        
-        # Configure CrewAI to use LiteLLM with explicit provider
-        # and wrap with a semaphore for bounded concurrency
-        llm = ControlledLLM(
-            model=f"openai/{config.model}",  # Tell LiteLLM this is an OpenAI-compatible model
-            api_key=config.api_key,
-            base_url=config.api_base,
-            temperature=temperature,
-            max_tokens=4000,
-            max_concurrency=config.max_concurrency
-        )
-        
-        return llm
-        
-    except ImportError:
-        logger.warning("langchain-openai package not installed. Install with: pip install langchain-openai")
-        return None
-    except Exception as e:
-        logger.error(f"Error creating LLM instance: {e}")
         return None
 
+    llm_config = config.get_llm_config()
+    chat = ChatOpenAI(
+        **llm_config,
+        temperature=0.01,
+        max_tokens=5000
+    )
+    return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01)

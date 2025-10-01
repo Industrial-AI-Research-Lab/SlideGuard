@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
+from slideguard.criteria.slide_types import SlideType
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide.
@@ -32,8 +33,7 @@ Your answer should have two sections: «Thought» and «Answer».
 First, in the «Thought:» section, write down your reasoning on the task strictly in accordance with the plan of the solution of the task. Perform all the steps of the plan of the solution of the task and describe your results.
 Then, in the «Answer:» section, write the final answer for the user in Russian, based on your reasoning, namely list all the problems you found, if there are any.
 
-Write the final answer in the following JSON format:
-{schema_format}
+Return the final answer strictly following the format instructions.
 """
 
 class SlideOrphographyCorrectnessResult(BaseAttributes):
@@ -44,6 +44,8 @@ class SlideOrphographyCorrectness(BaseModel):
     evaluation_results: list[SlideOrphographyCorrectnessResult] = Field(description="List of identified content issues")
     score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
 
+exclude_st = [SlideType.END_SLIDE, SlideType.TITLE_SLIDE]
+
 SLIDE_ORPHOGRAPHY_CORRECTNESS = CriterionInfo(
     criteria=Criteria.slide_orphography_correctness,
     type="slide",
@@ -51,7 +53,7 @@ SLIDE_ORPHOGRAPHY_CORRECTNESS = CriterionInfo(
     agent_prompt_template=prompt,
     task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideOrphographyCorrectness,
-    applicable_slide_types=None,
+    applicable_slide_types=[st.value for st in SlideType if st not in exclude_st],
     priority=4,
     requires_slide_type=False,
     category="visual"

@@ -96,13 +96,11 @@ class FullEvaluation(BaseModel):
     tldr: Optional[str] = None
 
 
-class FinalSummaryOutput(BaseModel):
-    summary: str
-    tldr: str
-
-
 class SummaryOutput(BaseModel):
     summary: str
+
+class TLDROutput(BaseModel):
+    tldr: str
 
 
 class AbstractSlideDeck(ABC, BaseModel, Generic[T]):
@@ -138,28 +136,3 @@ class UIEvaluationResult:
     
     def __iter__(self): #method for unpacking as tuple in gradio
         return iter((self.deck_summary, self.first_slide_image, self.tldr_html, self.score_html, self.status_msg))
-
-
-class SummaryConfig(BaseModel):
-    context_severity_threshold: int = 2
-    severity_threshold: int = 3
-    max_problems: int = 10
-    max_strengths: int = 5
-    strength_min_avg_score: int = 4
-
-
-class NavigationSummary(BaseModel):
-    overview: Dict[str, Any]
-    problems: List[Dict[str, Any]]
-    strengths: List[Dict[str, Any]]
-
-
-class BasicSummaryPayload(BaseModel):
-    slide_evaluations: List[Dict[str, Any]]
-    deck_evaluations: Optional[Dict[str, Any]] = None
-
-
-class AdvancedSummaryPayload(BaseModel):
-    nav: NavigationSummary
-    slide_evaluations: List[Dict[str, Any]]
-    deck_evaluations: Optional[Dict[str, Any]] = None

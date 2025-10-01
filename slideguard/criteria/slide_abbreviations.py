@@ -22,8 +22,7 @@ Normal words and abbreviations from known words cannot be abbreviations.
 ## Response Format:
 Your answer should have two sections: Thought and Answer.
 First, in the 'Thought' section, write down your reasoning on the task STRICTLY following the plan of the solution and mark the individual stages of the solution. 
-Then, in the 'Answer' section, form the final answer in the following JSON format:
-{schema_format}
+Then, in the 'Answer' section, return the final answer strictly following the format instructions.
 """
 
 
@@ -53,5 +52,5 @@ SLIDE_ABBREVIATIONS = CriterionInfo(
 
 # Whitelist of abbreviations that should be ignored in model's output
 ABBREVIATIONS_WHITELIST: set[str] = {
-    'itmo', 'vitmo', 'json', 'phd', 'ai'
+    'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag'
 }

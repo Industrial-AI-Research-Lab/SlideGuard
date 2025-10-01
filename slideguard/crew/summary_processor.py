@@ -6,13 +6,43 @@ import json
 from typing import Any, Dict, List, Optional
 from collections import Counter, defaultdict
 from statistics import mean
+from pydantic import BaseModel
 
 from slideguard.criteria import SLIDE_CRITERIA_INFO
 from slideguard.schemes import (
-    Criteria, SlideEvaluationResult, DeckEvaluationResult,
-    SummaryConfig, BasicSummaryPayload, AdvancedSummaryPayload,
-    NavigationSummary
+    Criteria, SlideEvaluationResult, DeckEvaluationResult
 )
+
+class SummaryConfig(BaseModel):
+    context_severity_threshold: int = 2
+    severity_threshold: int = 3
+    max_problems: int = 10
+    max_strengths: int = 5
+    strength_min_avg_score: int = 4
+
+
+class NavigationSummary(BaseModel):
+    overview: Dict[str, Any]
+    problems: List[Dict[str, Any]]
+    strengths: List[Dict[str, Any]]
+
+
+class BasicSummaryPayload(BaseModel):
+    slide_evaluations: List[Dict[str, Any]]
+    deck_evaluations: Optional[Dict[str, Any]] = None
+
+
+class AdvancedSummaryPayload(BaseModel):
+    nav: NavigationSummary
+    slide_evaluations: List[Dict[str, Any]]
+    deck_evaluations: Optional[Dict[str, Any]] = None
+
+
+SUMMARY_AGENT_BACKSTORY = """You are an expert at synthesizing complex evaluation data into clear, actionable insights.
+You take results from multiple specialized agents and create a coherent summary that
+highlights key findings, identifies priority areas for improvement, and provides
+an overall assessment score. Your summaries help presenters understand exactly
+what needs to be improved and why."""
 
 
 class SummaryProcessor:

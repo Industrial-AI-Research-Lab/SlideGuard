@@ -246,8 +246,7 @@ You always work with only one slide.
 You need to remember that slides can contain information of the following types and also belong to the corresponding sections:
 {slide_types_section}
 
-Write the answer in the following JSON format:
-{schema_format}
+Return the answer as JSON strictly following the format instructions.
 
 IMPORTANT! You cannot specify more than three types for one slide. But you can not specify any type if the slide does not belong to any of the listed types.
 

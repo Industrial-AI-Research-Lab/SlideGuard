@@ -10,8 +10,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from langfuse import Langfuse, get_client
-from openinference.instrumentation.crewai import CrewAIInstrumentor
-from openinference.instrumentation.litellm import LiteLLMInstrumentor
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +35,7 @@ class SlideGuardConfig:
         """Get LLM configuration dictionary"""
         return {
             'api_key': self.api_key,
-            'api_base': self.api_base,
+            'base_url': self.api_base, # in langchain-openai api_base is moved to model_kwargs, use base_url instead
             'model': self.model
         }
     
@@ -126,8 +124,5 @@ def load_langfuse_client(use_langfuse: bool) -> Langfuse | None:
         logger.info("Langfuse client is authenticated and ready!")
     else:
         logger.error("Langfuse Authentication failed. Please check your credentials and host.")
-
-    CrewAIInstrumentor().instrument(skip_dep_check=True)
-    LiteLLMInstrumentor().instrument()
 
     return langfuse_client
