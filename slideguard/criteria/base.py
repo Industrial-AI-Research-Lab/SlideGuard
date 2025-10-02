@@ -1,6 +1,5 @@
 import logging
 from pydantic import BaseModel, Field
-import json
 from typing import Literal, List, Optional, Type
 from textwrap import dedent
 
@@ -29,10 +28,7 @@ class CriterionInfo(BaseModel):
     @property
     def agent_prompt(self) -> str:
         # No schema insertion here; ControlledLLM appends format instructions itself
-        try:
-            return self.agent_prompt_template
-        except Exception:
-            return self.agent_prompt_template
+        return self.agent_prompt_template
     
     def to_runnable(self, llm: ControlledLLM) -> Runnable:
         prompt = ChatPromptTemplate.from_messages([

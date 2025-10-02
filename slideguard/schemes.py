@@ -65,8 +65,11 @@ class DeckDescription(Slideable):
 
     @staticmethod
     def from_slide_descriptions(slide_descriptions: List[SlideDescriptionWithType]) -> "DeckDescription":
-        descriptions = json.dumps([slide.model_dump() for slide in slide_descriptions], indent=4)
-        return DeckDescription(deck_description=descriptions)
+        normalized = [
+            {**slide.model_dump(), "slide_type": sorted(slide.slide_type)}
+            for slide in slide_descriptions
+        ] # canonicalize slide_type to be sorted for cache key
+        return DeckDescription(deck_description=json.dumps(normalized, sort_keys=True, separators=(",", ":"), indent=4))
 
     class Config:
         frozen = True

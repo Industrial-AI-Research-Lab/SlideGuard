@@ -23,6 +23,9 @@ class CacheManager(Generic[T, U], ABC):
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_hash_id(self, key: BaseModel | str ) -> str:
+        # NOTE: may still have cache misses:
+        # for slide criteria hashing by image bytes instead of the path may increase robustness
+        # for deck criteria can lead to cache misses if the slide descriptions are regenerated, otherwise should work fine
         try:
             if isinstance(key, BaseModel):
                 payload_dict = key.model_dump(mode="json")

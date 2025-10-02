@@ -5,6 +5,7 @@ LangChain-oriented LLM wrapper with error-aware structured output retries and im
 import base64
 import json
 import re
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Type
@@ -19,6 +20,8 @@ from langchain.output_parsers import RetryWithErrorOutputParser
 from langchain_openai.chat_models.base import ChatOpenAI
 
 from slideguard.utils.config import SlideGuardConfig
+
+logger = logging.getLogger(__name__)
 
 
 def encode_image_to_base64(image_path: str) -> str:
@@ -65,7 +68,8 @@ def default_text_cleaner(s: str) -> str:
         s = re.sub(r"\\+\]", "]", s)
         s = re.sub(r"\\(?![\"\\/bfnrtu])", "", s)
         return s
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to clean output: {s} - {e}", exc_info=True)
         return s
 
 
@@ -132,7 +136,8 @@ class ControlledLLM:
                 if isinstance(prompt_value, ChatPromptValue):
                     extended_messages = list(prompt_value.messages) + [HumanMessage(content=f"{fmt}\n\n{lang_instructions}")]
                     prompt_value = ChatPromptValue(messages=extended_messages)
-            except Exception:
+            except Exception as e:
+                logger.error(f"Failed to extend messages: {e}", exc_info=True)
                 pass
 
             msg: BaseMessage = await self.chat_model.ainvoke(prompt_value, config)
@@ -153,13 +158,15 @@ class ControlledLLM:
                     raw_out = cleaned
                     break
                 except Exception as e:
+                    logger.info(f"({i}/{attempts}) Failed to parse output: {e}", exc_info=True)
                     if i == attempts - 1:
                         break
                     try:
                         parsed_obj = await retry_parser.aparse_with_prompt(cleaned, prompt_value)
                         raw_out = json.dumps(parsed_obj.model_dump())
                         break
-                    except Exception:
+                    except Exception as e:
+                        logger.info(f"({i}/{attempts}) Failed to parse output with retry: {e}", exc_info=True)
                         current_text = cleaned
                         continue
 
@@ -168,7 +175,8 @@ class ControlledLLM:
                     data = json.loads(default_text_cleaner(current_text))
                     parsed_obj = output_model.model_validate(data)
                     raw_out = current_text
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse output after {attempts} attempts: {e}. Returning only raw output.", exc_info=True)
                     parsed_obj = None
                     raw_out = current_text
 

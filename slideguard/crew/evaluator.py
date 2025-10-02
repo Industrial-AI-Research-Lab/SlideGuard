@@ -15,7 +15,7 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from langfuse import Langfuse
-from slideguard.crew.callbacks import ImageStrippingLangfuseHandler
+from slideguard.crew.callbacks import langfuse_callback_cm
 
 from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
@@ -121,17 +121,13 @@ class SlideGuardEvaluator:
         deck_criterias: List[Criteria] | None = None,
         langfuse_client: Langfuse | None = None,
     ) -> FullEvaluation:
-        if langfuse_client:
-            try:
-                self._callbacks = [ImageStrippingLangfuseHandler()] # instantiate handler per run if client is provided (means langfuse is enabled and working)
-            except Exception:
-                self._callbacks = []
+        with langfuse_callback_cm(langfuse_client) as cbs:
+            self._callbacks = cbs
         if deck_criterias:
             if slide_criterias is None:
                 slide_criterias = [Criteria.slide_type, Criteria.slide_description] # add service criteria
             else:
-                sc = set(slide_criterias)
-                sc.update({Criteria.slide_type, Criteria.slide_description})
+                sc = {*slide_criterias, Criteria.slide_type, Criteria.slide_description}
                 slide_criterias = list(sc)
 
         initial = EvaluationState(
@@ -144,7 +140,7 @@ class SlideGuardEvaluator:
         if self._callbacks:
             result = await self.app.ainvoke(initial, config={"callbacks": self._callbacks, "configurable": {"thread_id": "1"}})
         else:
-            result = await self.app.ainvoke(initial, config={"configurable": {"thread_id": "1"}}) # thread_id is used by the checkpointer
+            result = await self.app.ainvoke(initial, config={"configurable": {"thread_id": "1"}})
         final_state: EvaluationState = EvaluationState.model_validate(result) if isinstance(result, dict) else cast(EvaluationState, result)
             
         full_evaluation = FullEvaluation(
@@ -156,12 +152,6 @@ class SlideGuardEvaluator:
             tldr=final_state.tldr,
         )
 
-        if langfuse_client:
-            try:
-                langfuse_client.flush()
-            except Exception:
-                pass
-            
         return full_evaluation
 
     def _setup_app(self) -> StateGraph:
@@ -201,12 +191,11 @@ class SlideGuardEvaluator:
 
     async def _node_process_presentation(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         slides = self.file_manager.process_presentation(state.presentation_path)
+        if not slides:
+            raise ValueError(f"Failed to process presentation: {state.presentation_path}")
         return {"slides": slides}
 
     async def _node_evaluate_service(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
-        if not state.slides:
-            return {}
-
         requested = [c for c in state.slide_criterias if c.is_service_criteria()]
         results: Dict[Criteria, List[BaseModel]] = {}
         for c in requested: # can be batched instead?
@@ -342,6 +331,7 @@ class SlideGuardEvaluator:
 
     async def _node_build_deck_descriptions(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         if not state.slide_evaluations:
+            logger.error("No slide evaluations found. Returning fallback deck descriptions.")
             return {"deck_descriptions": None}
         slide_descriptions: List[SlideDescriptionWithType] = []
         for slide in state.slide_evaluations:
@@ -358,6 +348,7 @@ class SlideGuardEvaluator:
                 continue
 
         if not slide_descriptions:
+            logger.error("No slide descriptions found. Returning fallback deck descriptions.")
             return {"deck_descriptions": None}
 
         slide_deck_descriptions = SlideDeckDescriptions(
@@ -368,6 +359,8 @@ class SlideGuardEvaluator:
 
     async def _node_evaluate_deck_criteria(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         if not state.deck_criterias or not state.deck_descriptions:
+            logger.error("No deck criteria or deck descriptions found. Returning fallback deck evaluations.")
+            # TODO: return fallback deck evaluations
             return {"deck_evaluations": None}
 
         evaluations: Dict[Criteria, Any] = {}
@@ -380,7 +373,8 @@ class SlideGuardEvaluator:
                     evaluations[c] = self._postprocess_result(c, res_list[0])
                 else:
                     evaluations[c] = FallbackResult()
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Failed to evaluate deck criterion {c}: {e}. Returning fallback result.", exc_info=True)
                 evaluations[c] = FallbackResult()
 
         return {"deck_evaluations": DeckEvaluationResult(evaluations=evaluations)}
@@ -422,6 +416,7 @@ class SlideGuardEvaluator:
 
     async def _node_build_tldr(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         if not state.summary:
+            logger.error("No summary found. Returning None for TL;DR.")
             return {"tldr": None}
 
         tldr_prompt_text = dedent("""
@@ -447,6 +442,9 @@ class SlideGuardEvaluator:
         return {"tldr": final.tldr}
 
     async def _node_compute_overall(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
+        if not state.slide_evaluations or not state.deck_evaluations:
+            logger.error("No slide evaluations or deck evaluations found. Returning None for overall score.")
+            return {"overall_score": None}
         score = self.summary_processor.calculate_overall_score(state.slide_evaluations or [], state.deck_evaluations)
         return {"overall_score": score}
 
@@ -469,7 +467,8 @@ class SlideGuardEvaluator:
             setattr(obj, 'evaluation_results', items)
             if not items:
                 setattr(obj, 'score', 5) # sanity check
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Failed to filter and sort by severity: {e}", exc_info=True)
             pass
         return obj
 
@@ -483,21 +482,23 @@ class SlideGuardEvaluator:
                         token = str(getattr(item, "evaluation_element", "")).strip().lower().replace(".", "")
                         if token and token not in wl:
                             filtered.append(item)
-                    except Exception:
+                    except Exception as e:
+                        logger.warning(f"Failed to filter abbreviations: {e}", exc_info=True)
                         filtered.append(item)
                 obj.evaluation_results = filtered
             
             if isinstance(obj, CriterionResult):
                 obj = cast(CriterionResult, obj)
                 obj = self._filter_sort_by_severity(obj)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Failed to postprocess result: {e}", exc_info=True)
             pass
         return obj
 
     def _create_fallback(self, model_cls: Type[BaseModel]) -> BaseModel:
         try:
             return model_cls.model_validate({})
-        except Exception:
+        except Exception :
             if model_cls.__name__ == "SlideType":
                 return FallbackSlideType()
             if model_cls.__name__ == "SlideDescription":
