@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:15
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-slideguard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      POSTGRES_DB: ${POSTGRES_DB:-slideguard}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-slideguard} -d ${POSTGRES_DB:-slideguard}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfile
+    env_file:
+      - .env
+    environment:
+      UI_HOST: ${UI_HOST:-0.0.0.0}
+      UI_PORT: ${UI_PORT:-7860}
+      AUTH_DB_URL: ${AUTH_DB_URL:-postgresql+psycopg2://slideguard:${POSTGRES_PASSWORD:-123456}@db:5432/${POSTGRES_DB:-slideguard}}
+
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_ROLE: ${ADMIN_ROLE:-admin}
+      
+      SLIDEGUARD_LLM_API_KEY: ${SLIDEGUARD_LLM_API_KEY:-}
+      SLIDEGUARD_LLM_API_BASE: ${SLIDEGUARD_LLM_API_BASE:-}
+      SLIDEGUARD_LLM_MODEL: ${SLIDEGUARD_LLM_MODEL:-/model}
+      SLIDEGUARD_MAX_CONCURRENCY: ${SLIDEGUARD_MAX_CONCURRENCY:-8}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${UI_PORT:-7860}:7860"
+    volumes:
+      - slideguard_cache:/app/.slideguard_cache
+      - file_cache:/app/.file_cache
+      - type: bind
+        source: ../resources
+        target: /app/resources
+        read_only: true
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  slideguard_cache:
+  file_cache:
