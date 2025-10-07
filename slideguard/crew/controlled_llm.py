@@ -3,6 +3,7 @@ LangChain-oriented LLM wrapper with error-aware structured output retries and im
 """
 
 import base64
+import os
 import json
 import re
 import logging
@@ -184,6 +185,11 @@ class ControlledLLM:
 
         return RunnableLambda(_run)
 
+class OpenAIModel(str, Enum):
+    GPT_5 = "gpt-5"
+    GPT_4O = "gpt-4o"
+
+
 def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
     if not config.is_configured():
         try:
@@ -192,10 +198,26 @@ def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
             logger.error(f"Failed to load config: {e}")
         return None
 
-    llm_config = config.get_llm_config()
-    chat = ChatOpenAI(
-        **llm_config,
-        temperature=0.01,
-        max_tokens=5000
-    )
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key:
+        model_name = os.getenv("OPENAI_MODEL", OpenAIModel.GPT_4O.value)
+        try:
+            selected = OpenAIModel(model_name)
+        except Exception:
+            logger.warning(f"Failed to load OpenAI model: {model_name}. Using default model: {OpenAIModel.GPT_4O.value}")
+            selected = OpenAIModel.GPT_4O
+        logger.info(f"Using OpenAI model: {selected.value}")
+        chat = ChatOpenAI(
+            api_key=openai_key,
+            model=selected.value,
+            temperature=0.01,
+            max_tokens=5000,
+        )
+    else:
+        llm_config = config.get_llm_config()
+        chat = ChatOpenAI(
+            **llm_config,
+            temperature=0.01,
+            max_tokens=5000
+        )
     return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01)

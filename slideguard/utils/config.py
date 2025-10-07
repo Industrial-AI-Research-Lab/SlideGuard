@@ -82,6 +82,14 @@ SLIDEGUARD_LLM_MODEL=/model
 SLIDEGUARD_CACHE_DIR=.slideguard_cache
 SLIDEGUARD_FILE_CACHE_DIR=.file_cache
 
+# Concurrency (optional)
+# SLIDEGUARD_MAX_CONCURRENCY=8
+
+# OpenAI integration (optional)
+# If set, OpenAI will be used instead of local model
+# OPENAI_API_KEY=sk-...
+# OPENAI_MODEL=gpt-4o
+
 # Examples for different services:
 # 
 # For vLLM server:
