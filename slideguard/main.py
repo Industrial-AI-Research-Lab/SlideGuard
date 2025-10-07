@@ -49,6 +49,23 @@ def _initialize_logging() -> None:
         format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
+    class _DropOtelExportErrors(logging.Filter): # do not show otel export errors (occur from bad connection)
+        def filter(self, record: logging.LogRecord) -> bool:
+            name = record.name or ""
+            msg = record.getMessage() if record.msg is not None else ""
+            if name.startswith("opentelemetry") and "Exception while exporting Span" in msg:
+                return False
+            if name.startswith("opentelemetry") and ("ConnectTimeout" in msg or "Connection to" in msg or "Remote end closed" in msg):
+                return False
+            return True
+    root = logging.getLogger()
+    for h in root.handlers:
+        h.addFilter(_DropOtelExportErrors())
+    logging.getLogger("opentelemetry").setLevel(logging.WARNING)
+    logging.getLogger("opentelemetry.sdk._shared_internal").setLevel(logging.ERROR)
+    logging.getLogger("opentelemetry.exporter").setLevel(logging.ERROR)
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 def _setup_console_encoding() -> None:
@@ -253,6 +270,11 @@ def eval_run(
         "--raise-on-error",
         help="Raise an exception if an error occurs",
     ),
+    eval_debug: bool = typer.Option(
+        False,
+        "--eval-debug",
+        help="Enable debug mode (Save graph images)",
+    ),
 ) -> None:
     """Start an evaluation for the given presentation."""
     typer.echo(f"Loading settings...")
@@ -273,7 +295,9 @@ def eval_run(
     evaluator = SlideGuardEvaluator(
         file_manager=FileManager(config.file_cache_dir),
         cache_manager=CacheManager(config.evaluations_cache_dir),
-        llm=llm
+        llm=llm,
+        max_concurrency=config.max_concurrency,
+        debug=eval_debug
     )
 
     typer.echo(f"Starting evaluation for {presentation_path}...")
@@ -343,6 +367,11 @@ def eval_multirun(
         "--raise-on-error",
         help="Raise an exception if an error occurs",
     ),
+    eval_debug: bool = typer.Option(
+        False,
+        "--eval-debug",
+        help="Enable debug mode (Save graph images)",
+    ),
 ) -> None:
     """Start evaluations for all PDF files in the given folder."""
     typer.echo(f"Loading settings...")
@@ -361,7 +390,9 @@ def eval_multirun(
     evaluator = SlideGuardEvaluator(
         file_manager=FileManager(config.file_cache_dir),
         cache_manager=CacheManager(config.evaluations_cache_dir),
-        llm=llm
+        llm=llm,
+        max_concurrency=config.max_concurrency,
+        debug=eval_debug
     )
     
     try:
@@ -483,6 +514,11 @@ def ui_run(
         "--use-langfuse",
         help="Use Langfuse for observability",
     ),
+    eval_debug: bool = typer.Option(
+        False,
+        "--eval-debug",
+        help="Enable debug mode (Save graph images)",
+    ),
 ) -> None:
     """Run the Gradio UI"""
     header = "=" * 60
@@ -493,7 +529,7 @@ def ui_run(
     typer.echo(f"Open: http://{host}:{port}?__theme={theme}")
     typer.echo()
     try:
-        app = create_app(auth=auth, use_langfuse=use_langfuse)
+        app = create_app(auth=auth, use_langfuse=use_langfuse, eval_debug=eval_debug)
         auth_func = verify_user_db if auth else None
         app.launch(
             server_name=host,

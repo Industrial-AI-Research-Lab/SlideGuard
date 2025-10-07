@@ -29,7 +29,7 @@ from slideguard.ui.auth import verify_user_db, get_role, register_user, Role, li
 class SlideGuardUI:
     """Main UI class for SlideGuard application."""
     
-    def __init__(self, use_langfuse: bool = False):
+    def __init__(self, use_langfuse: bool = False, eval_debug: bool = False):
         self.evaluator = None
         self.current_evaluation = None
         self.slide_images = []
@@ -44,6 +44,7 @@ class SlideGuardUI:
         # Load configuration
         self.config = load_config()
         self.langfuse_client = load_langfuse_client(use_langfuse)
+        self.eval_debug = eval_debug
         
         # Initialize evaluator and report generator
         self._initialize_evaluator()
@@ -60,7 +61,9 @@ class SlideGuardUI:
             self.evaluator = SlideGuardEvaluator(
                 file_manager=FileManager(self.config.file_cache_dir),
                 cache_manager=CacheManager(self.config.evaluations_cache_dir),
-                llm=llm
+                llm=llm,
+                max_concurrency=self.config.max_concurrency,
+                debug=self.eval_debug
             )
             self.logger.info("Evaluator initialized successfully")
         except Exception as e:
@@ -928,13 +931,13 @@ class SlideGuardUI:
         return interface
 
 
-def create_app(auth:bool = True, use_langfuse: bool = False):
+def create_app(auth:bool = True, use_langfuse: bool = False, eval_debug: bool = False):
     """Create and return the Gradio app."""
     if auth:
         from slideguard.ui.auth import init_db
         init_db()
 
-    ui = SlideGuardUI(use_langfuse=use_langfuse)
+    ui = SlideGuardUI(use_langfuse=use_langfuse, eval_debug=eval_debug)
     return ui.create_ui()
 
 

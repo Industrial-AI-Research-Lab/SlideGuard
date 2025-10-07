@@ -25,7 +25,9 @@ class SlideGuardConfig:
         self.cache_dir = os.getenv('SLIDEGUARD_CACHE_DIR', '.slideguard_cache')
         self.evaluations_cache_dir = os.getenv('SLIDEGUARD_EVALUATIONS_DIR', os.path.join(self.cache_dir, 'evaluations'))
         self.file_cache_dir = os.getenv('SLIDEGUARD_FILE_CACHE_DIR', os.path.join(self.cache_dir, 'file_cache'))
-        self.max_concurrency = max_concurrency or int(os.getenv('SLIDEGUARD_MAX_CONCURRENCY', '0'))
+        env_mc = os.getenv('SLIDEGUARD_MAX_CONCURRENCY')
+        parsed_mc = int(env_mc) if env_mc and env_mc.isdigit() and int(env_mc) > 0 else None
+        self.max_concurrency = max_concurrency if max_concurrency is not None else parsed_mc
     
     def is_configured(self) -> bool:
         """Check if required environment variables are set"""

@@ -19,7 +19,7 @@ from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain.output_parsers import RetryWithErrorOutputParser
 from langchain_openai.chat_models.base import ChatOpenAI
 
-from slideguard.utils.config import SlideGuardConfig
+from slideguard.utils.config import SlideGuardConfig, load_config
 
 logger = logging.getLogger(__name__)
 
@@ -148,8 +148,8 @@ class ControlledLLM:
             current_text: str = text
             
             # custom parse-retry loop
-            attempts = max(1, self.max_retries + 1)
-            for i in range(attempts):
+            total_attempts = max(1, self.max_retries)
+            for attempt_no in range(1, total_attempts + 1):
                 cleaned = current_text
                 for fn in self.preprocessors:
                     cleaned = fn(cleaned)
@@ -158,15 +158,15 @@ class ControlledLLM:
                     raw_out = cleaned
                     break
                 except Exception as e:
-                    logger.info(f"({i}/{attempts}) Failed to parse output: {e}", exc_info=True)
-                    if i == attempts - 1:
+                    logger.info(f"({attempt_no}/{total_attempts}) Failed to parse output: {e}")
+                    if attempt_no == total_attempts:
                         break
                     try:
                         parsed_obj = await retry_parser.aparse_with_prompt(cleaned, prompt_value)
                         raw_out = json.dumps(parsed_obj.model_dump())
                         break
                     except Exception as e:
-                        logger.info(f"({i}/{attempts}) Failed to parse output with retry: {e}", exc_info=True)
+                        logger.info(f"({attempt_no}/{total_attempts}) Failed to parse output with retry: {e}")
                         current_text = cleaned
                         continue
 
@@ -176,7 +176,7 @@ class ControlledLLM:
                     parsed_obj = output_model.model_validate(data)
                     raw_out = current_text
                 except Exception as e:
-                    logger.warning(f"Failed to parse output after {attempts} attempts: {e}. Returning only raw output.", exc_info=True)
+                    logger.warning(f"Failed to parse output after {total_attempts} attempts: {e}. Returning only raw output.")
                     parsed_obj = None
                     raw_out = current_text
 
@@ -184,9 +184,12 @@ class ControlledLLM:
 
         return RunnableLambda(_run)
 
-
 def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
     if not config.is_configured():
+        try:
+            config = load_config()
+        except Exception as e:
+            logger.error(f"Failed to load config: {e}")
         return None
 
     llm_config = config.get_llm_config()

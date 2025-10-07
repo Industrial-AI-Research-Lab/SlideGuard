@@ -3,16 +3,21 @@ Class for slides evaluation and presentation analysis on multiple criteria.
 Based on LangGraph + LangChain.
 """
 
+import os
+import shutil
+import subprocess
 import asyncio
 import logging
 from textwrap import dedent
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple, Type, cast, Protocol, runtime_checkable
+from typing import Any, AsyncIterable, Dict, List, Optional, Tuple, Type, cast, Protocol, runtime_checkable, Literal
+from typing_extensions import Annotated
 
 from pydantic import BaseModel
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.graph import StateGraph
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from langfuse import Langfuse
 from slideguard.crew.callbacks import langfuse_callback_cm
@@ -71,23 +76,42 @@ class FallbackSlideDescription(SlideDescription, FallbackMarker):
     summary: str = "Unable to analyze this slide due to evaluation errors."
 
 
-class EvaluationState(BaseModel):
-    presentation_path: str
-    slide_criterias: List[Criteria]
-    deck_criterias: Optional[List[Criteria]] = None
+class NotApplicableResult(BaseModel, FallbackMarker):
+    __slideguard_not_applicable__: bool = True
+    reason: str = "Criterion not applicable to this slide"
 
-    slides: Optional[SlideDeckImages] = None
-    slide_service: Optional[Dict[Criteria, List[BaseModel]]] = None
+
+def _merge_dicts(left: Optional[Dict[Any, Any]], right: Optional[Dict[Any, Any]]) -> Dict[Any, Any]:
+    l = dict(left or {})
+    for k, v in (right or {}).items():
+        l[k] = v
+    return l
+
+def _merge_lists(a: Optional[List[Any]], b: Optional[List[Any]]) -> List[Any]:
+    return list(set(a or []) | set(b or []))
+
+def _take_any(a: Optional[Any], b: Optional[Any]) -> Optional[Any]:
+    return a or b
+
+class EvaluationState(BaseModel):
+    presentation_path: Annotated[str, _take_any]
+    slide_criterias: Annotated[List[Criteria], _merge_lists]
+    deck_criterias: Annotated[Optional[List[Criteria]], _merge_lists] = None
+
+    slides: Annotated[Optional[SlideDeckImages], _take_any] = None
+    slide_service: Annotated[Dict[Criteria, List[BaseModel]], _merge_dicts] = {}
     slide_subsets: Optional[List[Tuple[Criteria, List[int], SlideDeckImages]]] = None
+    slide_results: Annotated[Dict[Criteria, List[BaseModel]], _merge_dicts] = {}
     slide_evaluations: Optional[List[SlideEvaluationResult]] = None
 
     deck_descriptions: Optional[SlideDeckDescriptions] = None
+    deck_results: Annotated[Dict[Criteria, BaseModel], _merge_dicts] = {}
     deck_evaluations: Optional[DeckEvaluationResult] = None
 
     summary: Optional[str] = None
     tldr: Optional[str] = None
     overall_score: Optional[int] = None
-    errors: List[str] = []
+    errors: Annotated[List[str], _merge_lists] = []
 
 
 class SlideGuardEvaluator:
@@ -96,7 +120,9 @@ class SlideGuardEvaluator:
         file_manager: FileManager,
         cache_manager: CacheManager,
         llm: ControlledLLM,
+        max_concurrency: Optional[int] = None,
         max_retries: int = 3,
+        debug: bool = False,
     ) -> None:
         self.file_manager = file_manager
         self.cache_manager = cache_manager
@@ -104,10 +130,12 @@ class SlideGuardEvaluator:
         self.tools = self._setup_tools()
         self.max_retries = max_retries
         self.summary_processor = SummaryProcessor()
-
+        self._compiled_subgraphs: Dict[str, Any] = {}
+        self._debug: bool = debug # if true, save graph images (for now)
+        self._max_concurrency: Optional[int] = max_concurrency
+        
         self.slide_infos: Dict[Criteria, CriterionInfo] = dict(SLIDE_CRITERIA_INFO)
         self.deck_infos: Dict[Criteria, CriterionInfo] = dict(DECK_CRITERIA_INFO)
-        self.app = self._setup_app()
         # Bind tools to the LLM if they are set
         if self.tools:
             self.llm = self.llm.with_tools(self.tools)
@@ -124,23 +152,32 @@ class SlideGuardEvaluator:
         with langfuse_callback_cm(langfuse_client) as cbs:
             self._callbacks = cbs
         if deck_criterias:
-            if slide_criterias is None:
-                slide_criterias = [Criteria.slide_type, Criteria.slide_description] # add service criteria
-            else:
-                sc = {*slide_criterias, Criteria.slide_type, Criteria.slide_description}
-                slide_criterias = list(sc)
+            slide_criterias = list({*(slide_criterias or []), Criteria.slide_type, Criteria.slide_description})
+        elif slide_criterias:
+            if any(not c.is_service_criteria() for c in slide_criterias) and Criteria.slide_type not in slide_criterias:
+                slide_criterias = list({*slide_criterias, Criteria.slide_type})
 
         initial = EvaluationState(
             presentation_path=presentation_path,
-            slide_criterias=slide_criterias or list(self.slide_infos.keys()),
+            slide_criterias=slide_criterias,
             deck_criterias=deck_criterias,
         )
+        
+        app = self._setup_app(initial.slide_criterias, initial.deck_criterias)
+        if self._debug:
+            try:
+                self._save_graph_images(app)
+            except Exception as e:
+                logger.warning(f"Failed to export graph: {e}", exc_info=True)
 
-        # Run graph; attach callbacks to capture LangGraph + LCEL traces
+        # Build base config and inject max_concurrency if set
+        base_config: Dict[str, Any] = {"configurable": {"thread_id": "1"}}
         if self._callbacks:
-            result = await self.app.ainvoke(initial, config={"callbacks": self._callbacks, "configurable": {"thread_id": "1"}})
-        else:
-            result = await self.app.ainvoke(initial, config={"configurable": {"thread_id": "1"}})
+            base_config["callbacks"] = self._callbacks
+        if self._max_concurrency is not None:
+            base_config["max_concurrency"] = self._max_concurrency
+
+        result = await app.ainvoke(initial, config=base_config)
         final_state: EvaluationState = EvaluationState.model_validate(result) if isinstance(result, dict) else cast(EvaluationState, result)
             
         full_evaluation = FullEvaluation(
@@ -154,52 +191,116 @@ class SlideGuardEvaluator:
 
         return full_evaluation
 
-    def _setup_app(self) -> StateGraph:
-        graph = StateGraph(EvaluationState)
-        graph.add_node("process_presentation", self._node_process_presentation)
-        graph.add_node("evaluate_service", self._node_evaluate_service)
-        graph.add_node("plan_subsets", self._node_plan_subsets)
-        graph.add_node("evaluate_slide_criteria", self._node_evaluate_slide_criteria)
-        graph.add_node("build_deck_descriptions", self._node_build_deck_descriptions)
-        graph.add_node("evaluate_deck_criteria", self._node_evaluate_deck_criteria)
-        graph.add_node("build_summary", self._node_build_summary)
-        graph.add_node("build_tldr", self._node_build_tldr)
-        graph.add_node("compute_overall", self._node_compute_overall)
+    def _setup_tools(self) -> List:
+        """Setup tools for agents"""
+        tools = []
+        # Note: Search tools temporarily disabled for vLLM compatibility
+        # The core evaluation functionality works without external search
+        return tools
 
-        graph.set_entry_point("process_presentation")
-        graph.add_edge("process_presentation", "evaluate_service")
-        graph.add_edge("evaluate_service", "plan_subsets")
-        graph.add_edge("plan_subsets", "evaluate_slide_criteria")
+    def _setup_app(self, used_slide: List[Criteria], used_deck: Optional[List[Criteria]] = None) -> StateGraph:
+        service_slide = [c for c in used_slide if c.is_service_criteria()]
+        non_service_slide = [c for c in used_slide if not c.is_service_criteria()]
 
-        def _branch_after_slides(state: EvaluationState) -> str:
-            return "build_deck_descriptions" if state.deck_criterias else "build_summary"
+        def _get_deck_flow():
+            graph = StateGraph(EvaluationState)
+            graph.add_node("build_deck_descriptions", self._node_build_deck_descriptions)
+            for c in used_deck:
+                graph.add_node(c.value, self._make_deck_criterion_node(c))
+                graph.add_edge("build_deck_descriptions", c.value) # run in parallel
+            graph.add_node("gather_deck_results", self._node_gather_deck_results)
+            graph.add_edge([c.value for c in used_deck], "gather_deck_results") # wait for all deck criteria to finish
+            graph.set_entry_point("build_deck_descriptions")
+            return graph.compile()
 
-        graph.add_conditional_edges(
-            "evaluate_slide_criteria",
-            _branch_after_slides,
-            {
-                "build_deck_descriptions": "build_deck_descriptions",
-                "build_summary": "build_summary",
-            },
-        )
-        graph.add_edge("build_deck_descriptions", "evaluate_deck_criteria")
-        graph.add_edge("evaluate_deck_criteria", "build_summary")
-        graph.add_edge("build_summary", "build_tldr")
-        graph.add_edge("build_tldr", "compute_overall")
+        def _get_slide_flow():
+            graph = StateGraph(EvaluationState)
+            graph.add_node("slide_entry", lambda s: {}) # dummy node for cleaner code
+            for c in non_service_slide:
+                graph.add_node(c.value, self._make_slide_criterion_node(c))
+            graph.add_node("gather_slide_results", self._node_gather_slide_results)
+            for c in non_service_slide:
+                graph.add_edge("slide_entry", c.value) # run in parallel
+            graph.add_edge([c.value for c in non_service_slide], "gather_slide_results") # wait for all slide criteria to finish
+            if not non_service_slide:
+                graph.add_edge("slide_entry", "gather_slide_results")
+            graph.set_entry_point("slide_entry")
+            return graph.compile()
 
-        return graph.compile(checkpointer=MemorySaver()) # checkpointer could be used in the future to resume a partially completed evaluation (retry)
+        def _get_summary_flow():
+            graph = StateGraph(EvaluationState)
+            graph.add_node("build_summary", self._node_build_summary)
+            graph.add_node("build_tldr", self._node_build_tldr)
+            graph.add_node("compute_overall", self._node_compute_overall)
+            graph.add_edge("build_summary", "build_tldr")
+            graph.add_edge("build_tldr", "compute_overall")
+            graph.set_entry_point("build_summary")
+            return graph.compile()
+
+        main = StateGraph(EvaluationState)
+        # Add service nodes
+        main.add_node("process_presentation", self._node_process_presentation)
+        for c in service_slide:
+            main.add_node(c.value, self._make_service_criterion_node(c))
+
+        slide_requires = [Criteria.slide_type.value] # define requirements for slide flow
+        deck_requires = [Criteria.slide_type.value, Criteria.slide_description.value] # define requirements for deck flow
+
+        # Add subgraphs
+        slide_app = _get_slide_flow()
+        deck_app = _get_deck_flow() if used_deck else None
+        summary_app = _get_summary_flow()
+
+        main.add_node("slide_flow", slide_app)
+        if deck_app:
+            main.add_node("deck_flow", deck_app)
+        main.add_node("summary_flow", summary_app)
+
+        # Entry
+        main.set_entry_point("process_presentation")
+
+        # Add service edges
+        for c in service_slide:
+            main.add_edge("process_presentation", c.value)
+
+        # Main flows (slide + deck)
+        main.add_edge([c.value for c in service_slide if c in slide_requires], "slide_flow")
+        if deck_app:
+            main.add_edge([c.value for c in service_slide if c in deck_requires], "deck_flow")
+
+        # Summary flow
+        if deck_app:
+            main.add_edge(["slide_flow", "deck_flow"], "summary_flow") # wait for slide and deck subgraphs to finish
+        else:
+            main.add_edge("slide_flow", "summary_flow")
+            
+        app = main.compile(checkpointer=MemorySaver())
+
+        if self._debug:
+            try:
+                subs: Dict[str, Any] = {"summary_flow": summary_app}
+                if deck_app:
+                    subs["deck_flow"] = deck_app
+                if not non_service_slide:
+                    subs["slide_flow"] = slide_app
+                self._compiled_subgraphs = subs
+            except Exception as e:
+                logger.warning(f"Failed to compile subgraphs: {e}")
+                self._compiled_subgraphs = {}
+
+        return app
 
     async def _node_process_presentation(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         slides = self.file_manager.process_presentation(state.presentation_path)
-        if not slides:
+        if not slides.slides:
             raise ValueError(f"Failed to process presentation: {state.presentation_path}")
         return {"slides": slides}
 
-    async def _node_evaluate_service(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
-        requested = [c for c in state.slide_criterias if c.is_service_criteria()]
-        results: Dict[Criteria, List[BaseModel]] = {}
-        for c in requested: # can be batched instead?
-            info = self.slide_infos[c]
+    def _make_service_criterion_node(self, crit: Criteria):
+        async def _run(state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
+            if not state.slides or crit not in state.slide_criterias:
+                return {}
+            info = self.slide_infos[crit]
             chain = info.to_runnable(self.llm)
             entities = await self._eval_criterion_with_cache(
                 info=info,
@@ -207,107 +308,78 @@ class SlideGuardEvaluator:
                 chain=chain,
                 config=config,
             )
-            results[c] = entities
+            if not entities:
+                logger.error(f"No entities found for {crit}.")
+            return {"slide_service": {crit: entities}}
+        return _run
 
-        return {"slide_service": results}
+    def _make_slide_criterion_node(self, crit: Criteria):
+        async def _run(state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
+            if not state.slides or crit not in state.slide_criterias:
+                return {}
+            info = SLIDE_CRITERIA_INFO[crit]
+            chain = info.to_runnable(self.llm)
+            total = len(state.slides.slides)
+            applicable = info.applicable_slide_types
+            requires_type = info.requires_slide_type
 
-    async def _node_plan_subsets(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
-        if not state.slides:
-            return {}
-
-        infos: List[CriterionInfo] = [SLIDE_CRITERIA_INFO[c] for c in state.slide_criterias]
-        other_infos = sorted(
-            [i for i in infos if not i.criteria.is_service_criteria()],
-            key=lambda x: getattr(x, "priority", 100),
-        )
-
-        slide_types_per_idx: List[List[str]] = []
-        for i in range(len(state.slides.slides)):
-            if state.slide_service and Criteria.slide_type in state.slide_service and i < len(state.slide_service[Criteria.slide_type]):
-                st_obj = cast(SlideType, state.slide_service[Criteria.slide_type][i])
-                slide_types_per_idx.append(list(getattr(st_obj, "slide_type", []) or []))
-            else:
-                slide_types_per_idx.append([])
-
-        subsets: List[Tuple[Criteria, List[int], SlideDeckImages]] = []
-        for info in other_infos:
-            if getattr(info, "applicable_slide_types", None) or getattr(info, "requires_slide_type", False):
-                eligible = [idx for idx, types in enumerate(slide_types_per_idx) if self._criterion_applies(info, types)]
-                if not eligible:
-                    continue
-                subset = SlideDeckImages(
-                    slide_deck_path=state.slides.slide_deck_path,
-                    png_dir=state.slides.png_dir,
-                    slides=[state.slides.slides[i] for i in eligible],
-                )
-                subsets.append((info.criteria, eligible, subset))
-            else:
-                eligible = list(range(len(state.slides.slides)))
-                subsets.append((info.criteria, eligible, state.slides))
-
-        return {"slide_subsets": subsets}
-
-    async def _node_evaluate_slide_criteria(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
-        if not state.slides:
-            return {}
-
-        crit2result: Dict[Criteria, List[BaseModel]] = {}
-        subsets = state.slide_subsets or []
-
-        if subsets:
-            tasks: List[Tuple[Criteria, List[int], List[BaseModel]]] = []
-            for crit, eligible, subset in subsets:
-                info = SLIDE_CRITERIA_INFO[crit]
-                chain = info.to_runnable(self.llm)
-                entities = await self._eval_criterion_with_cache(
-                    info=info,
-                    deck=subset,
-                    chain=chain,
-                    config=config,
-                )
-                tasks.append((crit, eligible, entities))
-
-            for crit, eligible, subset_results in tasks:
-                if len(eligible) == len(state.slides.slides):
-                    crit2result[crit] = [self._postprocess_result(crit, r) for r in subset_results]
+            eligible = list(range(total))
+            if applicable or requires_type:
+                st_service = (state.slide_service or {}).get(Criteria.slide_type)
+                if st_service and len(st_service) == total:
+                    slide_types_per_slide: List[List[str]] = [cast(SlideType, st_service[i]).slide_type for i in range(total)]
+                    eligible = [i for i, types in enumerate(slide_types_per_slide) if self._criterion_applies(info, types)]
                 else:
-                    merged: List[BaseModel] = [None] * len(state.slides.slides)
-                    for j, idx in enumerate(eligible):
-                        merged[idx] = self._postprocess_result(crit, subset_results[j])
-                    crit2result[crit] = merged
+                    eligible = list(range(total))
 
-        infos = [SLIDE_CRITERIA_INFO[c] for c in state.slide_criterias]
-        service_infos = [i for i in infos if i.criteria.is_service_criteria()]
-        all_infos = service_infos + [i for i in infos if not i.criteria.is_service_criteria()]
+            if not eligible:
+                logger.warning(f"No eligible slides for {crit}. Running for all slides.")
+                eligible = list(range(total))
 
-        slide_evaluation_results: List[SlideEvaluationResult] = []
+            if len(eligible) == total:
+                entities = await self._eval_criterion_with_cache(info=info, deck=state.slides, chain=chain, config=config)
+                processed = [self._postprocess_result(crit, r) for r in entities]
+                return {"slide_results": {crit: processed}}
 
-        def _get_result(crit: Criteria, idx: int) -> Optional[BaseModel]:
-            lst = crit2result.get(crit) or (state.slide_service or {}).get(crit)
-            if not lst or idx >= len(lst):
-                return None
-            return lst[idx]
+            subset = SlideDeckImages(
+                slide_deck_path=state.slides.slide_deck_path,
+                png_dir=state.slides.png_dir,
+                slides=[state.slides.slides[i] for i in eligible],
+            )
+            subset_entities = await self._eval_criterion_with_cache(info=info, deck=subset, chain=chain, config=config)
+            merged: List[BaseModel] = [cast(BaseModel, NotApplicableResult()) for _ in range(total)]
+            for j, idx in enumerate(eligible):
+                merged[idx] = self._postprocess_result(crit, subset_entities[j])
+            return {"slide_results": {crit: merged}}
+        return _run
 
+    async def _node_gather_slide_results(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
+        if not state.slides:
+            return {}
+        def _is_not_applicable(v: Optional[BaseModel]) -> bool:
+            try:
+                return bool(getattr(v, "__slideguard_not_applicable__", False)) if v is not None else False
+            except Exception:
+                return False
+
+        service = state.slide_service or {}
+        results = state.slide_results or {}
+        non_service_criteria = [c for c in (state.slide_criterias or []) if not c.is_service_criteria()]
+
+        out: List[SlideEvaluationResult] = []
         for i, slide in enumerate(state.slides.slides):
             try:
-                slide_type_obj = None
-                slide_desc_obj = None
-                if Criteria.slide_type in state.slide_criterias:
-                    st = _get_result(Criteria.slide_type, i)
-                    slide_type_obj = cast(SlideType, st) if st else FallbackSlideType()
-                if Criteria.slide_description in state.slide_criterias:
-                    sd = _get_result(Criteria.slide_description, i)
-                    slide_desc_obj = cast(SlideDescription, sd) if sd else FallbackSlideDescription()
+                st = self._safe_get(service, Criteria.slide_type, i) if Criteria.slide_type in (state.slide_criterias or []) else None
+                sd = self._safe_get(service, Criteria.slide_description, i) if Criteria.slide_description in (state.slide_criterias or []) else None
+                slide_type_obj = cast(SlideType, st) if st else FallbackSlideType()
+                slide_desc_obj = cast(SlideDescription, sd) if sd else FallbackSlideDescription()
 
-                evaluations: Dict[Criteria, Any] = {}
-                for info in all_infos:
-                    if info.criteria.is_service_criteria():
-                        continue
-                    val = _get_result(info.criteria, i)
-                    if val is not None:
-                        evaluations[info.criteria] = val
+                evaluations: Dict[Criteria, Any] = {
+                    c: val for c in non_service_criteria
+                    if (val := self._safe_get(results, c, i)) is not None and not _is_not_applicable(val)
+                }
 
-                slide_evaluation_results.append(
+                out.append(
                     SlideEvaluationResult(
                         slide_deck_path=state.slides.slide_deck_path,
                         slide_id=slide.slide_id,
@@ -318,7 +390,7 @@ class SlideGuardEvaluator:
                 )
             except Exception as e:
                 logger.error(f"Error creating slide evaluation result for slide {i}: {e}")
-                slide_evaluation_results.append(
+                out.append(
                     SlideEvaluationResult(
                         slide_deck_path=state.slides.slide_deck_path,
                         slide_id=slide.slide_id,
@@ -327,57 +399,70 @@ class SlideGuardEvaluator:
                         evaluations={},
                     )
                 )
-        return {"slide_evaluations": slide_evaluation_results}
+        return {"slide_evaluations": out}
 
     async def _node_build_deck_descriptions(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
-        if not state.slide_evaluations:
-            logger.error("No slide evaluations found. Returning fallback deck descriptions.")
-            return {"deck_descriptions": None}
+        if not state.slides:
+            return {}
+        types = (state.slide_service or {}).get(Criteria.slide_type) or []
+        descs = (state.slide_service or {}).get(Criteria.slide_description) or []
+        if len(descs) != len(state.slides.slides) or len(types) != len(state.slides.slides):
+            return {}
         slide_descriptions: List[SlideDescriptionWithType] = []
-        for slide in state.slide_evaluations:
+        for i in range(len(state.slides.slides)):
             try:
-                if slide.slide_description is not None and slide.slide_type is not None:
-                    slide_descriptions.append(
-                        SlideDescriptionWithType(
-                            **slide.slide_description.model_dump(),
-                            slide_type=slide.slide_type.slide_type,
-                        )
+                st = cast(SlideType, self._safe_get(types, i))
+                sd = cast(SlideDescription, self._safe_get(descs, i))
+                if sd is None: # allow for slide_type fails
+                    continue
+                slide_descriptions.append(
+                    SlideDescriptionWithType(
+                        **sd.model_dump(),
+                        slide_type=st.slide_type if st else [],
                     )
+                )
             except Exception as e:
-                logger.error(f"Error processing slide {slide.slide_id}: {e}")
+                logger.error(f"Error processing slide {i} for deck descriptions: {e}")
                 continue
-
         if not slide_descriptions:
-            logger.error("No slide descriptions found. Returning fallback deck descriptions.")
-            return {"deck_descriptions": None}
-
+            logger.warning("No slide descriptions found.")
+            return {}
         slide_deck_descriptions = SlideDeckDescriptions(
             slide_deck_path=state.presentation_path,
             slides=[DeckDescription.from_slide_descriptions(slide_descriptions)],
         )
         return {"deck_descriptions": slide_deck_descriptions}
 
-    async def _node_evaluate_deck_criteria(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
-        if not state.deck_criterias or not state.deck_descriptions:
-            logger.error("No deck criteria or deck descriptions found. Returning fallback deck evaluations.")
-            # TODO: return fallback deck evaluations
-            return {"deck_evaluations": None}
-
-        evaluations: Dict[Criteria, Any] = {}
-        for c in state.deck_criterias:
-            info = self.deck_infos[c]
+    def _make_deck_criterion_node(self, crit: Criteria):
+        async def _run(state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
+            if not state.deck_criterias or not state.deck_descriptions or crit not in state.deck_criterias:
+                return {}
+            info = self.deck_infos[crit]
             chain = info.to_runnable(self.llm)
             try:
                 res_list = await self._eval_criterion_with_cache(info, state.deck_descriptions, chain, config)
                 if res_list and res_list[0] is not None:
-                    evaluations[c] = self._postprocess_result(c, res_list[0])
+                    val = self._postprocess_result(crit, res_list[0])
                 else:
-                    evaluations[c] = FallbackResult()
+                    val = FallbackResult()
             except Exception as e:
-                logger.warning(f"Failed to evaluate deck criterion {c}: {e}. Returning fallback result.", exc_info=True)
-                evaluations[c] = FallbackResult()
+                logger.warning(f"Failed to evaluate deck criterion {crit}: {e}. Returning fallback result.", exc_info=True)
+                val = FallbackResult()
+            return {"deck_results": {crit: val}}
+        return _run
 
-        return {"deck_evaluations": DeckEvaluationResult(evaluations=evaluations)}
+    async def _node_gather_deck_results(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
+        if not state.deck_criterias:
+            return {"deck_evaluations": None}
+        try:
+            evaluations: Dict[Criteria, Any] = {
+                c: ((state.deck_results or {}).get(c) or FallbackResult())
+                for c in state.deck_criterias
+            }
+            return {"deck_evaluations": DeckEvaluationResult(evaluations=evaluations)}
+        except Exception as e:
+            logger.warning(f"Failed to gather deck results: {e}", exc_info=True)
+            return {"deck_evaluations": DeckEvaluationResult(evaluations={})}
 
     async def _node_build_summary(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         payload = self.summary_processor.get_summary_payload(state.slide_evaluations or [], state.deck_evaluations)
@@ -449,24 +534,19 @@ class SlideGuardEvaluator:
         return {"overall_score": score}
 
     def _criterion_applies(self, info: CriterionInfo, slide_types: List[str] | None) -> bool:
-        targets = getattr(info, "applicable_slide_types", None)
+        targets = info.applicable_slide_types
         if not targets:
             return True
         target_values = set(targets)
-        for st in (slide_types or []):
-            if st in target_values:
-                return True
-        return False
+        return any(st in target_values for st in (slide_types or []))
 
     def _filter_sort_by_severity(self, obj: CriterionResult) -> CriterionResult:
-        def _severity_value(v: Any) -> int:
-            return int(getattr(v, 'severity', 0))
         try:
-            items = sorted(getattr(obj, 'evaluation_results', []), key=_severity_value, reverse=True)
+            items = sorted(obj.evaluation_results, key=lambda v: v.severity, reverse=True)
             items = [item for item in items if item.severity > 0] # exclude 0 sev items (no issues found)
-            setattr(obj, 'evaluation_results', items)
+            obj.evaluation_results = items
             if not items:
-                setattr(obj, 'score', 5) # sanity check
+                obj.score = 5 # sanity check
         except Exception as e:
             logger.warning(f"Failed to filter and sort by severity: {e}", exc_info=True)
             pass
@@ -479,7 +559,7 @@ class SlideGuardEvaluator:
                 wl = ABBREVIATIONS_WHITELIST
                 for item in obj.evaluation_results:
                     try:
-                        token = str(getattr(item, "evaluation_element", "")).strip().lower().replace(".", "")
+                        token = str(item.evaluation_element).strip().lower().replace(".", "")
                         if token and token not in wl:
                             filtered.append(item)
                     except Exception as e:
@@ -505,12 +585,64 @@ class SlideGuardEvaluator:
                 return FallbackSlideDescription()
             return FallbackResult()
 
-    def _setup_tools(self) -> List:
-        """Setup tools for agents"""
-        tools = []
-        # Note: Search tools temporarily disabled for vLLM compatibility
-        # The core evaluation functionality works without external search
-        return tools
+    def _safe_get(self, container: Any, key_or_idx: Any, idx: Optional[int] = None) -> Optional[BaseModel]:
+        try:
+            if isinstance(container, dict):
+                lst = container.get(key_or_idx)
+                i = 0 if idx is None else idx
+            else:
+                lst = container
+                i = key_or_idx if isinstance(key_or_idx, int) else 0
+            return lst[i] if lst and i < len(lst) else None
+        except Exception:
+            return None
+
+    def _save_graph_images(self, app: CompiledStateGraph) -> None:
+        base_name = "slideguard_graph"
+        try:
+            out_dir = os.path.join(os.getcwd(), ".graph_images")
+            try:
+                os.makedirs(out_dir, exist_ok=True)
+            except Exception:
+                pass
+            png_path = os.path.join(out_dir, f"{base_name}.png")
+            graph = app.get_graph()
+            if not graph:
+                return
+            try:
+                data = graph.draw_mermaid_png()
+            except Exception as e:
+                logger.error(f"draw_mermaid_png failed: {e}")
+                return
+            try:
+                with open(png_path, "wb") as f:
+                    f.write(data)
+            except Exception as e:
+                logger.error(f"PNG write failed: {e}")
+            try:
+                full_graph = app.get_graph(xray=True)
+                full_png = os.path.join(out_dir, f"{base_name}_full.png")
+                full_data = full_graph.draw_mermaid_png()
+                with open(full_png, "wb") as f:
+                    f.write(full_data)
+            except Exception as e:
+                logger.error(f"Full workflow export failed: {e}")
+            try:
+                for name, sub in (self._compiled_subgraphs or {}).items():
+                    try:
+                        sub_graph = sub.get_graph()
+                        if not sub_graph:
+                            continue
+                        sub_png = os.path.join(out_dir, f"{base_name}_{name}.png")
+                        sub_data = sub_graph.draw_mermaid_png()
+                        with open(sub_png, "wb") as f:
+                            f.write(sub_data)
+                    except Exception as e:
+                        logger.error(f"Subgraph '{name}' export failed: {e}")
+            except Exception as e:
+                logger.error(f"Subgraphs export failed: {e}")
+        except Exception:
+            logger.exception("Graph export failed")
 
     async def _eval_criterion_with_cache(
         self,
@@ -537,14 +669,15 @@ class SlideGuardEvaluator:
                     logger.warning(f"Exception in cache computation for {info.criteria.value} idx={idx}. Creating fallback.")
                     return idx, self._create_fallback(info.pydantic)
 
-            payloads: List[Tuple[int, Dict[str, Any]]] = []
-            for i, in_ in inputs:
-                data: Dict[str, Any] = {}
-                if info.criteria.is_slide_criteria():
-                    data = {"slide_image_path": in_.slide_image_path, "slide_id": in_.slide_id}
-                else:
-                    data = {"deck_description": getattr(in_, "deck_description", "")}
-                payloads.append((i, data))
+            payloads: List[Tuple[int, Dict[str, Any]]] = [
+                (
+                    i,
+                    ({"slide_image_path": in_.slide_image_path, "slide_id": in_.slide_id}
+                     if info.criteria.is_slide_criteria()
+                     else {"deck_description": getattr(in_, "deck_description", "")})
+                )
+                for i, in_ in inputs
+            ]
 
             coros = [_ainvoke_one(i, d) for i, d in payloads]
             for coro in asyncio.as_completed(coros):
