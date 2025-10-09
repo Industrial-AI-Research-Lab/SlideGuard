@@ -3,7 +3,7 @@ Summary processing utilities for SlideGuard evaluations.
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 from collections import Counter, defaultdict
 from statistics import mean
 from pydantic import BaseModel
@@ -13,6 +13,14 @@ from slideguard.schemes import (
     Criteria, SlideEvaluationResult, DeckEvaluationResult
 )
 
+@runtime_checkable
+class ScoredEvaluation(Protocol):
+    score: int
+
+@runtime_checkable
+class EvaluationWithResults(Protocol):
+    evaluation_results: List[Any]
+    
 class SummaryConfig(BaseModel):
     context_severity_threshold: int = 2
     severity_threshold: int = 3
@@ -93,11 +101,11 @@ class SummaryProcessor:
         # Collect slide scores
         for slide in slide_evaluations:
             if slide.evaluations:
-                scores.extend(v.score for v in slide.evaluations.values() if hasattr(v, 'score'))
+                scores.extend(v.score for v in slide.evaluations.values() if isinstance(v, ScoredEvaluation))
         
         # Collect deck scores
         if deck_evaluations and deck_evaluations.evaluations:
-            scores.extend(v.score for v in deck_evaluations.evaluations.values() if hasattr(v, 'score'))
+            scores.extend(v.score for v in deck_evaluations.evaluations.values() if isinstance(v, ScoredEvaluation))
         
         if not scores:
             return None
@@ -131,17 +139,17 @@ class SummaryProcessor:
         """Calculate dynamic thresholds based on severity distribution."""
         base_config = SummaryConfig()
         
-        severities = [
-            item.severity for slide in slide_evaluations if slide.evaluations
-            for evaluation in slide.evaluations.values()
-            for item in getattr(evaluation, 'evaluation_results', [])
-        ]
+        severities = []
+        for slide in slide_evaluations:
+            if slide.evaluations:
+                for evaluation in slide.evaluations.values():
+                    if isinstance(evaluation, EvaluationWithResults):
+                        severities.extend(item.severity for item in evaluation.evaluation_results)
         
         if deck_evaluations:
-            severities.extend([
-                item.severity for evaluation in deck_evaluations.evaluations.values()
-                for item in getattr(evaluation, 'evaluation_results', [])
-            ])
+            for evaluation in deck_evaluations.evaluations.values():
+                if isinstance(evaluation, EvaluationWithResults):
+                    severities.extend(item.severity for item in evaluation.evaluation_results)
         
         # Adjust thresholds if less than 10% of items are severe
         if severities and sum(s >= base_config.severity_threshold for s in severities) / len(severities) < 0.1:
@@ -162,9 +170,11 @@ class SummaryProcessor:
     
     def _to_dict(self, obj: Any) -> Dict[str, Any]:
         """Convert object to dictionary representation."""
-        return obj.model_dump() if hasattr(obj, 'model_dump') else json.loads(
-            json.dumps(obj, default=lambda o: getattr(o, '__dict__', str(o)))
-        )
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+        else:
+            return json.loads(
+                json.dumps(obj, default=lambda o: o.__dict__ if hasattr(o, '__dict__') else str(o)))
     
     def _is_criterion_applicable(self, slide: SlideEvaluationResult, criterion: Criteria) -> bool:
         """Check if a criterion is applicable to a specific slide."""
@@ -175,7 +185,7 @@ class SummaryProcessor:
             )
         
         info = SLIDE_CRITERIA_INFO.get(criterion)
-        if not info or not getattr(info, 'applicable_slide_types', None):
+        if not info or not info.applicable_slide_types:
             return True
         
         types = slide.slide_type.slide_type if (slide.slide_type and slide.slide_type.slide_type) else []
@@ -347,10 +357,10 @@ class SummaryProcessor:
         for s in slide_evaluations:
             if s.evaluations:
                 for crit, ev in s.evaluations.items():
-                    if hasattr(crit, 'is_service_criteria') and crit.is_service_criteria():
+                    if crit.is_service_criteria():
                         continue
-                    key = crit.value if hasattr(crit, 'value') else str(crit)
-                    if hasattr(ev, 'evaluation_results'):
+                    key = crit.value
+                    if isinstance(ev, EvaluationWithResults):
                         severe_items = [it.severity for it in ev.evaluation_results if it.severity >= threshold]
                         slide_stats[key][0] += 1  # Total slides for this criterion
                         if severe_items:
@@ -367,11 +377,11 @@ class SummaryProcessor:
         deck_problems = []
         if deck_evaluations:
             for crit, ev in deck_evaluations.evaluations.items():
-                if hasattr(ev, 'evaluation_results'):
+                if isinstance(ev, EvaluationWithResults):
                     severe_items = [it.severity for it in ev.evaluation_results if it.severity >= threshold]
                     if severe_items:
                         deck_problems.append({
-                            "criterion": crit.value if hasattr(crit, 'value') else str(crit),
+                            "criterion": crit.value,
                             "priority": int(100 * ((sum(severe_items) / len(severe_items)) / 5.0))
                         })
         deck_problems.sort(key=lambda x: x["priority"], reverse=True)

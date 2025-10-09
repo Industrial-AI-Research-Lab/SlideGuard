@@ -52,5 +52,5 @@ SLIDE_ABBREVIATIONS = CriterionInfo(
 
 # Whitelist of abbreviations that should be ignored in model's output
 ABBREVIATIONS_WHITELIST: set[str] = {
-    'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag'
+    'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag'
 }

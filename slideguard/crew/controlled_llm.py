@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Type
 from pydantic import BaseModel
 
 from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain.output_parsers import RetryWithErrorOutputParser
@@ -120,7 +120,7 @@ class ControlledLLM:
             preprocessors=self.preprocessors,
         )
 
-    def with_structured_output_retry(self, output_model: Type[BaseModel]) -> Runnable:
+    def with_structured_output_retry(self, output_model: Type[BaseModel]) -> Runnable[[PromptValue], ControlledOutput]:
         """Runs prompt through the LLM and tries to parse the output using the output model.
 
         Appends parser.get_format_instructions() to the prompt
@@ -129,55 +129,53 @@ class ControlledLLM:
         retry_llm = self.chat_model.bind(temperature=self.retry_temperature)
         retry_parser = RetryWithErrorOutputParser.from_llm(parser=parser, llm=retry_llm)
 
-        async def _run(pv: PromptValue, config: Optional[RunnableConfig] = None) -> Dict[str, Any]:
+        async def _run(pv: PromptValue, config: Optional[RunnableConfig] = None) -> ControlledOutput:
             prompt_value = _ensure_image_messages(pv)
             try:
                 fmt = parser.get_format_instructions()
                 lang_instructions = get_language_instructions(AppLanguage.EN)
                 if isinstance(prompt_value, ChatPromptValue):
-                    extended_messages = list(prompt_value.messages) + [HumanMessage(content=f"{fmt}\n\n{lang_instructions}")]
+                    extended_messages = [*prompt_value.messages, HumanMessage(content=f"{fmt}\n\n{lang_instructions}")]
                     prompt_value = ChatPromptValue(messages=extended_messages)
             except Exception as e:
                 logger.error(f"Failed to extend messages: {e}", exc_info=True)
                 pass
 
-            msg: BaseMessage = await self.chat_model.ainvoke(prompt_value, config)
-            text = getattr(msg, "content", str(msg))
+            text: str = await (self.chat_model | StrOutputParser()).ainvoke(prompt_value, config)
 
             parsed_obj: Optional[BaseModel] = None
             raw_out: str = text
             current_text: str = text
             
-            # custom parse-retry loop
-            total_attempts = max(1, self.max_retries)
-            for attempt_no in range(1, total_attempts + 1):
-                cleaned = current_text
+            # parse with retry logic
+            attempt = 0
+            max_attempts = max(1, self.max_retries + 1) # +1 for the initial parse
+            
+            while attempt < max_attempts and not parsed_obj:
                 for fn in self.preprocessors:
-                    cleaned = fn(cleaned)
+                    current_text = fn(current_text)
+                
                 try:
-                    parsed_obj = await parser.aparse(cleaned)
-                    raw_out = cleaned
-                    break
+                    parsed_obj = await parser.aparse(current_text) # initial parse
+                    raw_out = current_text
                 except Exception as e:
-                    logger.info(f"({attempt_no}/{total_attempts}) Failed to parse output: {e}")
-                    if attempt_no == total_attempts:
-                        break
-                    try:
-                        parsed_obj = await retry_parser.aparse_with_prompt(cleaned, prompt_value)
-                        raw_out = json.dumps(parsed_obj.model_dump())
-                        break
-                    except Exception as e:
-                        logger.info(f"({attempt_no}/{total_attempts}) Failed to parse output with retry: {e}")
-                        current_text = cleaned
-                        continue
-
-            if parsed_obj is None:
+                    if attempt < self.max_retries: # retry parse
+                        logger.info(f"({attempt + 1}/{self.max_retries + 1}) Failed to parse output: {e}")
+                        try:
+                            parsed_obj = await retry_parser.aparse_with_prompt(current_text, prompt_value)
+                            raw_out = json.dumps(parsed_obj.model_dump())
+                        except Exception as retry_e:
+                            logger.info(f"({attempt + 1}/{self.max_retries + 1}) Failed to parse output with retry: {retry_e}")
+                    attempt += 1
+            
+            # Final fallback attempt
+            if not parsed_obj:
                 try:
                     data = json.loads(default_text_cleaner(current_text))
                     parsed_obj = output_model.model_validate(data)
                     raw_out = current_text
                 except Exception as e:
-                    logger.warning(f"Failed to parse output after {total_attempts} attempts: {e}. Returning only raw output.")
+                    logger.warning(f"Failed to parse output after {self.max_retries + 1} attempts: {e}. Returning only raw output.")
                     parsed_obj = None
                     raw_out = current_text
 
