@@ -33,10 +33,7 @@ Your task is to evaluate the visual arrangement, layout, and readability of elem
 ## Response Format:
 Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall visual assessment of the slide, identification of the slide title and its visual treatment, and analysis of layout structure and information hierarchy.
-In the Answer section, provide the final evaluation in JSON format with specific visual issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
-
-The answer in the 'Answer' section should be in the following JSON format:
-{schema_format}
+In the Answer section, return the final evaluation strictly following the format instructions.
 """
 
 class SlideVisualArrangementResult(BaseAttributes):
@@ -52,7 +49,7 @@ SLIDE_VISUAL_ARRANGEMENT = CriterionInfo(
     criteria=Criteria.slide_visual_arrangement,
     type="slide",
     criterion_description="Visual arrangement of the slide",
-    agent_prompt_template=prompt.format(schema_format=SlideVisualArrangement.model_json_schema()),
+    agent_prompt_template=prompt,
     task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideVisualArrangement,
     applicable_slide_types=None,  # Applies to all slide types

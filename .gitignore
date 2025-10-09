@@ -226,6 +226,7 @@ resources/outputs
 evaluation.json
 multirun_results
 *.db
+.graph_images
 
 # Env files
 .env

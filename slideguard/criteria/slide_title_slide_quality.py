@@ -24,10 +24,7 @@ If some of the elements are missing, then you need to make a remark and suggest 
 ## Response Format:
 Your answer should have two sections: «Thought» and «Answer».
 In the Thought section, provide your reasoning and analysis including an overall assessment of the slide title.
-In the Answer section, provide the final evaluation in JSON format with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
-
-The answer in the 'Answer' section should be in the following JSON format:
-{schema_format}
+In the Answer section, return the final evaluation strictly following the format instructions with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 """
 
 class SlideTitleSlideQualityResult(BaseAttributes):

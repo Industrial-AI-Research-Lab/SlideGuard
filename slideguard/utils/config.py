@@ -10,8 +10,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from langfuse import Langfuse, get_client
-from openinference.instrumentation.crewai import CrewAIInstrumentor
-from openinference.instrumentation.litellm import LiteLLMInstrumentor
 
 
 logger = logging.getLogger(__name__)
@@ -27,7 +25,9 @@ class SlideGuardConfig:
         self.cache_dir = os.getenv('SLIDEGUARD_CACHE_DIR', '.slideguard_cache')
         self.evaluations_cache_dir = os.getenv('SLIDEGUARD_EVALUATIONS_DIR', os.path.join(self.cache_dir, 'evaluations'))
         self.file_cache_dir = os.getenv('SLIDEGUARD_FILE_CACHE_DIR', os.path.join(self.cache_dir, 'file_cache'))
-        self.max_concurrency = max_concurrency or int(os.getenv('SLIDEGUARD_MAX_CONCURRENCY', '0'))
+        env_mc = os.getenv('SLIDEGUARD_MAX_CONCURRENCY')
+        parsed_mc = int(env_mc) if env_mc and env_mc.isdigit() and int(env_mc) > 0 else None
+        self.max_concurrency = max_concurrency if max_concurrency is not None else parsed_mc
     
     def is_configured(self) -> bool:
         """Check if required environment variables are set"""
@@ -37,7 +37,7 @@ class SlideGuardConfig:
         """Get LLM configuration dictionary"""
         return {
             'api_key': self.api_key,
-            'api_base': self.api_base,
+            'base_url': self.api_base, # in langchain-openai api_base is moved to model_kwargs, use base_url instead
             'model': self.model
         }
     
@@ -81,6 +81,14 @@ SLIDEGUARD_LLM_MODEL=/model
 # Cache Configuration (optional)
 SLIDEGUARD_CACHE_DIR=.slideguard_cache
 SLIDEGUARD_FILE_CACHE_DIR=.file_cache
+
+# Concurrency (optional)
+# SLIDEGUARD_MAX_CONCURRENCY=8
+
+# OpenAI integration (optional)
+# If set, OpenAI will be used instead of local model
+# OPENAI_API_KEY=sk-...
+# OPENAI_MODEL=gpt-4o
 
 # Examples for different services:
 # 
@@ -126,8 +134,5 @@ def load_langfuse_client(use_langfuse: bool) -> Langfuse | None:
         logger.info("Langfuse client is authenticated and ready!")
     else:
         logger.error("Langfuse Authentication failed. Please check your credentials and host.")
-
-    CrewAIInstrumentor().instrument(skip_dep_check=True)
-    LiteLLMInstrumentor().instrument()
 
     return langfuse_client

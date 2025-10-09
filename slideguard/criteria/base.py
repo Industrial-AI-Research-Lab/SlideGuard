@@ -3,7 +3,11 @@ from pydantic import BaseModel, Field
 from typing import Literal, List, Optional, Type
 from textwrap import dedent
 
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import Runnable
+
 from slideguard.schemes import Criteria
+from slideguard.crew.controlled_llm import ControlledLLM
 
 
 logger = logging.getLogger(__name__)
@@ -23,15 +27,19 @@ class CriterionInfo(BaseModel):
 
     @property
     def agent_prompt(self) -> str:
-        try:
-            return self.agent_prompt_template.format(schema_format=self.pydantic.model_json_schema())
-        except (KeyError, ValueError) as e:
-            logger.info(f"Template formatting error: {e}. Template may not contain 'schema_format' placeholder or has other unresolved placeholders. Returning template as-is.")
-            return self.agent_prompt_template
+        # No schema insertion here; ControlledLLM appends format instructions itself
+        return self.agent_prompt_template
+    
+    def to_runnable(self, llm: ControlledLLM) -> Runnable:
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", self.agent_prompt),
+            ("user", self.task_prompt_template),
+        ])
+        return prompt | llm.with_structured_output_retry(self.pydantic)
         
 
 class BaseAttributes(BaseModel):
-    severity: int = Field(description="Severity of the issue: 1 - minor, 2 - moderate, 3 - serious", ge=1, le=3)
+    severity: int = Field(description="Severity of the issue: 0 - no issues found, 1 - minor, 2 - moderate, 3 - serious", ge=0, le=3)
 
 
 # Define criterion categories

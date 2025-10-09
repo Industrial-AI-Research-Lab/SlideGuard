@@ -32,10 +32,7 @@ Your task is to check whether the color scheme and fonts correspond to the gener
 ## Response Format:
 Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall assessment of the slide color scheme and fonts.
-In the Answer section, provide the final evaluation in JSON format with specific visual issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
-
-The answer in the 'Answer' section should be in the following JSON format:
-{schema_format}
+In the Answer section, return the final evaluation strictly following the format instructions with specific visual issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 """
 
 

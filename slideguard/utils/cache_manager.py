@@ -1,6 +1,8 @@
 import logging
 import os
 import pickle
+import hashlib
+import json
 from pathlib import Path
 from abc import ABC
 from typing import Any, AsyncIterable, Callable, Generic, Iterable, List, Optional, Tuple, TypeVar, Union
@@ -21,7 +23,29 @@ class CacheManager(Generic[T, U], ABC):
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_hash_id(self, key: BaseModel | str ) -> str:
-        return hash(key)
+        # NOTE: may still have cache misses:
+        # for slide criteria hashing by image bytes instead of the path may increase robustness
+        # for deck criteria can lead to cache misses if the slide descriptions are regenerated, otherwise should work fine
+        try:
+            if isinstance(key, BaseModel):
+                payload_dict = key.model_dump(mode="json")
+                payload = json.dumps(payload_dict, sort_keys=True, separators=(",", ":"))
+            else:
+                payload = str(key)
+        except Exception:
+            payload = repr(key)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest() # no salting the hash for deterministic results
+
+    def _is_fallback(self, value: Any) -> bool:
+        try:
+            if not isinstance(value, BaseModel):
+                return False
+            if getattr(value, "__slideguard_fallback__", False):
+                return True
+            name = value.__class__.__name__
+            return name.startswith("Fallback")
+        except Exception:
+            return False
 
     async def _get_path(self, hash_id: str, deck_name: str, criteria_id: str, slide_id: Optional[str] = None) -> Path:
         # Handle case where slide_id is None (deck-level criteria)
@@ -39,6 +63,9 @@ class CacheManager(Generic[T, U], ABC):
 
         with open(cache_path, "rb") as f:
             data = pickle.load(f)
+        
+        if self._is_fallback(data):
+            return None
         
         return data
 
@@ -81,7 +108,8 @@ class CacheManager(Generic[T, U], ABC):
         if to_compute:
             async for i, result in func(to_compute):
                 hash_id = self._get_hash_id(inputs[i])
-                await self._put(hash_id, result, deck_name, criteria_id, inputs[i].slide_id)
+                if not self._is_fallback(result):
+                    await self._put(hash_id, result, deck_name, criteria_id, inputs[i].slide_id)
                 results.append((i, result))
 
         results = [result for _, result in sorted(results, key=lambda x: x[0])]

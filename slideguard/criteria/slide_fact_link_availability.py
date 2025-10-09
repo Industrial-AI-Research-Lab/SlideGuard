@@ -25,10 +25,7 @@ Fix if the link is missing, invalid, or the data is unjustified.
 ## Response Format:
 Your answer should have two sections: Thought and Answer.
 First, in the 'Thought' section, write down your reasoning on the task, including searching for links and facts that must be supported by sources on the slide. Make sure that important information on the slide is provided with links to sources. The link is usually at the bottom of the slide and can represent a URL, the name of a book or article, or have an explanatory word "source" or something similar. Very carefully check that you did not miss mentioning the source on the slide, otherwise you will get a penalty.
-In the Answer section, provide the final evaluation in JSON format with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
-
-The answer in the 'Answer' section should be in the following JSON format:
-{schema_format}
+In the Answer section, return the final evaluation strictly following the format instructions with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 """
 
 

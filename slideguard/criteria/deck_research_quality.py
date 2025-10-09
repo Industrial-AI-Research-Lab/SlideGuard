@@ -39,9 +39,7 @@ Your task is to assess whether the presentation demonstrates a strong research f
 Your answer must contain two sections: "Thought" and "Answer".
 Evaluate the presentation's research quality by examining the evidence-based approach to problem solving, the clarity of the proposed solution, and the scientific rigor of the research.
 Provide specific suggestions for improving the research quality of the presentation.
-
-The answer in the 'Answer' section should be in the following JSON format:
-{schema_format}
+In the Answer section, provide the final evaluation strictly following the format instructions.
 """
 
 

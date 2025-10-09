@@ -29,7 +29,7 @@ from slideguard.ui.auth import verify_user_db, get_role, register_user, Role, li
 class SlideGuardUI:
     """Main UI class for SlideGuard application."""
     
-    def __init__(self, use_langfuse: bool = False):
+    def __init__(self, use_langfuse: bool = False, eval_debug: bool = False):
         self.evaluator = None
         self.current_evaluation = None
         self.slide_images = []
@@ -44,6 +44,7 @@ class SlideGuardUI:
         # Load configuration
         self.config = load_config()
         self.langfuse_client = load_langfuse_client(use_langfuse)
+        self.eval_debug = eval_debug
         
         # Initialize evaluator and report generator
         self._initialize_evaluator()
@@ -60,7 +61,9 @@ class SlideGuardUI:
             self.evaluator = SlideGuardEvaluator(
                 file_manager=FileManager(self.config.file_cache_dir),
                 cache_manager=CacheManager(self.config.evaluations_cache_dir),
-                llm=llm
+                llm=llm,
+                max_concurrency=self.config.max_concurrency,
+                debug=self.eval_debug
             )
             self.logger.info("Evaluator initialized successfully")
         except Exception as e:
@@ -132,7 +135,7 @@ class SlideGuardUI:
         
         return slide_criterias, deck_criterias
     
-    async def evaluate_presentation(self, pdf_file, selected_criteria) -> UIEvaluationResult:
+    async def evaluate_presentation(self, pdf_file, slide_selected, deck_selected) -> UIEvaluationResult:
         """Evaluate a presentation and return results."""
         if not pdf_file:
             return UIEvaluationResult.error("Please upload a PDF file to start evaluation.")
@@ -144,6 +147,7 @@ class SlideGuardUI:
             self.current_evaluation = None
             
             # Load criteria
+            selected_criteria = (slide_selected or []) + (deck_selected or [])
             slide_criterias, deck_criterias = self._load_criteria(selected_criteria)
             
             # Run evaluation
@@ -631,8 +635,8 @@ class SlideGuardUI:
         # Available criteria (exclude internal helper criteria)
         slide_criteria = [c for c in SLIDE_CRITERIA_INFO.keys() if not c.is_service_criteria()]
         deck_criteria = list(DECK_CRITERIA_INFO.keys())
-        all_criteria = slide_criteria + deck_criteria
-        criteria_choices = [c.value for c in all_criteria]
+        slide_criteria_choices = [c.value for c in slide_criteria]
+        deck_criteria_choices = [c.value for c in deck_criteria]
         
         with gr.Blocks(title="SlideGuard - Presentation Evaluation", theme=gr.themes.Default()) as interface:
             gr.Markdown("# 🎯 SlideGuard - AI-Powered Presentation Evaluation")
@@ -653,10 +657,16 @@ class SlideGuardUI:
                     
                     # Criteria selection
                     gr.Markdown("## 🎯 Select Evaluation Criteria")
-                    criteria_input = gr.CheckboxGroup(
-                        choices=criteria_choices,
-                        label="Choose criteria to evaluate",
-                        value=criteria_choices,  # Select all by default
+                    slide_criteria_input = gr.CheckboxGroup(
+                        choices=slide_criteria_choices,
+                        label="Slide criteria",
+                        value=slide_criteria_choices,
+                        interactive=True
+                    )
+                    deck_criteria_input = gr.CheckboxGroup(
+                        choices=deck_criteria_choices,
+                        label="Deck criteria",
+                        value=deck_criteria_choices,
                         interactive=True
                     )
                     
@@ -810,7 +820,29 @@ class SlideGuardUI:
 
             
             # Event handlers
+            def _validate_criteria(s, d):
+                if not (s or d):
+                    raise gr.Error("Please select at least one criteria.")
+
+            def _toggle_evaluate_btn(s, d):
+                return gr.update(interactive=bool(s or d))
+
+            slide_criteria_input.change(
+                fn=_toggle_evaluate_btn,
+                inputs=[slide_criteria_input, deck_criteria_input],
+                outputs=[evaluate_btn]
+            )
+            deck_criteria_input.change(
+                fn=_toggle_evaluate_btn,
+                inputs=[slide_criteria_input, deck_criteria_input],
+                outputs=[evaluate_btn]
+            )
+
             evaluate_btn.click(
+                fn=_validate_criteria,
+                inputs=[slide_criteria_input, deck_criteria_input],
+                outputs=[]
+            ).then(
                 fn=self._clear_slide_navigation_state,
                 inputs=[pdf_input],
                 outputs=[slide_number, slide_image, slide_evaluation]
@@ -825,7 +857,7 @@ class SlideGuardUI:
                 outputs=[slide_evaluation]
             ).then(
                 fn=self.evaluate_presentation,
-                inputs=[pdf_input, criteria_input],
+                inputs=[pdf_input, slide_criteria_input, deck_criteria_input],
                 outputs=[result_state]
             ).then(
                 fn=lambda r: tuple(r),
@@ -899,13 +931,13 @@ class SlideGuardUI:
         return interface
 
 
-def create_app(auth:bool = True, use_langfuse: bool = False):
+def create_app(auth:bool = True, use_langfuse: bool = False, eval_debug: bool = False):
     """Create and return the Gradio app."""
     if auth:
         from slideguard.ui.auth import init_db
         init_db()
 
-    ui = SlideGuardUI(use_langfuse=use_langfuse)
+    ui = SlideGuardUI(use_langfuse=use_langfuse, eval_debug=eval_debug)
     return ui.create_ui()
 
 
