@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
 from slideguard.schemes import Criteria
+from slideguard.criteria.slide_types import SlideType
 
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide.
@@ -46,6 +47,7 @@ SLIDE_TITLE_CONTENT_MATCH = CriterionInfo(
     task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideTitleContentMatch,
     applicable_slide_types=None,  # Applies to all slide types
+    exclude_slide_types=[SlideType.TITLE_SLIDE.value, SlideType.END_SLIDE.value, SlideType.SEPARATOR.value],
     priority=3,
     requires_slide_type=False,
     category="visual"

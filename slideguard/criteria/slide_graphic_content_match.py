@@ -53,8 +53,10 @@ SLIDE_GRAPHIC_CONTENT_MATCH = CriterionInfo(
     agent_prompt_template=prompt,
     task_prompt_template=BASE_SLIDE_TASK_PROMPT,
     pydantic=SlideGraphicContentMatch,
-    applicable_slide_types=None, #maybe best to add flag for graphic content?
+    applicable_slide_types=None,
+    exclude_slide_types=[SlideType.TITLE_SLIDE.value, SlideType.END_SLIDE.value, SlideType.SEPARATOR.value],
     priority=4,
     requires_slide_type=True,
+    requires_infographics=True,
     category="visual"
 )

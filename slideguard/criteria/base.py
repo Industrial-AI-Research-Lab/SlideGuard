@@ -21,8 +21,10 @@ class CriterionInfo(BaseModel):
     pydantic: Type[BaseModel]
     # New fields for enhanced functionality
     applicable_slide_types: Optional[List[str]] = None  # If None, applies to all slide types
+    exclude_slide_types: Optional[List[str]] = None  # If None, applies to all slide types
     priority: int = 1  # Priority for evaluation order (lower = higher priority)
     requires_slide_type: bool = False  # Whether this criterion requires slide type classification first
+    requires_infographics: bool = False  # Whether this criterion requires infographics classification first
     category: str = "general"  # Category for grouping criteria (e.g., "visual", "content", "structure")
 
     @property

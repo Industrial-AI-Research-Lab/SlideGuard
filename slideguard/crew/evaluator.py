@@ -64,10 +64,11 @@ class FallbackResult(BaseModel, FallbackMarker):
     comments: str = "This evaluation failed due to technical issues. Please try again."
     recommendations: str = "Consider re-running the evaluation with different settings."
 
-class FallbackSlideType(SlideType, FallbackMarker):
+class FallbackSlideType(SlideType, FallbackMarker): # NOTE: can be replaced with pydantic fallback values
     slide_type: list[str] = ["unknown"]
+    contains_infographics: bool = False
 
-class FallbackSlideDescription(SlideDescription, FallbackMarker):
+class FallbackSlideDescription(SlideDescription, FallbackMarker): # NOTE: can be replaced with pydantic fallback values
     title: str = "Evaluation Failed"
     description: str = "This slide evaluation failed due to technical issues. Please try again."
     summary: str = "Unable to analyze this slide due to evaluation errors."
@@ -314,15 +315,19 @@ class SlideGuardEvaluator:
             info = SLIDE_CRITERIA_INFO[crit] # TODO: use factory pattern instead
             chain = info.to_runnable(self.llm)
             total = len(state.slides.slides)
-            applicable = info.applicable_slide_types
-            requires_type = info.requires_slide_type
+            needs_filtering = (
+                info.applicable_slide_types or 
+                info.exclude_slide_types or 
+                info.requires_slide_type or # TODO: legacy, remove
+                info.requires_infographics
+            )
 
             eligible = list(range(total))
-            if applicable or requires_type:
-                st_service = (state.slide_service or {}).get(Criteria.slide_type)
+            if needs_filtering:
+                st_service = (state.slide_service or {}).get(Criteria.slide_type) # TODO: use factory pattern instead
                 if st_service and len(st_service) == total:
                     slide_types_per_slide: List[List[str]] = [st_service[i].slide_type for i in range(total)]
-                    eligible = [i for i, types in enumerate(slide_types_per_slide) if self._criterion_applies(info, types)]
+                    eligible = [i for i, types in enumerate(slide_types_per_slide) if self._criterion_applies(info, types, st_service[i].contains_infographics)]
                 else:
                     eligible = list(range(total))
 
@@ -408,6 +413,7 @@ class SlideGuardEvaluator:
                     SlideDescriptionWithType(
                         **sd.model_dump(),
                         slide_type=st.slide_type if st else [],
+                        contains_infographics=st.contains_infographics if st else False, # NOTE: can be replaced with pydantic fallback values
                     )
                 )
             except Exception as e:
@@ -526,12 +532,18 @@ class SlideGuardEvaluator:
         score = self.summary_processor.calculate_overall_score(state.slide_evaluations or [], state.deck_evaluations)
         return {"overall_score": score}
 
-    def _criterion_applies(self, info: CriterionInfo, slide_types: List[str] | None) -> bool:
-        targets = info.applicable_slide_types
-        if not targets:
-            return True
-        target_values = set(targets)
-        return any(st in target_values for st in (slide_types or []))
+    def _criterion_applies(self, info: CriterionInfo, slide_types: List[str], contains_infographics: bool) -> bool:
+        ts, xs, ri = info.applicable_slide_types, info.exclude_slide_types, info.requires_infographics
+        # Check exclusions first
+        if xs and any(st in xs for st in slide_types):
+            return False
+        # Check applicable types
+        if ts and not any(st in ts for st in slide_types):
+            return False
+        # Check infographics requirement
+        if ri and not contains_infographics:
+            return False
+        return True
 
     def _is_applicable_result(self, v: Optional[BaseModel]) -> bool:
         if v is None:
