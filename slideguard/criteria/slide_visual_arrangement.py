@@ -1,7 +1,3 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
-
 prompt = """
 You are an expert in slide visual design and readability analysis.
 You will be provided with a screenshot of one slide from a presentation.
@@ -35,25 +31,3 @@ Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall visual assessment of the slide, identification of the slide title and its visual treatment, and analysis of layout structure and information hierarchy.
 In the Answer section, return the final evaluation strictly following the format instructions.
 """
-
-class SlideVisualArrangementResult(BaseAttributes):
-    evaluation_element: str = Field(description="Comment on the slide issue")
-    evaluation_suggestion: str = Field(description="Suggestion for the slide")
-
-class SlideVisualArrangement(BaseModel):
-    evaluation_results: list[SlideVisualArrangementResult] = Field(description="List of identified visual issues")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
-
-
-SLIDE_VISUAL_ARRANGEMENT = CriterionInfo(
-    criteria=Criteria.slide_visual_arrangement,
-    type="slide",
-    criterion_description="Visual arrangement of the slide",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
-    pydantic=SlideVisualArrangement,
-    applicable_slide_types=None,  # Applies to all slide types
-    priority=2,
-    requires_slide_type=False,
-    category="visual"
-)

@@ -9,14 +9,14 @@ import io
 from pathlib import Path
 from html import escape
 from textwrap import dedent
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 import gradio as gr
 from PIL import Image
 import fitz  # PyMuPDF
 
-from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
+from slideguard.criteria import get_registry_provider
 from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult
-from slideguard.utils.config import SlideGuardConfig, load_config
+from slideguard.utils.config import load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
 from slideguard.utils.cache_manager import CacheManager
@@ -46,6 +46,9 @@ class SlideGuardUI:
         self.langfuse_client = load_langfuse_client(use_langfuse)
         self.eval_debug = eval_debug
         
+        # Initialize registry provider
+        self.registry_provider = get_registry_provider()
+        
         # Initialize evaluator and report generator
         self._initialize_evaluator()
         self.report_generator = SlideGuardReportGenerator()
@@ -63,7 +66,8 @@ class SlideGuardUI:
                 cache_manager=CacheManager(self.config.evaluations_cache_dir),
                 llm=llm,
                 max_concurrency=self.config.max_concurrency,
-                debug=self.eval_debug
+                debug=self.eval_debug,
+                registry_provider=self.registry_provider
             )
             self.logger.info("Evaluator initialized successfully")
         except Exception as e:
@@ -130,12 +134,13 @@ class SlideGuardUI:
             slide_criterias = [c for c in criterias if c.is_slide_criteria()]
             deck_criterias = [c for c in criterias if c.is_deck_criteria()]
         else:
-            slide_criterias = list(SLIDE_CRITERIA_INFO.keys())
-            deck_criterias = list(DECK_CRITERIA_INFO.keys())
+            registry = self.registry_provider.get_for_user()
+            slide_criterias = registry.get_slide_ids()
+            deck_criterias = registry.get_deck_ids()
         
         return slide_criterias, deck_criterias
     
-    async def evaluate_presentation(self, pdf_file, slide_selected, deck_selected) -> UIEvaluationResult:
+    async def evaluate_presentation(self, pdf_file, slide_selected, deck_selected, user_id: Optional[str] = None) -> UIEvaluationResult:
         """Evaluate a presentation and return results."""
         if not pdf_file:
             return UIEvaluationResult.error("Please upload a PDF file to start evaluation.")
@@ -150,6 +155,9 @@ class SlideGuardUI:
             selected_criteria = (slide_selected or []) + (deck_selected or [])
             slide_criterias, deck_criterias = self._load_criteria(selected_criteria)
             
+            # Get registry for user
+            registry = self.registry_provider.get_for_user(user_id)
+            
             # Run evaluation
             self.logger.info(f"Starting evaluation with {len(slide_criterias)} slide criteria and {len(deck_criterias)} deck criteria")
             
@@ -157,7 +165,9 @@ class SlideGuardUI:
                 presentation_path=pdf_file.name,
                 slide_criterias=slide_criterias,
                 deck_criterias=deck_criterias,
-                langfuse_client=self.langfuse_client
+                langfuse_client=self.langfuse_client,
+                registry=registry,
+                user_id=user_id
             )
             
             self.current_evaluation = evaluation
@@ -210,7 +220,7 @@ class SlideGuardUI:
         
         for criteria, eval_result in evaluation.deck_evaluations.evaluations.items():
             criteria_name = criteria.value.replace('_', ' ').title()
-            result += f"<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #333333;'>\n"
+            result += "<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #333333;'>\n"
             result += f"<h3 style='color: #333333; margin-top: 0;'>🎯 {criteria_name}</h3>\n"
             
             # Handle both Pydantic objects and dictionaries
@@ -279,12 +289,12 @@ class SlideGuardUI:
                         result += f"<p style='color: #333333; margin: 8px 0;'><strong>💡 Recommendations:</strong><br>{eval_result['recommendations']}</p>\n"
                     result += "</div>\n"
                 else:
-                    result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                    result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
                     result += f"{eval_result}\n"
                     result += "</div>\n"
             else:
                 # Fallback for other formats
-                result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
                 result += f"{eval_result}\n"
                 result += "</div>\n"
             
@@ -305,14 +315,14 @@ class SlideGuardUI:
                 overall_icon = "🔴"
                 overall_text = "Needs Improvement"
             
-            result += f"<div style='background-color: #e3f2fd; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; color: #333333;'>\n"
+            result += "<div style='background-color: #e3f2fd; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; color: #333333;'>\n"
             result += f"<h3 style='color: #333333; margin-top: 0;'>🏆 <strong>Overall Score: {overall_icon} {evaluation.overall_score:.2f}/5.0 ({overall_percentage:.0f}%)</strong></h3>\n"
             result += f"<p style='color: #333333; margin: 8px 0;'><strong>Overall Assessment:</strong> {overall_text}</p>\n"
             result += "</div>\n\n"
         
         if evaluation.summary:
-            result += f"<div style='background-color: #f3e5f5; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #9c27b0; color: #333333;'>\n"
-            result += f"<h3 style='color: #333333; margin-top: 0;'>📝 <strong>Summary</strong></h3>\n"
+            result += "<div style='background-color: #f3e5f5; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #9c27b0; color: #333333;'>\n"
+            result += "<h3 style='color: #333333; margin-top: 0;'>📝 <strong>Summary</strong></h3>\n"
             result += f"<p style='color: #333333; margin: 8px 0;'>{evaluation.summary}</p>\n"
             result += "</div>\n\n"
         
@@ -373,7 +383,7 @@ class SlideGuardUI:
         if slide_eval.evaluations:
             for criteria, eval_result in slide_eval.evaluations.items():
                 criteria_name = criteria.value.replace('_', ' ').title()
-                result += f"<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n"
+                result += "<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n"
                 result += f"<h3 style='color: #333333; margin-top: 0;'>🎯 {criteria_name}</h3>\n"
                 
                 # Handle both Pydantic objects and dictionaries
@@ -398,7 +408,7 @@ class SlideGuardUI:
                             score_icon = "🔴"
                             score_text = "Needs Improvement"
                         
-                        result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                        result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
                         result += f"<p><strong>📊 Score: {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
                         result += f"<p><strong>Assessment:</strong> {score_text}</p>\n"
                         result += "</div>\n"
@@ -424,7 +434,7 @@ class SlideGuardUI:
                             score_icon = "🔴"
                             score_text = "Needs Improvement"
                         
-                        result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                        result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
                         result += f"<p><strong>📊 Score: {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
                         result += f"<p><strong>Assessment:</strong> {score_text}</p>\n"
                         
@@ -434,12 +444,12 @@ class SlideGuardUI:
                             result += f"<p><strong>💡 Recommendations:</strong><br>{eval_result['recommendations']}</p>\n"
                         result += "</div>\n"
                     else:
-                        result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                        result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
                         result += f"{eval_result}\n"
                         result += "</div>\n"
                 else:
                     # Fallback for other formats
-                    result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                    result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
                     result += f"{eval_result}\n"
                     result += "</div>\n"
                 
@@ -498,15 +508,15 @@ class SlideGuardUI:
                         severity = int(severity_match.group(1)) if severity_match else 1
                     else:
                         # Fallback for completely unexpected format
-                        result += f"<div style='background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #666;'>\n"
-                        result += f"### ⚠️ **Unexpected Result Format**\n"
+                        result += "<div style='background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #666;'>\n"
+                        result += "### ⚠️ **Unexpected Result Format**\n"
                         result += f"**Raw Data:** {str(eval_item)[:200]}...\n"
                         result += "</div>\n\n"
                         continue
                 except Exception as e:
                     # Final fallback
-                    result += f"<div style='background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #666;'>\n"
-                    result += f"### ⚠️ **Error Processing Result**\n"
+                    result += "<div style='background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #666;'>\n"
+                    result += "### ⚠️ **Error Processing Result**\n"
                     result += f"**Error:** {str(e)}\n"
                     result += f"**Raw Data:** {str(eval_item)[:200]}...\n"
                     result += "</div>\n\n"
@@ -519,25 +529,21 @@ class SlideGuardUI:
             if severity == 1:
                 severity_icon = "🟢"
                 severity_text = "Low Priority"
-                severity_color = "#4caf50"
                 bg_color = "#e8f5e8"
                 border_color = "#4caf50"
             elif severity == 2:
                 severity_icon = "🟡"
                 severity_text = "Medium Priority"
-                severity_color = "#ff9800"
                 bg_color = "#fff3e0"
                 border_color = "#ff9800"
             elif severity == 3:
                 severity_icon = "🔴"
                 severity_text = "High Priority"
-                severity_color = "#f44336"
                 bg_color = "#ffebee"
                 border_color = "#f44336"
             else:
                 severity_icon = "⚪"
                 severity_text = "Info"
-                severity_color = "#9e9e9e"
                 bg_color = "#f5f5f5"
                 border_color = "#9e9e9e"
             
@@ -633,8 +639,9 @@ class SlideGuardUI:
     def create_ui(self):
         """Create the Gradio interface."""
         # Available criteria (exclude internal helper criteria)
-        slide_criteria = [c for c in SLIDE_CRITERIA_INFO.keys() if not c.is_service_criteria()]
-        deck_criteria = list(DECK_CRITERIA_INFO.keys())
+        registry = self.registry_provider.get_for_user()
+        slide_criteria = [c for c in registry.get_slide_ids() if not c.is_service_criteria()]
+        deck_criteria = registry.get_deck_ids()
         slide_criteria_choices = [c.value for c in slide_criteria]
         deck_criteria_choices = [c.value for c in deck_criteria]
         

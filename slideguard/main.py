@@ -22,7 +22,7 @@ from io import StringIO
 import typer
 from tqdm.asyncio import tqdm
 
-from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
+from slideguard.criteria import get_registry_provider
 from slideguard.utils.config import SlideGuardConfig, load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
@@ -109,8 +109,10 @@ def _load_criterias(criteria: Optional[List[str]]) -> Tuple[List[Criteria], List
         slide_criterias = [c for c in criterias if c.is_slide_criteria()]
         deck_criterias = [c for c in criterias if c.is_deck_criteria()]
     else:
-        slide_criterias = list(SLIDE_CRITERIA_INFO.keys())
-        deck_criterias = list(DECK_CRITERIA_INFO.keys())
+        provider = get_registry_provider()
+        registry = provider.get_for_user()
+        slide_criterias = registry.get_slide_ids()
+        deck_criterias = registry.get_deck_ids()
     
     return slide_criterias, deck_criterias
 
@@ -174,7 +176,7 @@ async def _process_pdf_with_capture(
                 )
             
             result_content = evaluation.model_dump_json(indent=4)
-        except Exception as e:
+        except Exception:
             full_error = f"Exception:\n{traceback.format_exc()}"
         finally:
             stdout_content = stdout_capture.getvalue()
@@ -218,19 +220,21 @@ def eval_list_criterias() -> None:
     typer.echo("SlideGuard - Available Evaluation Criteria")
     typer.echo("=" * 45)
     
+    provider = get_registry_provider()
+    registry = provider.get_for_user()
     # Slide-level criteria
     typer.echo("\n📊 Slide-Level Criteria:")
     typer.echo("-" * 25)
-    for criteria in SLIDE_CRITERIA_INFO.keys():
+    for criteria in registry.get_slide_ids():
         typer.echo(f"  • {criteria.value}")
     
     # Deck-level criteria
     typer.echo("\n📋 Deck-Level Criteria:")
     typer.echo("-" * 24)
-    for criteria in DECK_CRITERIA_INFO.keys():
+    for criteria in registry.get_deck_ids():
         typer.echo(f"  • {criteria.value}")
     
-    typer.echo(f"\nTotal: {len(SLIDE_CRITERIA_INFO)} slide criteria, {len(DECK_CRITERIA_INFO)} deck criteria")
+    typer.echo(f"\nTotal: {len(registry.get_slide_ids())} slide criteria, {len(registry.get_deck_ids())} deck criteria")
     typer.echo("\nUsage examples:")
     typer.echo("  slideguard eval run -p presentation.pdf --criteria slide_visual_arrangement")
     typer.echo("  slideguard eval run -p presentation.pdf --criteria deck_structure_analysis")
@@ -277,7 +281,7 @@ def eval_run(
     ),
 ) -> None:
     """Start an evaluation for the given presentation."""
-    typer.echo(f"Loading settings...")
+    typer.echo("Loading settings...")
 
     slide_criterias, deck_criterias = _load_criterias(criteria)
 
@@ -292,12 +296,14 @@ def eval_run(
         _print_config_help(config)
         raise typer.Exit(code=1)
 
+    provider = get_registry_provider()
     evaluator = SlideGuardEvaluator(
         file_manager=FileManager(config.file_cache_dir),
         cache_manager=CacheManager(config.evaluations_cache_dir),
         llm=llm,
         max_concurrency=config.max_concurrency,
-        debug=eval_debug
+        debug=eval_debug,
+        registry_provider=provider,
     )
 
     typer.echo(f"Starting evaluation for {presentation_path}...")
@@ -374,7 +380,7 @@ def eval_multirun(
     ),
 ) -> None:
     """Start evaluations for all PDF files in the given folder."""
-    typer.echo(f"Loading settings...")
+    typer.echo("Loading settings...")
     
     slide_criterias, deck_criterias = _load_criterias(criteria)
     
@@ -387,12 +393,14 @@ def eval_multirun(
         _print_config_help(config)
         raise typer.Exit(code=1)
     
+    provider = get_registry_provider()
     evaluator = SlideGuardEvaluator(
         file_manager=FileManager(config.file_cache_dir),
         cache_manager=CacheManager(config.evaluations_cache_dir),
         llm=llm,
         max_concurrency=config.max_concurrency,
-        debug=eval_debug
+        debug=eval_debug,
+        registry_provider=provider,
     )
     
     try:
@@ -455,7 +463,7 @@ def eval_multirun(
     failed_count = sum(not success for _, success in results)
     
     # Summary
-    typer.echo(f"\nMultirun completed:")
+    typer.echo("\nMultirun completed:")
     typer.echo(f"  Successfully processed: {successful_count} PDFs")
     typer.echo(f"  Failed: {failed_count} PDFs")
     typer.echo(f"  Total: {len(results)} PDFs")

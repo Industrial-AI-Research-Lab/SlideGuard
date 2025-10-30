@@ -1,8 +1,3 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
-from slideguard.criteria.slide_types import SlideType
-
 prompt = """
 You are an expert in visual presentation design.
 You will be provided with a screenshot of a presentation.
@@ -34,29 +29,3 @@ Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall assessment of the slide color scheme and fonts.
 In the Answer section, return the final evaluation strictly following the format instructions with specific visual issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
 """
-
-
-class SlideColorAndFontsAnalysisResult(BaseAttributes):
-    evaluation_element: str = Field(description="Comment on the slide issue")
-    evaluation_suggestion: str = Field(description="Suggestion for the slide")
-
-
-class SlideColorAndFontsAnalysis(BaseModel):
-    evaluation_results: list[SlideColorAndFontsAnalysisResult] = Field(description="List of evaluation results with specific elements and suggestions")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
-
-
-SLIDE_COLOR_AND_FONTS = CriterionInfo(
-    criteria=Criteria.slide_color_and_fonts,
-    type="slide",
-    criterion_description="Checking the color scheme and fonts of the slide",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
-    pydantic=SlideColorAndFontsAnalysis,
-    # This criterion is most relevant for slides with visual content
-    applicable_slide_types=[SlideType.TITLE_SLIDE.value, SlideType.MOTIVATION.value, SlideType.GOAL.value, SlideType.CURRENT_STATE.value, SlideType.PROPOSED_SOLUTION.value, SlideType.EXPERIMENTAL_RESULTS.value, SlideType.CONCLUSION.value],
-    priority=4,
-    requires_slide_type=False,  # Can evaluate without knowing slide type
-    category="visual"
-)
-

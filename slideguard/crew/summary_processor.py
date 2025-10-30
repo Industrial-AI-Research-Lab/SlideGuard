@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from statistics import mean
 from pydantic import BaseModel
 
-from slideguard.criteria import SLIDE_CRITERIA_INFO
+from slideguard.criteria.factory import CriteriaRegistry
 from slideguard.schemes import (
     Criteria, SlideEvaluationResult, DeckEvaluationResult
 )
@@ -57,9 +57,10 @@ class SummaryProcessor:
     """Processes evaluation results into structured summaries and payloads."""
     
     def get_summary_payload(
-        self, 
-        slide_evaluations: List[SlideEvaluationResult], 
+        self,
+        slide_evaluations: List[SlideEvaluationResult],
         deck_evaluations: Optional[DeckEvaluationResult],
+        registry: CriteriaRegistry,
         advanced: bool = False
     ) -> BasicSummaryPayload | AdvancedSummaryPayload:
         """
@@ -86,9 +87,9 @@ class SummaryProcessor:
         self.config = self._get_dynamic_thresholds(slide_evaluations, deck_evaluations)
         
         if advanced:
-            return self._get_summary_payload_advanced(slide_evaluations, deck_evaluations)
+            return self._get_summary_payload_advanced(slide_evaluations, deck_evaluations, registry)
         else:
-            return self._get_summary_payload_basic(slide_evaluations, deck_evaluations)
+            return self._get_summary_payload_basic(slide_evaluations, deck_evaluations, registry)
     
     def calculate_overall_score(
         self, 
@@ -114,12 +115,13 @@ class SummaryProcessor:
         return int(avg + (avg % 1 > 0.7))
     
     def _get_summary_payload_basic(
-        self, 
-        slide_evaluations: List[SlideEvaluationResult], 
-        deck_evaluations: Optional[DeckEvaluationResult]
+        self,
+        slide_evaluations: List[SlideEvaluationResult],
+        deck_evaluations: Optional[DeckEvaluationResult],
+        registry: CriteriaRegistry,
     ) -> BasicSummaryPayload:
         """Generate basic summary payload with filtered evaluation results."""
-        slide_summaries = [self._filter_slide_evaluations(slide) for slide in slide_evaluations]
+        slide_summaries = [self._filter_slide_evaluations(slide, registry) for slide in slide_evaluations]
         payload_data = {"slide_evaluations": slide_summaries}
         
         if deck_evaluations:
@@ -176,28 +178,22 @@ class SummaryProcessor:
             return json.loads(
                 json.dumps(obj, default=lambda o: o.__dict__ if hasattr(o, '__dict__') else str(o)))
     
-    def _is_criterion_applicable(self, slide: SlideEvaluationResult, criterion: Criteria) -> bool:
+    def _is_criterion_applicable(self, slide: SlideEvaluationResult, criterion: Criteria, registry: CriteriaRegistry) -> bool:
         """Check if a criterion is applicable to a specific slide."""
-        if criterion == Criteria.slide_title_slide_quality:
-            return bool(
-                slide.slide_type and slide.slide_type.slide_type and 
-                ('Title slide' in slide.slide_type.slide_type)
-            )
-        
-        info = SLIDE_CRITERIA_INFO.get(criterion)
-        if not info or not info.applicable_slide_types:
+        info = registry.get_info(criterion)
+        if not info.applicable_slide_types:
             return True
         
         types = slide.slide_type.slide_type if (slide.slide_type and slide.slide_type.slide_type) else []
         return any(t in info.applicable_slide_types for t in types)
     
-    def _filter_slide_evaluations(self, slide: SlideEvaluationResult) -> Dict[str, Any]:
+    def _filter_slide_evaluations(self, slide: SlideEvaluationResult, registry: CriteriaRegistry) -> Dict[str, Any]:
         """Filter and format slide evaluations based on configuration."""
         evals = {}
         
         if slide.evaluations:
             for crit, obj in slide.evaluations.items():
-                if crit.is_service_criteria() or not self._is_criterion_applicable(slide, crit):
+                if crit.is_service_criteria() or not self._is_criterion_applicable(slide, crit, registry):
                     continue
                 
                 d = self._to_dict(obj)
@@ -217,12 +213,13 @@ class SummaryProcessor:
     # Advanced payload methods
     
     def _get_summary_payload_advanced(
-        self, 
-        slide_evaluations: List[SlideEvaluationResult], 
-        deck_evaluations: Optional[DeckEvaluationResult]
+        self,
+        slide_evaluations: List[SlideEvaluationResult],
+        deck_evaluations: Optional[DeckEvaluationResult],
+        registry: CriteriaRegistry,
     ) -> AdvancedSummaryPayload:
         """Generate advanced summary payload with analytics and navigation data."""
-        basic_payload = self._get_summary_payload_basic(slide_evaluations, deck_evaluations)
+        basic_payload = self._get_summary_payload_basic(slide_evaluations, deck_evaluations, registry)
         
         # Extract slide types and count them
         slide_types = [self._extract_slide_type(s) for s in basic_payload.slide_evaluations]

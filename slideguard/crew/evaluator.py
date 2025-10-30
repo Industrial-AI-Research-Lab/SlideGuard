@@ -7,7 +7,7 @@ import os
 import asyncio
 import logging
 from textwrap import dedent
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple, Type, Protocol, runtime_checkable
+from typing import Any, AsyncIterable, Dict, List, Optional, Tuple, Type
 from itertools import chain
 from typing_extensions import Annotated
 
@@ -22,13 +22,9 @@ from langfuse import Langfuse
 from slideguard.crew.callbacks import langfuse_callback_cm
 
 from slideguard.crew.controlled_llm import ControlledLLM
-from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.criteria.base import CriterionInfo
-from slideguard.criteria.slide_abbreviations import (
-    SlideAbbreviations,
-    SlideAbbreviationsResult, # TODO: use factory pattern instead
-    ABBREVIATIONS_WHITELIST,
-)
+from slideguard.criteria.factory import CriteriaRegistry, CriteriaRegistryProvider
+from slideguard.criteria.types import CriterionResult, PostProcessorContext
 from slideguard.schemes import (
     Criteria,
     DeckDescription,
@@ -49,11 +45,6 @@ from slideguard.utils.cache_manager import CacheManager
 
 
 logger = logging.getLogger(__name__)
-
-@runtime_checkable
-class CriterionResult(Protocol):
-    evaluation_results: List[Any]
-    score: int
 
 class FallbackMarker:
     __slideguard_fallback__ = True
@@ -117,6 +108,7 @@ class SlideGuardEvaluator:
         max_concurrency: Optional[int] = None,
         max_retries: int = 3,
         debug: bool = False,
+        registry_provider: Optional[CriteriaRegistryProvider] = None,
     ) -> None:
         self.file_manager = file_manager
         self.cache_manager = cache_manager
@@ -127,6 +119,8 @@ class SlideGuardEvaluator:
         self._compiled_subgraphs: Dict[str, Any] = {}
         self._debug: bool = debug # if true, save graph images (for now)
         self._max_concurrency: Optional[int] = max_concurrency
+        self.registry_provider = registry_provider
+        self._registry: Optional[CriteriaRegistry] = None
         
         # Bind tools to the LLM if they are set
         if self.tools:
@@ -140,9 +134,19 @@ class SlideGuardEvaluator:
         slide_criterias: List[Criteria] | None = None,
         deck_criterias: List[Criteria] | None = None,
         langfuse_client: Langfuse | None = None,
+        registry: Optional[CriteriaRegistry] = None,
+        user_id: Optional[str] = None,
     ) -> FullEvaluation:
         with langfuse_callback_cm(langfuse_client) as cbs:
             self._callbacks = cbs
+        
+        if registry:
+            self._registry = registry
+        elif self.registry_provider:
+            self._registry = self.registry_provider.get_for_user(user_id)
+        else:
+            raise ValueError("Criteria registry is not configured. Provide a registry or registry_provider.")
+        
         if deck_criterias:
             slide_criterias = list({*(slide_criterias or []), Criteria.slide_type, Criteria.slide_description})
         elif slide_criterias:
@@ -238,8 +242,8 @@ class SlideGuardEvaluator:
         for c in service_slide:
             main.add_node(c.value, self._make_service_criterion_node(c))
 
-        slide_requires = [Criteria.slide_type.value] # define requirements for slide flow
-        deck_requires = [Criteria.slide_type.value, Criteria.slide_description.value] # define requirements for deck flow
+        slide_requires = [Criteria.slide_type] # define requirements for slide flow
+        deck_requires = [Criteria.slide_type, Criteria.slide_description] # define requirements for deck flow
 
         # Add subgraphs
         slide_app = self._get_slide_flow(non_service_slide)
@@ -295,7 +299,8 @@ class SlideGuardEvaluator:
         async def _run(state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
             if not state.slides or crit not in state.slide_criterias:
                 return {}
-            info = SLIDE_CRITERIA_INFO[crit] # TODO: use factory pattern instead
+            registry = self._registry
+            info = registry.get_info(crit)
             chain = info.to_runnable(self.llm)
             entities = await self._eval_criterion_with_cache(
                 info=info,
@@ -312,19 +317,19 @@ class SlideGuardEvaluator:
         async def _run(state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
             if not state.slides or crit not in state.slide_criterias:
                 return {}
-            info = SLIDE_CRITERIA_INFO[crit] # TODO: use factory pattern instead
+            registry = self._registry
+            info = registry.get_info(crit)
             chain = info.to_runnable(self.llm)
             total = len(state.slides.slides)
             needs_filtering = (
                 info.applicable_slide_types or 
-                info.exclude_slide_types or 
-                info.requires_slide_type or # TODO: legacy, remove
+                info.exclude_slide_types or
                 info.requires_infographics
             )
 
             eligible = list(range(total))
             if needs_filtering:
-                st_service = (state.slide_service or {}).get(Criteria.slide_type) # TODO: use factory pattern instead
+                st_service = (state.slide_service or {}).get(Criteria.slide_type)
                 if st_service and len(st_service) == total:
                     slide_types_per_slide: List[List[str]] = [st_service[i].slide_type for i in range(total)]
                     eligible = [i for i, types in enumerate(slide_types_per_slide) if self._criterion_applies(info, types, st_service[i].contains_infographics)]
@@ -432,7 +437,8 @@ class SlideGuardEvaluator:
         async def _run(state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
             if not state.deck_criterias or not state.deck_descriptions or crit not in state.deck_criterias:
                 return {}
-            info = DECK_CRITERIA_INFO[crit] # TODO: use factory pattern instead
+            registry = self._registry
+            info = registry.get_info(crit)
             chain = info.to_runnable(self.llm)
             try:
                 res_list = await self._eval_criterion_with_cache(info, state.deck_descriptions, chain, config)
@@ -460,7 +466,11 @@ class SlideGuardEvaluator:
             return {"deck_evaluations": DeckEvaluationResult(evaluations={})}
 
     async def _node_build_summary(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
-        payload = self.summary_processor.get_summary_payload(state.slide_evaluations or [], state.deck_evaluations)
+        payload = self.summary_processor.get_summary_payload(
+            state.slide_evaluations or [],
+            state.deck_evaluations,
+            registry=self._registry,
+        )
         data = payload.model_dump()
         summary_prompt_text = dedent(
             """\
@@ -550,38 +560,18 @@ class SlideGuardEvaluator:
             return False
         return not isinstance(v, NotApplicableResult)
 
-    def _filter_sort_by_severity(self, obj: CriterionResult) -> CriterionResult:
-        try:
-            items = sorted(obj.evaluation_results, key=lambda v: v.severity, reverse=True)
-            items = [item for item in items if item.severity > 0] # exclude 0 sev items (no issues found)
-            obj.evaluation_results = items
-            if not items:
-                obj.score = 5 # sanity check
-        except Exception as e:
-            logger.warning(f"Failed to filter and sort by severity: {e}", exc_info=True)
-            pass
-        return obj
 
     def _postprocess_result(self, criteria: Criteria, obj: BaseModel) -> BaseModel:
         try:
-            if criteria == Criteria.slide_abbreviations and isinstance(obj, SlideAbbreviations):
-                filtered: List[SlideAbbreviationsResult] = []
-                wl = ABBREVIATIONS_WHITELIST
-                for item in obj.evaluation_results:
-                    try:
-                        token = str(item.evaluation_element).strip().lower().replace(".", "")
-                        if token and token not in wl:
-                            filtered.append(item)
-                    except Exception as e:
-                        logger.warning(f"Failed to filter abbreviations: {e}", exc_info=True)
-                        filtered.append(item)
-                obj.evaluation_results = filtered
-            
             if isinstance(obj, CriterionResult):
-                obj = self._filter_sort_by_severity(obj)
+                info = self._registry.get_info(criteria)
+                ctx = PostProcessorContext(criteria_id=criteria.value)
+                result = obj
+                for postprocessor_func in info.postprocessors:
+                    result = postprocessor_func(result, ctx)
+                return result
         except Exception as e:
-            logger.warning(f"Failed to postprocess result: {e}", exc_info=True)
-            pass
+            logger.warning(f"Postprocessing skipped for {criteria}: {e}")
         return obj
 
     def _create_fallback(self, model_cls: Type[BaseModel]) -> BaseModel:

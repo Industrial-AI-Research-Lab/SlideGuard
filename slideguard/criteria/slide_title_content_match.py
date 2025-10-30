@@ -1,8 +1,3 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
-from slideguard.criteria.slide_types import SlideType
-
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide.
 Your task is to analyze the slide and determine if the title matches the content of the slide.
@@ -30,25 +25,3 @@ Your response should have two sections: Thought and Answer.
 First, in the 'Thought' section, provide your reasoning on the task STRICTLY following the problem-solving plan and marking individual stages of the task solution.
 Then in the 'Answer' section, rewrite the found mismatches and how to fix them, if any, strictly following the format instructions.
 """
-
-class SlideTitleContentMatchResult(BaseAttributes):
-    evaluation_element: str = Field(description="Comment on the slide issue")
-    evaluation_suggestion: str = Field(description="Suggestion for the slide")
-
-class SlideTitleContentMatch(BaseModel):
-    evaluation_results: list[SlideTitleContentMatchResult] = Field(description="List of identified content issues")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
-
-SLIDE_TITLE_CONTENT_MATCH = CriterionInfo(
-    criteria=Criteria.slide_title_content_match,
-    type="slide",
-    criterion_description="Analyzing whether slide titles match their content and provide appropriate suggestions",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
-    pydantic=SlideTitleContentMatch,
-    applicable_slide_types=None,  # Applies to all slide types
-    exclude_slide_types=[SlideType.TITLE_SLIDE.value, SlideType.END_SLIDE.value, SlideType.SEPARATOR.value],
-    priority=3,
-    requires_slide_type=False,
-    category="visual"
-)

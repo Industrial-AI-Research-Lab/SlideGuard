@@ -1,8 +1,3 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
-from slideguard.criteria.slide_types import SlideType
-
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide.
 Your task is to check whether the slide has any orthographic or grammatical errors.
@@ -35,26 +30,3 @@ Then, in the «Answer:» section, write the final answer for the user in Russian
 
 Return the final answer strictly following the format instructions.
 """
-
-class SlideOrphographyCorrectnessResult(BaseAttributes):
-    evaluation_element: str = Field(description="Found Orphographic or grammatical error")
-    evaluation_suggestion: str = Field(description="Fix the word <<incorrect word>>")
-
-class SlideOrphographyCorrectness(BaseModel):
-    evaluation_results: list[SlideOrphographyCorrectnessResult] = Field(description="List of identified content issues")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
-
-exclude_st = [SlideType.END_SLIDE, SlideType.TITLE_SLIDE]
-
-SLIDE_ORPHOGRAPHY_CORRECTNESS = CriterionInfo(
-    criteria=Criteria.slide_orphography_correctness,
-    type="slide",
-    criterion_description="Analyzing whether the slide has any typographical or grammatical errors and provide appropriate suggestions",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
-    pydantic=SlideOrphographyCorrectness,
-    applicable_slide_types=[st.value for st in SlideType if st not in exclude_st],
-    priority=4,
-    requires_slide_type=False,
-    category="visual"
-)

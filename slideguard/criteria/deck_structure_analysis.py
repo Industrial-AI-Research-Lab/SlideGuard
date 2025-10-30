@@ -1,7 +1,3 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
-
 prompt = """
 You are an expert in evaluating the completeness of presentation structure.
 You will be provided with information about all slides in the presentation.
@@ -30,28 +26,3 @@ Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall assessment of the deck structure.
 In the Answer section, provide the final evaluation strictly following the format instructions.
 """
-
-
-class DeckStructureAnalysisResult(BaseAttributes):
-    evaluation_element: str = Field(description="Issue description")
-    evaluation_suggestion: str = Field(description="Detailed description of the issue and suggestion for improvement")
-
-
-class DeckStructureAnalysis(BaseModel):
-    evaluation_results: list[DeckStructureAnalysisResult] = Field(description="List of evaluation results with specific elements and suggestions")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5")
-
-
-DECK_STRUCTURE_ANALYSIS = CriterionInfo(
-    criteria=Criteria.deck_structure_analysis,
-    type="deck",
-    criterion_description=prompt,
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_DECK_TASK_PROMPT,
-    pydantic=DeckStructureAnalysis,
-    applicable_slide_types=None,  # Applies to entire deck
-    priority=1,
-    requires_slide_type=True,  # Needs slide types to evaluate structure
-    category="structure"
-)
-

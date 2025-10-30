@@ -62,7 +62,11 @@ class CacheManager(Generic[T, U], ABC):
             return None
 
         with open(cache_path, "rb") as f:
-            data = pickle.load(f)
+            try:
+                data = pickle.load(f)
+            except Exception as e:
+                logger.warning(f"Failed to load cache entry {cache_path}: {e}. Ignoring and recomputing.")
+                return None
         
         if self._is_fallback(data):
             return None
