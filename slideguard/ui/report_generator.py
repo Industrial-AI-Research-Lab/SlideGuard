@@ -18,12 +18,14 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 from slideguard.schemes import FullEvaluation, Criteria
+from slideguard.ui.translations import Translator
 
 
 class SlideGuardReportGenerator:
     """Generate comprehensive PDF reports for SlideGuard evaluations."""
     
-    def __init__(self):
+    def __init__(self, translator: Translator = None):
+        self.translator = translator or Translator("en")
         self.styles = getSampleStyleSheet()
         self._register_fonts()
         self._setup_custom_styles()
@@ -190,7 +192,7 @@ class SlideGuardReportGenerator:
         canvas_obj.setFont(self._font_bold, 11)
         canvas_obj.setFillColor(HexColor('#2E86AB'))
         width, height = A4
-        canvas_obj.drawString(50, height - 40, "SlideGuard AI Evaluation Report")
+        canvas_obj.drawString(50, height - 40, self.translator.t('report_title'))
         canvas_obj.restoreState()
 
     def _create_footer(self, canvas_obj: canvas.Canvas):
@@ -198,8 +200,8 @@ class SlideGuardReportGenerator:
         canvas_obj.setFont(self._font_regular, 8)
         canvas_obj.setFillColor(black)
         width, _ = A4
-        canvas_obj.drawString(50, 40, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        canvas_obj.drawRightString(width - 50, 40, f"Page {canvas_obj.getPageNumber()}")
+        canvas_obj.drawString(50, 40, f"{self.translator.t('report_generated')} {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        canvas_obj.drawRightString(width - 50, 40, f"{self.translator.t('report_page')} {canvas_obj.getPageNumber()}")
         canvas_obj.restoreState()
     
     def _add_evaluation_element(self, story: List, element: Any, index: int):
@@ -241,9 +243,9 @@ class SlideGuardReportGenerator:
         
         # Severity indicator
         severity_color = self._get_severity_color(severity)
-        severity_text = {1: "Low", 2: "Medium", 3: "High"}.get(severity, "Info")
+        severity_text = self.translator.get_priority_text(severity)
         
-        severity_label = f"{severity_text} Priority (Severity: {severity}/3)"
+        severity_label = f"{severity_text} ({self.translator.t('severity_label')} {severity}/3)"
         severity_table = Table([[severity_label]])
         severity_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), HexColor(severity_color)),
@@ -262,7 +264,7 @@ class SlideGuardReportGenerator:
             Spacer(1, 4),
             severity_table,
             Spacer(1, 6),
-            Paragraph(f"<b>Suggestion:</b> {suggestion}", self.normal_style),
+            Paragraph(f"<b>{self.translator.t('suggestion_label')}</b> {suggestion}", self.normal_style),
         ]
         story.append(self.RoundedPanel(inner, bg_color="#fff3f3" if severity==3 else ("#fff9e6" if severity==2 else "#eaf6ee"), accent_color=severity_color))
         story.append(Spacer(1, 10))
@@ -300,7 +302,7 @@ class SlideGuardReportGenerator:
             score_percentage = (severity_score / 3.0) * 100
             
             severity_score_color = self._get_score_color(severity_score, 3.0, False)
-            severity_score_text = f"Total Severity: {severity_score:.1f}/3.0 ({score_percentage:.0f}%)"
+            severity_score_text = f"{self.translator.t('total_severity')} {severity_score:.1f}/3.0 ({score_percentage:.0f}%)"
             
             score_style = ParagraphStyle(
                 'ScoreStyle',
@@ -370,12 +372,12 @@ class SlideGuardReportGenerator:
                 score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                 score_color = self._get_score_color(score, 5.0)
                 
-                story.append(self.RoundedPanel([Paragraph(f"<b>Score: {score:.1f}/5.0 ({score_percentage:.0f}%)</b>", self.score_style)], bg_color="#ffffff", accent_color=score_color))
+                story.append(self.RoundedPanel([Paragraph(f"<b>{self.translator.t('score_label')} {score:.1f}/5.0 ({score_percentage:.0f}%)</b>", self.score_style)], bg_color="#ffffff", accent_color=score_color))
                 
                 if 'comments' in eval_result:
-                    story.append(Paragraph(f"<b>Comments:</b> {eval_result['comments']}", self.normal_style))
+                    story.append(Paragraph(f"<b>{self.translator.t('comments')}</b> {eval_result['comments']}", self.normal_style))
                 if 'recommendations' in eval_result:
-                    story.append(Paragraph(f"<b>Recommendations:</b> {eval_result['recommendations']}", self.normal_style))
+                    story.append(Paragraph(f"<b>{self.translator.t('recommendations')}</b> {eval_result['recommendations']}", self.normal_style))
             else:
                 story.append(Paragraph(str(eval_result), self.normal_style))
         else:
@@ -399,11 +401,11 @@ class SlideGuardReportGenerator:
         story = []
         
         # Title page
-        story.append(Paragraph("SlideGuard AI Evaluation Report", self.title_style))
+        story.append(Paragraph(self.translator.t('report_title'), self.title_style))
         story.append(Spacer(1, 30))
-        story.append(Paragraph(f"<b>Presentation:</b> {presentation_name}", self.normal_style))
-        story.append(Paragraph(f"<b>Evaluation Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", self.normal_style))
-        story.append(Paragraph(f"<b>Total Slides:</b> {len(evaluation.slide_evaluations)}", self.normal_style))
+        story.append(Paragraph(f"<b>{self.translator.t('report_presentation')}</b> {presentation_name}", self.normal_style))
+        story.append(Paragraph(f"<b>{self.translator.t('report_date')}</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", self.normal_style))
+        story.append(Paragraph(f"<b>{self.translator.t('report_total_slides')}</b> {len(evaluation.slide_evaluations)}", self.normal_style))
         
         # Overall score if available
         if evaluation.overall_score:
@@ -420,25 +422,25 @@ class SlideGuardReportGenerator:
             )
             
             story.append(Spacer(1, 20))
-            story.append(Paragraph(f"<b>Overall Score: {evaluation.overall_score:.2f}/5.0 ({overall_percentage:.0f}%)</b>", overall_style))
+            story.append(Paragraph(f"<b>{self.translator.t('overall_score_label')} {evaluation.overall_score:.2f}/5.0 ({overall_percentage:.0f}%)</b>", overall_style))
         
         story.append(PageBreak())
         
         # TL;DR
         if evaluation.tldr:
-            story.append(Paragraph("TL;DR", self.section_style))
+            story.append(Paragraph(self.translator.t('report_tldr'), self.section_style))
             story.append(self.RoundedPanel([Paragraph(evaluation.tldr, self.normal_style)], bg_color="#fff7e0", accent_color="#ffb300"))
             story.append(Spacer(1, 20))
 
         # long summary
         if evaluation.summary:
-            story.append(Paragraph("Summary", self.section_style))
+            story.append(Paragraph(self.translator.t('report_summary'), self.section_style))
             story.append(self.RoundedPanel([Paragraph(evaluation.summary, self.normal_style)], bg_color="#fffde7", accent_color="#fbc02d"))
             story.append(PageBreak())
         
         # Deck-Level Evaluations
         if evaluation.deck_evaluations and evaluation.deck_evaluations.evaluations:
-            story.append(Paragraph("Deck-Level Evaluation Results", self.section_style))
+            story.append(Paragraph(self.translator.t('report_deck_title'), self.section_style))
             
             for criteria, eval_result in evaluation.deck_evaluations.evaluations.items():
                 self._add_criteria_evaluation(story, criteria, eval_result)
@@ -447,9 +449,9 @@ class SlideGuardReportGenerator:
         
         # Slide-Level Evaluations with images
         if evaluation.slide_evaluations:
-            story.append(Paragraph("Slide-Level Evaluation Results", self.section_style))
+            story.append(Paragraph(self.translator.t('report_slide_title'), self.section_style))
             for slide_idx, slide_eval in enumerate(evaluation.slide_evaluations, 1):
-                story.append(Paragraph(f"Slide {slide_idx}", self.subsection_style))
+                story.append(Paragraph(f"{self.translator.t('report_slide')} {slide_idx}", self.subsection_style))
                 # Image below the title
                 img_flow = None
                 if slide_images and 0 <= slide_idx-1 < len(slide_images) and slide_images[slide_idx-1] and os.path.exists(slide_images[slide_idx-1]):
@@ -467,7 +469,7 @@ class SlideGuardReportGenerator:
                     for criteria, eval_result in slide_eval.evaluations.items():
                         self._add_criteria_evaluation(story, criteria, eval_result, include_header=True)
                 else:
-                    story.append(Paragraph("No evaluations available for this slide.", self.normal_style))
+                    story.append(Paragraph(self.translator.t('report_no_evaluations'), self.normal_style))
                 story.append(Spacer(1, 20))
         
         # Build PDF

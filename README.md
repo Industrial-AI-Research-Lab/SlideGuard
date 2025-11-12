@@ -288,6 +288,8 @@ SlideGuard includes a Gradio-based web interface for interactive presentation ev
 - **Deck-Level Results**: View overall presentation evaluation results
 - **Slide-Level Results**: See detailed feedback for each individual slide
 - **Interactive Presentation Viewer**: Navigate through slides with corresponding evaluations
+- **Multi-Language Support**: Switch between English and Russian interface with a single click
+- **PDF Report Generation**: Export evaluation results as a professional PDF report
 
 ### Installation
 
@@ -320,12 +322,42 @@ The UI will be available at `http://localhost:7860`
 
 ### UI Components
 
-1. **Upload Section**: Drag and drop or select a PDF file to upload
-2. **Criteria Selection**: Check/uncheck the criteria you want to evaluate
-3. **Results Tabs**:
+1. **Language Switcher**: Click the button in the upper right corner to toggle between English and Russian
+2. **Upload Section**: Drag and drop or select a PDF file to upload
+3. **Criteria Selection**: Check/uncheck the criteria you want to evaluate
+4. **Results Tabs**:
    - **Deck-Level Results**: Overall presentation evaluation
    - **Slide-Level Results**: Detailed slide-by-slide feedback
    - **Interactive Presentation Viewer**: Navigate slides with evaluations
+5. **PDF Report Generation**: Download a professionally formatted PDF report with all evaluation results
+
+### Language Support
+
+The SlideGuard UI supports two languages:
+- **English (EN)**: Default language
+- **Russian (RU)**: Full Russian translation of the interface
+
+To switch languages, simply click the language button (EN/RU) in the top-right corner of the interface. The UI updates instantly—no page reload required.
+
+**How it works**:
+- The button displays the **current** language (e.g., "EN" for English, "RU" for Russian)
+- Click the button to toggle to the other language; the interface updates immediately
+- All new evaluations, status messages, and generated reports will use the selected language
+
+**Current Limitations**:
+- Some evaluation content generated prior to switching languages retains its original language
+- The language switcher button and dynamic content (evaluation results, messages, PDF reports) correctly reflect the selected language
+- The language selection resets to English when the page is refreshed
+
+**Tip**: Switch languages at any time during a session; the interface will stay in that language until you refresh the page.
+
+All UI elements, evaluation results, and PDF reports are translated, including:
+- Navigation labels and buttons
+- Evaluation criteria descriptions
+- Status messages and notifications
+- Score indicators and assessment text
+- Admin panel (if you have admin access)
+- Generated PDF reports
 
 ### Navigation
 

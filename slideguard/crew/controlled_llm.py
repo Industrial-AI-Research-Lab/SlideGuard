@@ -9,7 +9,7 @@ import re
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, List, Optional, Type
 
 from pydantic import BaseModel
 
@@ -88,9 +88,18 @@ class AppLanguage(str, Enum):
 
 def get_language_instructions(language: AppLanguage) -> str: # can be set based on the presentation language
     if language == AppLanguage.RU:
-        return "Заполняй значения в JSON схеме ТОЛЬКО на русском языке."
+        return (
+            "Заполняй значения в JSON-схеме ТОЛЬКО на русском языке. "
+            "Все текстовые поля (включая комментарии, рекомендации, краткие выводы и иные пояснения) "
+            "должны быть написаны на грамотном русском языке. "
+            "Если требуются списки или пояснения, используй русский язык для каждого пункта."
+        )
     else:
-        return "Fill values of JSON schema ONLY in English."
+        return (
+            "Fill values of the JSON schema ONLY in English. "
+            "All textual fields (comments, recommendations, summaries, explanations) "
+            "must be written in clear English."
+        )
 
 class ControlledLLM:
     def __init__(
@@ -99,11 +108,13 @@ class ControlledLLM:
         max_retries: int = 3,
         retry_temperature: float = 0.01,
         preprocessors: Optional[List[Callable[[str], str]]] = None,
+        language: AppLanguage = AppLanguage.EN,
     ) -> None:
         self.chat_model = chat_model
         self.max_retries = max_retries
         self.retry_temperature = retry_temperature
         self.preprocessors = preprocessors or [default_text_cleaner]
+        self.language: AppLanguage = language
 
     def with_tools(self, tools: List[Any]) -> "ControlledLLM":
         """Binds tools to the LLM"""
@@ -118,6 +129,7 @@ class ControlledLLM:
             max_retries=self.max_retries,
             retry_temperature=self.retry_temperature,
             preprocessors=self.preprocessors,
+            language=self.language,
         )
 
     def with_structured_output_retry(self, output_model: Type[BaseModel]) -> Runnable[[PromptValue], ControlledOutput]:
@@ -133,7 +145,7 @@ class ControlledLLM:
             prompt_value = _ensure_image_messages(pv)
             try:
                 fmt = parser.get_format_instructions()
-                lang_instructions = get_language_instructions(AppLanguage.EN)
+                lang_instructions = get_language_instructions(self.language)
                 if isinstance(prompt_value, ChatPromptValue):
                     extended_messages = [*prompt_value.messages, HumanMessage(content=f"{fmt}\n\n{lang_instructions}")]
                     prompt_value = ChatPromptValue(messages=extended_messages)
@@ -182,6 +194,16 @@ class ControlledLLM:
             return ControlledOutput(raw=raw_out, json=parsed_obj.model_dump() if parsed_obj else None, pydantic=parsed_obj)
 
         return RunnableLambda(_run)
+
+    def set_language(self, language: AppLanguage | str) -> None:
+        """Set preferred language for future LLM responses."""
+        try:
+            if isinstance(language, str):
+                language = AppLanguage(language.lower())
+            self.language = language
+        except Exception:
+            logger.warning("Invalid language %s provided to ControlledLLM. Falling back to English.", language)
+            self.language = AppLanguage.EN
 
 class OpenAIModel(str, Enum):
     GPT_5 = "gpt-5"
