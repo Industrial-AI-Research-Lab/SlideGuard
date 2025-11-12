@@ -95,6 +95,7 @@ TRANSLATIONS = {
         "no_deck_evaluations": "No deck-level evaluations available.",
         "no_slide_evaluations": "No slide-level evaluations available.",
         "no_slide_evaluation_single": "⚠️ No evaluations available for this slide.",
+        "no_detailed_results": "No detailed evaluation results available.\n\n",
         
         # Score indicators
         "score_label": "📊 Score:",
@@ -227,6 +228,7 @@ TRANSLATIONS = {
         "no_deck_evaluations": "Нет доступных оценок презентации.",
         "no_slide_evaluations": "Нет доступных оценок слайдов.",
         "no_slide_evaluation_single": "⚠️ Нет доступных оценок для этого слайда.",
+        "no_detailed_results": "Подробные результаты оценки недоступны.\n\n",
         
         # Score indicators
         "score_label": "📊 Оценка:",

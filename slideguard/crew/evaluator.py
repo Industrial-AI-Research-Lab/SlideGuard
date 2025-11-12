@@ -426,6 +426,14 @@ class SlideGuardEvaluator:
         async def _run(state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
             if not state.deck_criterias or not state.deck_descriptions or crit not in state.deck_criterias:
                 return {}
+            if not state.deck_descriptions.slides:
+                logger.warning(f"No deck descriptions available for deck criterion {crit}. Returning fallback result.")
+                return {"deck_results": {crit: FallbackResult()}}
+            # Validate deck description is not empty
+            deck_desc = state.deck_descriptions.slides[0]
+            if not hasattr(deck_desc, 'deck_description') or not deck_desc.deck_description or deck_desc.deck_description.strip() == "":
+                logger.error(f"Deck description is empty or missing for deck criterion {crit}. Cannot evaluate.")
+                return {"deck_results": {crit: FallbackResult()}}
             info = DECK_CRITERIA_INFO[crit] # TODO: use factory pattern instead
             chain = info.to_runnable(self.llm)
             try:
@@ -648,19 +656,23 @@ class SlideGuardEvaluator:
                         logger.warning(f"Failed to parse output for {info.criteria.value} idx={idx}. Creating fallback.")
                         p = self._create_fallback(info.pydantic)
                     return idx, p
-                except Exception:
-                    logger.warning(f"Exception in cache computation for {info.criteria.value} idx={idx}. Creating fallback.")
+                except Exception as e:
+                    logger.warning(f"Exception in cache computation for {info.criteria.value} idx={idx}: {e}. Creating fallback.", exc_info=True)
                     return idx, self._create_fallback(info.pydantic)
 
-            payloads: List[Tuple[int, Dict[str, Any]]] = [
-                (
-                    i,
-                    ({"slide_image_path": in_.slide_image_path, "slide_id": in_.slide_id}
-                     if info.criteria.is_slide_criteria()
-                     else {"deck_description": in_.deck_description if info.criteria.is_deck_criteria() else ""})
-                )
-                for i, in_ in inputs
-            ]
+            payloads: List[Tuple[int, Dict[str, Any]]] = []
+            for i, in_ in inputs:
+                if info.criteria.is_slide_criteria():
+                    payload = {"slide_image_path": in_.slide_image_path, "slide_id": in_.slide_id}
+                elif info.criteria.is_deck_criteria():
+                    if not hasattr(in_, 'deck_description') or not in_.deck_description:
+                        logger.error(f"Deck description missing for {info.criteria.value} idx={i}. Input type: {type(in_)}, attributes: {dir(in_)}")
+                        payload = {"deck_description": ""}
+                    else:
+                        payload = {"deck_description": in_.deck_description}
+                else:
+                    payload = {}
+                payloads.append((i, payload))
 
             coros = [_ainvoke_one(i, d) for i, d in payloads]
             for coro in asyncio.as_completed(coros):

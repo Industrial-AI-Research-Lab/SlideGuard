@@ -17,7 +17,7 @@ import fitz  # PyMuPDF
 from slideguard.criteria import DECK_CRITERIA_INFO, SLIDE_CRITERIA_INFO
 from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult
 from slideguard.utils.config import load_config
-from slideguard.crew.controlled_llm import create_llm_from_config
+from slideguard.crew.controlled_llm import AppLanguage, create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
 from slideguard.utils.cache_manager import CacheManager
 from slideguard.utils.file_manager import FileManager
@@ -31,6 +31,21 @@ BILINGUAL_TABS = {
     "deck": "📋 Deck Results / Результаты",
     "admin": "🔒 Admin Panel / Панель администратора",
 }
+
+CRITERIA_LABELS: Dict[Criteria, Tuple[str, str]] = {
+    Criteria.slide_visual_arrangement: ("Visual arrangement", "Визуальное оформление"),
+    Criteria.slide_abbreviations: ("Abbreviations", "Проверка аббревиатур"),
+    Criteria.slide_fact_link_availability: ("Fact link availability", "Корректность ссылок на источники"),
+    Criteria.slide_graphic_content_match: ("Graphic and content match", "Соответствие графических материалов содержанию слайда"),
+    Criteria.slide_orphography_correctness: ("Orphography correctness", "Качество орфографии"),
+    Criteria.slide_title_content_match: ("Title content match", "Соответствие заголовка содержанию слайда"),
+    Criteria.slide_title_slide_quality: ("Slide title quality", "Качество заголовка слайда"),
+    Criteria.deck_storytelling: ("Storytelling quality", "Связность рассказа"),
+    Criteria.deck_structure_analysis: ("Structure analysis", "Анализ структуры"),
+    Criteria.deck_research_quality: ("Research quality", "Качество исследования"),
+}
+
+SERVICE_CRITERIA: Tuple[Criteria, ...] = (Criteria.slide_type, Criteria.slide_description)
 
 
 class SlideGuardUI:
@@ -150,6 +165,41 @@ class SlideGuardUI:
         lang = lang if lang in ("en", "ru") else "en"
         self.current_language = lang
         self.translator.set_language(lang)
+        try:
+            if self.evaluator and self.evaluator.llm:
+                self.evaluator.llm.set_language(AppLanguage(lang))
+        except Exception:
+            self.logger.warning("Failed to set evaluator LLM language to %s", lang, exc_info=True)
+
+    def _get_criteria_display_name(self, criteria: Criteria) -> str:
+        labels = CRITERIA_LABELS.get(criteria)
+        if labels:
+            return labels[0] if self.current_language == "en" else labels[1]
+        return criteria.value.replace("_", " ").title()
+
+    def _get_criteria_choices(self, criteria_list: List[Criteria]) -> List[str]:
+        return [self._get_criteria_display_name(c) for c in criteria_list]
+
+    def _decode_criteria_selection(self, selected: Optional[List[str]], criteria_list: List[Criteria]) -> List[Criteria]:
+        mapping: Dict[str, Criteria] = {}
+        for crit in criteria_list:
+            mapping[crit.value] = crit
+            mapping[crit.name] = crit
+            labels = CRITERIA_LABELS.get(crit)
+            if labels:
+                mapping[labels[0]] = crit
+                mapping[labels[1]] = crit
+            mapping[self._get_criteria_display_name(crit)] = crit
+        decoded: List[Criteria] = []
+        for item in selected or []:
+            crit = mapping.get(item)
+            if crit is None:
+                try:
+                    crit = Criteria(item)
+                except Exception:
+                    continue
+            decoded.append(crit)
+        return decoded
 
     def _get_ui_texts(self) -> Dict[str, Any]:
         """Return all language-dependent UI strings."""
@@ -192,12 +242,28 @@ class SlideGuardUI:
         }
         return texts
 
-    def _language_updates(self) -> Tuple[Any, ...]:
+    def _language_updates(
+        self,
+        selected_slide: Optional[List[Criteria]] = None,
+        selected_deck: Optional[List[Criteria]] = None,
+    ) -> Tuple[Any, ...]:
         """Build component updates for the current language."""
         texts = self._get_ui_texts()
         is_admin = (
             self.current_user != "Guest" and get_role(self.current_user) == Role.ADMIN
         )
+
+        slide_selected = selected_slide or getattr(self, "_selected_slide_criteria", self._slide_criteria_list)
+        deck_selected = selected_deck or getattr(self, "_selected_deck_criteria", self._deck_criteria_list)
+
+        self._selected_slide_criteria = slide_selected
+        self._selected_deck_criteria = deck_selected
+
+        slide_choices = self._get_criteria_choices(self._slide_criteria_list)
+        deck_choices = self._get_criteria_choices(self._deck_criteria_list)
+
+        slide_selected_display = [self._get_criteria_display_name(c) for c in slide_selected if c in self._slide_criteria_list]
+        deck_selected_display = [self._get_criteria_display_name(c) for c in deck_selected if c in self._deck_criteria_list]
 
         slide_update = gr.update()
         deck_update = gr.update()
@@ -214,8 +280,8 @@ class SlideGuardUI:
             texts["upload_md"],
             gr.update(label=texts["upload_label"]),
             texts["criteria_md"],
-            gr.update(label=texts["slide_criteria_label"]),
-            gr.update(label=texts["deck_criteria_label"]),
+            gr.update(label=texts["slide_criteria_label"], choices=slide_choices, value=slide_selected_display),
+            gr.update(label=texts["deck_criteria_label"], choices=deck_choices, value=deck_selected_display),
             gr.update(value=texts["evaluate_btn"]),
             texts["results_md"],
             gr.update(label=texts["status_label"]),
@@ -257,8 +323,18 @@ class SlideGuardUI:
             self.current_evaluation = None
             
             # Load criteria
-            selected_criteria = (slide_selected or []) + (deck_selected or [])
-            slide_criterias, deck_criterias = self._load_criteria(selected_criteria)
+            slide_selected_list = self._decode_criteria_selection(slide_selected, self._slide_criteria_list + self._service_slide_criteria)
+            deck_selected_list = self._decode_criteria_selection(deck_selected, self._deck_criteria_list)
+
+            service_needed: List[Criteria] = [
+                serv for serv in self._service_slide_criteria if serv not in slide_selected_list
+            ]
+
+            self._selected_slide_criteria = slide_selected_list
+            self._selected_deck_criteria = deck_selected_list
+
+            selected_values = [c.value for c in slide_selected_list + service_needed + deck_selected_list]
+            slide_criterias, deck_criterias = self._load_criteria(selected_values)
             
             # Run evaluation
             self.logger.info(f"Starting evaluation with {len(slide_criterias)} slide criteria and {len(deck_criterias)} deck criteria")
@@ -319,7 +395,7 @@ class SlideGuardUI:
         result = f"<h2 style='color: #333333;'>{self.translator.t('deck_results_title')}</h2>\n\n"
         
         for criteria, eval_result in evaluation.deck_evaluations.evaluations.items():
-            criteria_name = criteria.value.replace('_', ' ').title()
+            criteria_name = self._get_criteria_display_name(criteria)
             result += "<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #333333;'>\n"
             result += f"<h3 style='color: #333333; margin-top: 0;'>🎯 {criteria_name}</h3>\n"
             
@@ -440,7 +516,7 @@ class SlideGuardUI:
             
             if slide_eval.evaluations:
                 for criteria, eval_result in slide_eval.evaluations.items():
-                    result += f"<h4 style='color: #333333;'>🎯 {criteria.value.replace('_', ' ').title()}</h4>\n"
+                    result += f"<h4 style='color: #333333;'>🎯 {self._get_criteria_display_name(criteria)}</h4>\n"
                     # Handle both Pydantic objects and dictionaries
                     if hasattr(eval_result, 'evaluation_results'):
                         # Handle Pydantic objects with evaluation_results (like SlideTitleContentMatch)
@@ -482,7 +558,7 @@ class SlideGuardUI:
         
         if slide_eval.evaluations:
             for criteria, eval_result in slide_eval.evaluations.items():
-                criteria_name = criteria.value.replace('_', ' ').title()
+                criteria_name = self._get_criteria_display_name(criteria)
                 result += "<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n"
                 result += f"<h3 style='color: #333333; margin-top: 0;'>🎯 {criteria_name}</h3>\n"
                 
@@ -564,7 +640,7 @@ class SlideGuardUI:
     def _format_structured_evaluation(self, evaluation_results) -> str:
         """Format structured evaluation results with severity indicators."""
         if not evaluation_results:
-            return "No detailed evaluation results available.\n\n"
+            return self.translator.t("no_detailed_results")
         
         result = ""
         total_severity = 0
@@ -742,10 +818,15 @@ class SlideGuardUI:
         self._set_language(self.current_language)
         texts = self._get_ui_texts()
 
-        slide_criteria = [c for c in SLIDE_CRITERIA_INFO.keys() if not c.is_service_criteria()]
+        slide_criteria = list(SLIDE_CRITERIA_INFO.keys())
         deck_criteria = list(DECK_CRITERIA_INFO.keys())
-        slide_criteria_choices = [c.value for c in slide_criteria]
-        deck_criteria_choices = [c.value for c in deck_criteria]
+        self._service_slide_criteria = [c for c in slide_criteria if c.is_service_criteria()]
+        self._slide_criteria_list = [c for c in slide_criteria if not c.is_service_criteria()]
+        self._deck_criteria_list = deck_criteria
+        self._selected_slide_criteria = self._slide_criteria_list.copy()
+        self._selected_deck_criteria = deck_criteria.copy()
+        slide_choices_display = self._get_criteria_choices(self._slide_criteria_list)
+        deck_choices_display = self._get_criteria_choices(deck_criteria)
 
         with gr.Blocks(
             title="SlideGuard - Presentation Evaluation",
@@ -802,15 +883,15 @@ class SlideGuardUI:
 
                     criteria_md = gr.Markdown(texts["criteria_md"])
                     slide_criteria_input = gr.CheckboxGroup(
-                        choices=slide_criteria_choices,
+                        choices=slide_choices_display,
                         label=texts["slide_criteria_label"],
-                        value=slide_criteria_choices,
+                        value=slide_choices_display,
                         interactive=True,
                     )
                     deck_criteria_input = gr.CheckboxGroup(
-                        choices=deck_criteria_choices,
+                        choices=deck_choices_display,
                         label=texts["deck_criteria_label"],
-                        value=deck_criteria_choices,
+                        value=deck_choices_display,
                         interactive=True,
                     )
 
@@ -951,11 +1032,13 @@ class SlideGuardUI:
                                 updates = self._language_updates()
                                 return (*updates, lang)
 
-                            def toggle_language(current_lang: str):
+                            def toggle_language(current_lang: str, slide_selected_values: List[str], deck_selected_values: List[str]):
                                 lang = current_lang if current_lang in ("en", "ru") else "en"
                                 new_lang = "ru" if lang == "en" else "en"
                                 self._set_language(new_lang)
-                                updates = self._language_updates()
+                                slide_selected_criteria = self._decode_criteria_selection(slide_selected_values, self._slide_criteria_list)
+                                deck_selected_criteria = self._decode_criteria_selection(deck_selected_values, self._deck_criteria_list)
+                                updates = self._language_updates(slide_selected_criteria, deck_selected_criteria)
                                 return (*updates, new_lang)
 
                             def admin_register(u, p, r, req: gr.Request):
@@ -1050,7 +1133,7 @@ class SlideGuardUI:
                             )
                             lang_button.click(
                                 toggle_language,
-                                inputs=[lang_state],
+                                inputs=[lang_state, slide_criteria_input, deck_criteria_input],
                                 outputs=[
                                     profile_html,
                                     admin_tab,
