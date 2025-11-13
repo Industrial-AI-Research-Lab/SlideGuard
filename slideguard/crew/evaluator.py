@@ -337,8 +337,8 @@ class SlideGuardEvaluator:
                     eligible = list(range(total))
 
             if not eligible:
-                logger.warning(f"No eligible slides for {crit}. Running for all slides.")
-                eligible = list(range(total))
+                logger.info(f"No eligible slides for {crit}. Returning NotApplicableResult for all slides.")
+                return {"slide_results": {crit: [NotApplicableResult() for _ in range(total)]}}
 
             if len(eligible) == total:
                 entities = await self._eval_criterion_with_cache(info=info, deck=state.slides, chain=chain, config=config)
@@ -545,11 +545,17 @@ class SlideGuardEvaluator:
     def _criterion_applies(self, info: CriterionInfo, slide_types: List[str], contains_infographics: bool) -> bool:
         ts, xs, ri = info.applicable_slide_types, info.exclude_slide_types, info.requires_infographics
         # Check exclusions first
-        if xs and any(st in xs for st in slide_types):
-            return False
+        if xs:
+            # Ensure xs contains strings (not enum objects)
+            xs_str = [str(x) for x in xs]
+            if any(st in xs_str for st in slide_types):
+                return False
         # Check applicable types
-        if ts and not any(st in ts for st in slide_types):
-            return False
+        if ts:
+            # Ensure ts contains strings (not enum objects)
+            ts_str = [str(t) for t in ts]
+            if not any(st in ts_str for st in slide_types):
+                return False
         # Check infographics requirement
         if ri and not contains_infographics:
             return False

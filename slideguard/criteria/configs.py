@@ -26,7 +26,7 @@ from slideguard.criteria.deck_structure_analysis import prompt as deck_structure
 from slideguard.criteria.deck_research_quality import prompt as deck_research_quality_prompt
 
 ABBREVIATIONS_WHITELIST = {
-    'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag'
+    'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag', 'к.т.н.'
 }
 
 

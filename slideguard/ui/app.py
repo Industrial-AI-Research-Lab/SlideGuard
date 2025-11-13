@@ -39,7 +39,7 @@ CRITERIA_LABELS: Dict[Criteria, Tuple[str, str]] = {
     Criteria.slide_graphic_content_match: ("Graphic and content match", "Соответствие графических материалов содержанию слайда"),
     Criteria.slide_orphography_correctness: ("Orphography correctness", "Качество орфографии"),
     Criteria.slide_title_content_match: ("Title content match", "Соответствие заголовка содержанию слайда"),
-    Criteria.slide_title_slide_quality: ("Slide title quality", "Качество заголовка слайда"),
+    Criteria.slide_title_slide_quality: ("Slide title quality", "Качество титульного слайда"),
     Criteria.deck_storytelling: ("Storytelling quality", "Связность рассказа"),
     Criteria.deck_structure_analysis: ("Structure analysis", "Анализ структуры"),
     Criteria.deck_research_quality: ("Research quality", "Качество исследования"),
@@ -172,7 +172,7 @@ class SlideGuardUI:
         self.translator.set_language(lang)
         try:
             if self.evaluator and self.evaluator.llm:
-                self.evaluator.llm.set_language(AppLanguage(lang))
+                self.evaluator.llm.set_language(lang)
         except Exception:
             self.logger.warning("Failed to set evaluator LLM language to %s", lang, exc_info=True)
 

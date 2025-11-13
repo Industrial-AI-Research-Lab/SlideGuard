@@ -1,6 +1,6 @@
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, runtime_checkable, Type
-from pydantic import BaseModel, Field
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, runtime_checkable, Type, Union
+from pydantic import BaseModel, Field, field_validator
 
 
 class CriteriaTarget(str, Enum):
@@ -38,6 +38,14 @@ class Applicability(BaseModel):
     applicable_slide_types: Optional[List[str]] = None
     exclude_slide_types: Optional[List[str]] = None
     requires_infographics: bool = False
+
+    @field_validator('applicable_slide_types', 'exclude_slide_types', mode='before')
+    @classmethod
+    def convert_enum_to_string(cls, v: Optional[List[Union[str, Enum]]]) -> Optional[List[str]]:
+        """Convert enum values to their string representations."""
+        if v is None:
+            return None
+        return [item.value if isinstance(item, Enum) else str(item) for item in v]
 
 
 class ScoredListItemSpec(BaseModel):
