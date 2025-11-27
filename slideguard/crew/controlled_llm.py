@@ -10,11 +10,13 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, List, Optional, Type
+from urllib.parse import urlparse
 
 from pydantic import BaseModel
 
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain.output_parsers import RetryWithErrorOutputParser
@@ -23,6 +25,52 @@ from langchain_openai.chat_models.base import ChatOpenAI
 from slideguard.utils.config import SlideGuardConfig, load_config
 
 logger = logging.getLogger(__name__)
+
+LEGACY_CHAT_ENV_FLAG = "SLIDEGUARD_FORCE_LEGACY_CHAT_COMPLETIONS"
+
+
+def _flag_enabled(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _should_use_legacy_chat_params(base_url: Optional[str]) -> bool:
+    """Detect when we should keep using `max_tokens` for chat/completions APIs."""
+    if _flag_enabled(os.getenv(LEGACY_CHAT_ENV_FLAG)):
+        return True
+    if not base_url:
+        return False
+    try:
+        host = urlparse(base_url).netloc or base_url
+    except ValueError:
+        host = base_url
+    host = host.lower()
+    return "openai" not in host
+
+
+class LegacyCompatibleChatOpenAI(ChatOpenAI):
+    """ChatOpenAI flavor that keeps legacy `max_tokens` for compat servers."""
+
+    @property
+    def _default_params(self) -> dict[str, Any]:
+        params = dict(super()._default_params)
+        if "max_completion_tokens" in params:
+            params["max_tokens"] = params.pop("max_completion_tokens")
+        return params
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        # Only legacy chat/completions endpoints expect this parameter.
+        if "messages" in payload and "max_completion_tokens" in payload:
+            payload["max_tokens"] = payload.pop("max_completion_tokens")
+        return payload
 
 
 def encode_image_to_base64(image_path: str) -> str:
@@ -235,7 +283,18 @@ def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
         )
     else:
         llm_config = config.get_llm_config()
-        chat = ChatOpenAI(
+        base_url = llm_config.get("base_url")
+        chat_cls = (
+            LegacyCompatibleChatOpenAI
+            if _should_use_legacy_chat_params(base_url)
+            else ChatOpenAI
+        )
+        if chat_cls is LegacyCompatibleChatOpenAI:
+            logger.info(
+                "Using legacy Chat Completions compatibility mode for base_url=%s",
+                base_url,
+            )
+        chat = chat_cls(
             **llm_config,
             temperature=0.01,
             max_tokens=5000

@@ -559,7 +559,7 @@ class SlideGuardEvaluator:
         # Check infographics requirement
         if ri and not contains_infographics:
             return False
-        return True
+            return True
 
     def _is_applicable_result(self, v: Optional[BaseModel]) -> bool:
         if v is None:
