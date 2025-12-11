@@ -26,7 +26,7 @@ A comprehensive slide deck evaluation system using LangGraph and LangChain that 
 # Using Poetry (recommended)
 poetry install
 
-# Or using pip
+# Or using pip 
 pip install pydantic python-dotenv typer langfuse langchain langchain-openai langgraph gradio PyMuPDF reportlab bcrypt
 ```
 
@@ -83,9 +83,9 @@ slideguard ui run --host 127.0.0.1 --port 7860
 ### Setup Scripts
 
 ```bash
-python3 -m slideguard.setup setup    # Interactive setup
-python3 -m slideguard.setup test     # Test installation
-python3 -m slideguard.setup example  # Generate example script
+poetry run python3 -m slideguard.setup setup    # Interactive setup
+poetry run python3 -m slideguard.setup test     # Test installation
+poetry run python3 -m slideguard.setup example  # Generate example script
 ```
 
 ## CLI Usage
