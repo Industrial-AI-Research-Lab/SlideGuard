@@ -44,7 +44,7 @@ export SLIDEGUARD_CACHE_DIR=".slideguard_cache"
 export SLIDEGUARD_FILE_CACHE_DIR=".file_cache"
 
 # Or use interactive setup
-python -m slideguard.setup setup
+python3 -m slideguard.setup setup
 ```
 
 ### Basic Usage
@@ -83,9 +83,9 @@ slideguard ui run --host 127.0.0.1 --port 7860
 ### Setup Scripts
 
 ```bash
-python -m slideguard.setup setup    # Interactive setup
-python -m slideguard.setup test     # Test installation
-python -m slideguard.setup example  # Generate example script
+python3 -m slideguard.setup setup    # Interactive setup
+python3 -m slideguard.setup test     # Test installation
+python3 -m slideguard.setup example  # Generate example script
 ```
 
 ## CLI Usage
@@ -254,7 +254,7 @@ asyncio.run(evaluate())
 
 ### Common Issues
 
-1. **LLM not available**: Set environment variables with `python -m slideguard.setup setup`
+1. **LLM not available**: Set environment variables with `python3 -m slideguard.setup setup`
 2. **Import errors**: Install dependencies with `poetry install` or `pip install -r requirements-ui.txt`
 3. **File not found**: Ensure presentation file exists and is accessible
 4. **API errors**: Check API key and base URL configuration
@@ -271,7 +271,7 @@ rm -rf .slideguard_cache
 ### Test Installation
 
 ```bash
-python -m slideguard.setup test
+python3 -m slideguard.setup test
 slideguard eval list-criterias
 slideguard --help
 ```
