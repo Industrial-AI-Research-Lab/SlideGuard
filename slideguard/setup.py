@@ -46,7 +46,21 @@ SLIDEGUARD_LLM_MODEL={model}
 
 # Cache Configuration (optional)
 SLIDEGUARD_CACHE_DIR=.slideguard_cache
+SLIDEGUARD_EVALUATIONS_DIR=.slideguard_cache/evaluations
 SLIDEGUARD_FILE_CACHE_DIR=.file_cache
+
+# Model Configuration (optional)
+SLIDEGUARD_MAX_CONCURRENCY=8
+
+# Legacy compatibility flag (optional)
+# SLIDEGUARD_FORCE_LEGACY_CHAT_COMPLETIONS=false
+
+# OpenAI Configuration (optional)
+# OPENAI_API_KEY=sk-...
+# OPENAI_MODEL=gpt-4o
+
+# DB config
+AUTH_DB_URL=sqlite:///./auth.db
 """
     
     with open(env_file, 'w') as f:
@@ -132,6 +146,7 @@ def test_installation():
                 response_text = test_response.content if hasattr(test_response, 'content') else str(test_response)
                 print("✓ LLM server connection successful")
                 print(f"  Model: {config.model}")
+                print(f"  API Base: {config.api_base}")
                 print(f"  Response preview: {response_text[:100] if response_text else '(empty)'}...")
             else:
                 print("⚠ LLM server responded but returned empty response")

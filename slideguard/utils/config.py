@@ -80,15 +80,23 @@ SLIDEGUARD_LLM_MODEL=/model
 
 # Cache Configuration (optional)
 SLIDEGUARD_CACHE_DIR=.slideguard_cache
+SLIDEGUARD_EVALUATIONS_DIR=.slideguard_cache/evaluations
 SLIDEGUARD_FILE_CACHE_DIR=.file_cache
 
-# Concurrency (optional)
-# SLIDEGUARD_MAX_CONCURRENCY=8
+# Model Configuration (optional)
+SLIDEGUARD_MAX_CONCURRENCY=8
 
-# OpenAI integration (optional)
+# Legacy compatibility flag (optional)
+# Set to 1, true, yes, or on to force legacy chat completions API parameters
+# SLIDEGUARD_FORCE_LEGACY_CHAT_COMPLETIONS=false
+
+# OpenAI Configuration (optional)
 # If set, OpenAI will be used instead of local model
 # OPENAI_API_KEY=sk-...
 # OPENAI_MODEL=gpt-4o
+
+# DB config
+AUTH_DB_URL=sqlite:///./auth.db
 
 # Examples for different services:
 # 
@@ -119,7 +127,7 @@ SLIDEGUARD_FILE_CACHE_DIR=.file_cache
 
 def load_config(max_concurrency: Optional[int] = None) -> SlideGuardConfig:
     """Load environment variables from .env file if it exists."""
-    load_dotenv()
+    load_dotenv(override=True)
     
     return SlideGuardConfig(max_concurrency=max_concurrency)
 
