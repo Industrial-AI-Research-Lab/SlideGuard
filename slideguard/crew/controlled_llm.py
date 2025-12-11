@@ -258,13 +258,17 @@ class OpenAIModel(str, Enum):
     GPT_4O = "gpt-4o"
 
 
-def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
+def create_llm_from_config(config: SlideGuardConfig, language: AppLanguage = AppLanguage.EN) -> Optional[ControlledLLM]:
     if not config.is_configured():
         try:
             config = load_config()
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
-        return None
+            return None
+        
+        # Re-check if config is valid after loading
+        if not config.is_configured():
+            return None
 
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
@@ -299,4 +303,4 @@ def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
             temperature=0.01,
             max_tokens=5000
         )
-    return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01)
+    return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01, language=language)
