@@ -223,8 +223,7 @@ class SlideTypeManager:
         
         return "\n\n".join(prompt_sections)
     
-    def generate_slide_helper_type_prompt(self, schema_format: str = "{schema_format}", 
-                                        description: str = "{description}") -> str:
+    def generate_slide_helper_type_prompt(self) -> str:
         """
         Generate the complete slide helper type prompt with dynamic slide type descriptions.
         
@@ -239,7 +238,7 @@ class SlideTypeManager:
         
         prompt = f"""
 You are an expert in detailed presentation analysis. You are provided with a single slide.
-You need to describe it in maximum detail so that the information can be used to evaluate the structure of the entire presentation.
+You need to analyze the slide and determine it's type and if it contains infographics.
 DO NOT make assumptions and DO NOT invent anything regarding what might be on other slides.
 You always work with only one slide.
 
@@ -249,8 +248,10 @@ You need to remember that slides can contain information of the following types 
 Return the answer as JSON strictly following the format instructions.
 
 IMPORTANT! You cannot specify more than three types for one slide. But you can not specify any type if the slide does not belong to any of the listed types.
-
-Slide description: {description}
+Infographics are:
+- Numerical graphics (e.g., boxplots, circular and bar charts, graphs, tables with data),
+- Diagrams, workflows, charts describing the approach / solution
+IMPORTANT! Slide may contain some background images which are decorative and not a part of the slide content - they should be ignored
 """
         return prompt.strip()
 
@@ -275,10 +276,9 @@ def validate_slide_type(name: str) -> bool:
     """Validate if a slide type exists"""
     return slide_type_manager.validate_slide_type(name)
 
-def generate_slide_helper_type_prompt(schema_format: str = "{schema_format}", 
-                                    description: str = "{description}") -> str:
+def generate_slide_helper_type_prompt() -> str:
     """Generate the complete slide helper type prompt with dynamic slide type descriptions"""
-    return slide_type_manager.generate_slide_helper_type_prompt(schema_format, description="")
+    return slide_type_manager.generate_slide_helper_type_prompt()
 
 def get_slide_type_prompt_section() -> str:
     """Get the slide type descriptions section for prompts"""

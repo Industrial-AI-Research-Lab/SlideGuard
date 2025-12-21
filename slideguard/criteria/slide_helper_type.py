@@ -1,6 +1,3 @@
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
-from slideguard.schemes import Criteria
-from slideguard.schemes import SlideType
 from slideguard.criteria.slide_types import generate_slide_helper_type_prompt
 
 # prompt = """
@@ -38,17 +35,3 @@ from slideguard.criteria.slide_types import generate_slide_helper_type_prompt
 
 # Generate prompt dynamically from slide type manager
 prompt = generate_slide_helper_type_prompt()
-
-
-SLIDE_HELPER_TYPE = CriterionInfo(
-    criteria=Criteria.slide_type,
-    type="slide",
-    criterion_description="Type of the slide",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
-    pydantic=SlideType,
-    applicable_slide_types=None,  # Applies to all slide types
-    priority=1,  # High priority - needed by other criteria
-    requires_slide_type=False,
-    category="structure"
-)

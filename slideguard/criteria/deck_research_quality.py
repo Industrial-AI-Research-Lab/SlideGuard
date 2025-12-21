@@ -1,7 +1,3 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
-
 prompt = """
 You are an expert in evaluating the research quality of students' presentations.
 You will be provided with information about all slides in the presentation.
@@ -41,28 +37,3 @@ Evaluate the presentation's research quality by examining the evidence-based app
 Provide specific suggestions for improving the research quality of the presentation.
 In the Answer section, provide the final evaluation strictly following the format instructions.
 """
-
-
-class DeckResearchQualityResult(BaseAttributes):
-    evaluation_element: str = Field(description="Issue description")
-    evaluation_suggestion: str = Field(description="Detailed description of the issue and suggestion for improvement")
-
-
-class DeckResearchQuality(BaseModel):
-    evaluation_results: list[DeckResearchQualityResult] = Field(description="List of evaluation results with specific elements and suggestions")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
-
-
-DECK_RESEARCH_QUALITY = CriterionInfo(
-    criteria=Criteria.deck_research_quality,
-    type="deck",
-    criterion_description="Evaluating the research quality of students' presentations",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_DECK_TASK_PROMPT,
-    pydantic=DeckResearchQuality,
-    applicable_slide_types=None,  # Applies to all slide types
-    priority=3,
-    requires_slide_type=False,
-    category="research"
-)
-

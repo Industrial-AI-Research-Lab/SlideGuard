@@ -9,12 +9,14 @@ import re
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, List, Optional, Type
+from urllib.parse import urlparse
 
 from pydantic import BaseModel
 
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain.output_parsers import RetryWithErrorOutputParser
@@ -23,6 +25,52 @@ from langchain_openai.chat_models.base import ChatOpenAI
 from slideguard.utils.config import SlideGuardConfig, load_config
 
 logger = logging.getLogger(__name__)
+
+LEGACY_CHAT_ENV_FLAG = "SLIDEGUARD_FORCE_LEGACY_CHAT_COMPLETIONS"
+
+
+def _flag_enabled(value: Optional[str]) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _should_use_legacy_chat_params(base_url: Optional[str]) -> bool:
+    """Detect when we should keep using `max_tokens` for chat/completions APIs."""
+    if _flag_enabled(os.getenv(LEGACY_CHAT_ENV_FLAG)):
+        return True
+    if not base_url:
+        return False
+    try:
+        host = urlparse(base_url).netloc or base_url
+    except ValueError:
+        host = base_url
+    host = host.lower()
+    return "openai" not in host
+
+
+class LegacyCompatibleChatOpenAI(ChatOpenAI):
+    """ChatOpenAI flavor that keeps legacy `max_tokens` for compat servers."""
+
+    @property
+    def _default_params(self) -> dict[str, Any]:
+        params = dict(super()._default_params)
+        if "max_completion_tokens" in params:
+            params["max_tokens"] = params.pop("max_completion_tokens")
+        return params
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        # Only legacy chat/completions endpoints expect this parameter.
+        if "messages" in payload and "max_completion_tokens" in payload:
+            payload["max_tokens"] = payload.pop("max_completion_tokens")
+        return payload
 
 
 def encode_image_to_base64(image_path: str) -> str:
@@ -88,9 +136,18 @@ class AppLanguage(str, Enum):
 
 def get_language_instructions(language: AppLanguage) -> str: # can be set based on the presentation language
     if language == AppLanguage.RU:
-        return "Заполняй значения в JSON схеме ТОЛЬКО на русском языке."
+        return (
+            "Заполняй значения в JSON-схеме ТОЛЬКО на русском языке. "
+            "Все текстовые поля (включая комментарии, рекомендации, краткие выводы и иные пояснения) "
+            "должны быть написаны на грамотном русском языке. "
+            "Если требуются списки или пояснения, используй русский язык для каждого пункта."
+        )
     else:
-        return "Fill values of JSON schema ONLY in English."
+        return (
+            "Fill values of the JSON schema ONLY in English. "
+            "All textual fields (comments, recommendations, summaries, explanations) "
+            "must be written in clear English."
+        )
 
 class ControlledLLM:
     def __init__(
@@ -99,11 +156,13 @@ class ControlledLLM:
         max_retries: int = 3,
         retry_temperature: float = 0.01,
         preprocessors: Optional[List[Callable[[str], str]]] = None,
+        language: AppLanguage = AppLanguage.EN,
     ) -> None:
         self.chat_model = chat_model
         self.max_retries = max_retries
         self.retry_temperature = retry_temperature
         self.preprocessors = preprocessors or [default_text_cleaner]
+        self.language: AppLanguage = language
 
     def with_tools(self, tools: List[Any]) -> "ControlledLLM":
         """Binds tools to the LLM"""
@@ -118,6 +177,7 @@ class ControlledLLM:
             max_retries=self.max_retries,
             retry_temperature=self.retry_temperature,
             preprocessors=self.preprocessors,
+            language=self.language,
         )
 
     def with_structured_output_retry(self, output_model: Type[BaseModel]) -> Runnable[[PromptValue], ControlledOutput]:
@@ -133,7 +193,7 @@ class ControlledLLM:
             prompt_value = _ensure_image_messages(pv)
             try:
                 fmt = parser.get_format_instructions()
-                lang_instructions = get_language_instructions(AppLanguage.EN)
+                lang_instructions = get_language_instructions(self.language)
                 if isinstance(prompt_value, ChatPromptValue):
                     extended_messages = [*prompt_value.messages, HumanMessage(content=f"{fmt}\n\n{lang_instructions}")]
                     prompt_value = ChatPromptValue(messages=extended_messages)
@@ -183,18 +243,32 @@ class ControlledLLM:
 
         return RunnableLambda(_run)
 
+    def set_language(self, language: AppLanguage | str) -> None:
+        """Set preferred language for future LLM responses."""
+        try:
+            if isinstance(language, str):
+                language = AppLanguage(language.lower())
+            self.language = language
+        except Exception:
+            logger.warning("Invalid language %s provided to ControlledLLM. Falling back to English.", language)
+            self.language = AppLanguage.EN
+
 class OpenAIModel(str, Enum):
     GPT_5 = "gpt-5"
     GPT_4O = "gpt-4o"
 
 
-def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
+def create_llm_from_config(config: SlideGuardConfig, language: AppLanguage = AppLanguage.EN) -> Optional[ControlledLLM]:
     if not config.is_configured():
         try:
             config = load_config()
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
-        return None
+            return None
+        
+        # Re-check if config is valid after loading
+        if not config.is_configured():
+            return None
 
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
@@ -213,9 +287,20 @@ def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
         )
     else:
         llm_config = config.get_llm_config()
-        chat = ChatOpenAI(
+        base_url = llm_config.get("base_url")
+        chat_cls = (
+            LegacyCompatibleChatOpenAI
+            if _should_use_legacy_chat_params(base_url)
+            else ChatOpenAI
+        )
+        if chat_cls is LegacyCompatibleChatOpenAI:
+            logger.info(
+                "Using legacy Chat Completions compatibility mode for base_url=%s",
+                base_url,
+            )
+        chat = chat_cls(
             **llm_config,
             temperature=0.01,
             max_tokens=5000
         )
-    return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01)
+    return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01, language=language)

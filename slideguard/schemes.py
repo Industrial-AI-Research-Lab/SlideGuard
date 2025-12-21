@@ -53,10 +53,12 @@ class SlideDescription(BaseModel):
 
 
 class SlideType(BaseModel):
-    slide_type: list[str] = Field(description="List of slide types that are most suitable for the slide")
+    slide_type: list[str] = Field(default_factory=list, description="List of slide types that are most suitable for the slide")
+    contains_infographics: bool = Field(default=False, description="Whether the slide contains infographics")
 
-class SlideDescriptionWithType(SlideDescription):
-    slide_type: list[str] = Field(description="List of slide types that are most suitable for the slide")
+class SlideDescriptionWithType(SlideDescription, SlideType):
+    """Combines slide description with type and infographics information"""
+    pass
 
 
 # we inherit from Slideable to make it compatible with cache manager

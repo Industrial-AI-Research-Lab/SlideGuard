@@ -1,5 +1,4 @@
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, CriterionInfo
-from slideguard.schemes import Criteria, SlideDescription
+
 
 prompt = """
 You are an expert in detailed presentation analysis. You are provided with ONLY ONE single slide.
@@ -19,16 +18,4 @@ Describe the slide in maximum detail according to the following plan:
 
 Return the result in JSON as instructed by the format instructions.
 """
-
-SLIDE_HELPER_DESCRIPTION = CriterionInfo(
-    criteria=Criteria.slide_description,
-    criterion_description="Detailed description of the slide, including description of all charts, tables and illustrations and how they are arranged",
-    type="slide",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
-    pydantic=SlideDescription,
-    applicable_slide_types=None,  # Applies to all slide types
-    priority=1,  # Highest priority - needed by other criteria
-    requires_slide_type=False,
-    category="content"
-)
+ 
