@@ -544,22 +544,22 @@ class SlideGuardEvaluator:
 
     def _criterion_applies(self, info: CriterionInfo, slide_types: List[str], contains_infographics: bool) -> bool:
         ts, xs, ri = info.applicable_slide_types, info.exclude_slide_types, info.requires_infographics
-        # Check exclusions first
-        if xs:
-            # Ensure xs contains strings (not enum objects)
-            xs_str = [str(x) for x in xs]
-            if any(st in xs_str for st in slide_types):
-                return False
-        # Check applicable types
-        if ts:
-            # Ensure ts contains strings (not enum objects)
-            ts_str = [str(t) for t in ts]
-            if not any(st in ts_str for st in slide_types):
-                return False
-        # Check infographics requirement
+        excluded = set(xs or [])
+        applicable = set(ts or [])
+
+        # Exclusions first: if any slide type is excluded, the criterion doesn't apply
+        if excluded and any(st in excluded for st in slide_types):
+            return False
+
+        # Applicability constraint: if configured, at least one slide type must match
+        if applicable and not any(st in applicable for st in slide_types):
+            return False
+
+        # Infographics constraint: some criteria only apply if the slide contains infographics
         if ri and not contains_infographics:
             return False
-            return True
+
+        return True
 
     def _is_applicable_result(self, v: Optional[BaseModel]) -> bool:
         if v is None:
@@ -657,7 +657,7 @@ class SlideGuardEvaluator:
                         p = self._create_fallback(info.pydantic)
                     return idx, p
                 except Exception:
-                    logger.warning(f"Exception in cache computation for {info.criteria.value} idx={idx}. Creating fallback.")
+                    logger.warning(f"Exception in response computation for {info.criteria.value} idx={idx}. Creating fallback.")
                     return idx, self._create_fallback(info.pydantic)
 
             payloads: List[Tuple[int, Dict[str, Any]]] = [

@@ -1,4 +1,5 @@
 from enum import Enum
+import logging
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, runtime_checkable, Type, Union
 from pydantic import BaseModel, Field, field_validator
 
@@ -45,7 +46,14 @@ class Applicability(BaseModel):
         """Convert enum values to their string representations."""
         if v is None:
             return None
-        return [item.value if isinstance(item, Enum) else str(item) for item in v]
+        out: List[str] = []
+        for item in v:
+            try:
+                out.append(item.value)
+            except AttributeError:
+                logging.warning(f"Wrong slide type passed in config: {item}. Converting to string directly, which could lead to unexpected behavior")
+                out.append(str(item))
+        return out
 
 
 class ScoredListItemSpec(BaseModel):
