@@ -27,7 +27,7 @@ class SlideType(Enum):
     CONCLUSION = "Conclusion"
     END_SLIDE = "End slide"
     Q_AND_A = "Q&A"
-    # Ppt type-specific slide types 
+    SCIENTIFIC_TRACK_JUSTIFICATION = "Scientific Track Justification"
     SCIENTIFIC_NOVELTY = "Scientific Novelty"
     PUBLICATION_READINESS = "Publication Readiness"
     TECHNOLOGICAL_NOVELTY = "Technological Novelty"
@@ -115,7 +115,6 @@ class SlideTypeManager:
                 description="this is a slide that contains the question and answer session.",
                 category="interactive"
             ),
-            # New slide types 
             SlideType.SCIENTIFIC_NOVELTY.value: SlideTypeInfo(
                 name=SlideType.SCIENTIFIC_NOVELTY.value,
                 description="this is a slide that explains what makes the project unique by detailing how its approach differs from known solutions, outlining the proposed new data, methods, or models, specifying which gaps in the field it closes, and stating its potential scientific or practical consequences.",
@@ -152,6 +151,12 @@ class SlideTypeManager:
                 category="content",
                 presentation_type=PresentationType.COLLABORATIVE
             ),
+            SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value: SlideTypeInfo(
+                name=SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value,
+                description="this is a slide that explicitly justifies the scientific nature of the work or explains why the scientific track was chosen. It contains reasoning about the scientific contribution, research methodology, or academic value of the project.",
+                category="content",
+                presentation_type=PresentationType.SCIENTIFIC
+            )
         }
         
         for slide_type, info in default_types.items():

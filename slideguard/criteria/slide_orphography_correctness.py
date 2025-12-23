@@ -15,13 +15,15 @@ The plan of the solution of the task:
 
 Common problems that can be found on a slide:
 - Lists may have ending periods which is not correct
-- Titles should may have periods at the end which is not correct
+- Titles may have periods at the end which is not correct
 
 ## Evaluation Guidelines:
-- Be specific about what needs to be changed and where on the slide
+- Be specific about what is needed to be changed and where on the slide
 - Provide concrete examples and suggestions for improvement
+- DO NOT address hyphenating
 - usually in presentations there are very few orthographic and grammatical errors, so make sure you are sure you have found them
-- Only report issues you are confident about
+- Only report issues you are very confident about, keep in mind that you can yourself make mistakes in OCR part
+- In thought part of your answer also generate an example of your final answer and make sure that all your considerations make sense and correspond to the slide
 
 ## Response Format:
 Your answer should have two sections: «Thought» and «Answer».

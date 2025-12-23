@@ -41,6 +41,7 @@ from slideguard.ui.auth import (
     delete_user,
     list_users,
 )
+from slideguard.criteria.types import PresentationType
 
 def _initialize_logging() -> None:
     """Initialize logging configuration for SlideGuard."""
@@ -102,17 +103,29 @@ def _print_config_help(config: SlideGuardConfig) -> None:
     )
 
 
-def _load_criterias(criteria: Optional[List[str]]) -> Tuple[List[Criteria], List[Criteria]]:
-    """Load slide and deck criteria based on input criteria list."""
+def _load_criterias(criteria: Optional[List[str]], presentation_type: Optional[str]) -> Tuple[List[Criteria], List[Criteria]]:
+    """Load slide and deck criteria based on input criteria list and presentation type."""
+    provider = get_registry_provider()
+    registry = provider.get_for_user()
+
+    def _validate_applicability(selected: List[Criteria]) -> None:
+        if not presentation_type:
+            return
+        for crit in selected:
+            info = registry.get_info(crit)
+            if info.presentation_types and presentation_type not in info.presentation_types:
+                raise typer.BadParameter(
+                    f"Criterion '{crit.value}' is not available for presentation type '{presentation_type}'."
+                )
+
     if criteria:
         criterias = [Criteria(c) for c in criteria]
         slide_criterias = [c for c in criterias if c.is_slide_criteria()]
         deck_criterias = [c for c in criterias if c.is_deck_criteria()]
+        _validate_applicability(slide_criterias + deck_criterias)
     else:
-        provider = get_registry_provider()
-        registry = provider.get_for_user()
-        slide_criterias = registry.get_slide_ids()
-        deck_criterias = registry.get_deck_ids()
+        slide_criterias = registry.get_slide_ids(presentation_type=presentation_type)
+        deck_criterias = registry.get_deck_ids(presentation_type=presentation_type)
     
     return slide_criterias, deck_criterias
 
@@ -215,7 +228,15 @@ def main_callback() -> None:
 
 
 @eval_app.command("list-criterias")
-def eval_list_criterias() -> None:
+def eval_list_criterias(
+    presentation_type: PresentationType = typer.Option(
+        PresentationType.SCIENTIFIC,
+        "--presentation-type",
+        "-t",
+        case_sensitive=False,
+        help="Filter criteria by presentation type (collaborative, industrial, scientific, technological)",
+    ),
+) -> None:
     """List all available slide-level and deck-level criteria."""
     typer.echo("SlideGuard - Available Evaluation Criteria")
     typer.echo("=" * 45)
@@ -225,16 +246,18 @@ def eval_list_criterias() -> None:
     # Slide-level criteria
     typer.echo("\n📊 Slide-Level Criteria:")
     typer.echo("-" * 25)
-    for criteria in registry.get_slide_ids():
+    for criteria in registry.get_slide_ids(presentation_type=presentation_type):
         typer.echo(f"  • {criteria.value}")
     
     # Deck-level criteria
     typer.echo("\n📋 Deck-Level Criteria:")
     typer.echo("-" * 24)
-    for criteria in registry.get_deck_ids():
+    for criteria in registry.get_deck_ids(presentation_type=presentation_type):
         typer.echo(f"  • {criteria.value}")
     
-    typer.echo(f"\nTotal: {len(registry.get_slide_ids())} slide criteria, {len(registry.get_deck_ids())} deck criteria")
+    slide_total = len(registry.get_slide_ids(presentation_type=presentation_type))
+    deck_total = len(registry.get_deck_ids(presentation_type=presentation_type))
+    typer.echo(f"\nTotal: {slide_total} slide criteria, {deck_total} deck criteria")
     typer.echo("\nUsage examples:")
     typer.echo("  slideguard eval run -p presentation.pdf --criteria slide_visual_arrangement")
     typer.echo("  slideguard eval run -p presentation.pdf --criteria deck_structure_analysis")
@@ -279,11 +302,18 @@ def eval_run(
         "--eval-debug",
         help="Enable debug mode (Save graph images)",
     ),
+    presentation_type: PresentationType = typer.Option(
+        PresentationType.SCIENTIFIC,
+        "--presentation-type",
+        "-t",
+        case_sensitive=False,
+        help="Presentation type: collaborative, industrial, scientific (default), technological",
+    ),
 ) -> None:
     """Start an evaluation for the given presentation."""
     typer.echo("Loading settings...")
 
-    slide_criterias, deck_criterias = _load_criterias(criteria)
+    slide_criterias, deck_criterias = _load_criterias(criteria, presentation_type.value)
 
     # Load environment variables from .env file
     config = load_config(max_concurrency)
@@ -378,11 +408,18 @@ def eval_multirun(
         "--eval-debug",
         help="Enable debug mode (Save graph images)",
     ),
+    presentation_type: PresentationType = typer.Option(
+        PresentationType.SCIENTIFIC,
+        "--presentation-type",
+        "-t",
+        case_sensitive=False,
+        help="Presentation type: collaborative, industrial, scientific (default), technological",
+    ),
 ) -> None:
     """Start evaluations for all PDF files in the given folder."""
     typer.echo("Loading settings...")
     
-    slide_criterias, deck_criterias = _load_criterias(criteria)
+    slide_criterias, deck_criterias = _load_criterias(criteria, presentation_type.value)
     
     # Load environment variables from .env file
     config = load_config(max_concurrency)

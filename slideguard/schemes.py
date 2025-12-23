@@ -31,6 +31,7 @@ class Criteria(str, Enum):
     slide_orphography_correctness = "slide_orphography_correctness"
     slide_title_content_match = "slide_title_content_match"
     slide_title_slide_quality = "slide_title_slide_quality"
+    slide_scientific_track_justification = "slide_scientific_track_justification"
 
     # deck criteria
     deck_storytelling = "deck_storytelling"

@@ -15,7 +15,8 @@ from PIL import Image
 import fitz  # PyMuPDF
 
 from slideguard.criteria import get_registry_provider
-from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult, PresentationType
+from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult
+from slideguard.criteria.types import PresentationType, DEFAULT_PRESENTATION_TYPE
 from slideguard.utils.config import load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
@@ -40,12 +41,14 @@ CRITERIA_LABELS: Dict[Criteria, Tuple[str, str]] = {
     Criteria.slide_orphography_correctness: ("Orphography correctness", "Качество орфографии"),
     Criteria.slide_title_content_match: ("Title content match", "Соответствие заголовка содержанию слайда"),
     Criteria.slide_title_slide_quality: ("Slide title quality", "Качество титульного слайда"),
+    Criteria.slide_scientific_track_justification: ("Scientific track justification", "Обоснование выбора научного трека"),
     Criteria.deck_storytelling: ("Storytelling quality", "Связность рассказа"),
     Criteria.deck_structure_analysis: ("Structure analysis", "Анализ структуры"),
     Criteria.deck_research_quality: ("Research quality", "Качество исследования"),
 }
 
 SERVICE_CRITERIA: Tuple[Criteria, ...] = (Criteria.slide_type, Criteria.slide_description)
+PRESENTATION_TYPES = [p.value for p in PresentationType]
 
 
 class SlideGuardUI:
@@ -59,6 +62,7 @@ class SlideGuardUI:
         self.temp_files = []  # Track temporary files for cleanup
         self.current_presentation_name = "Unknown"
         self.current_language = "en"
+        self.current_presentation_type = DEFAULT_PRESENTATION_TYPE
         self.current_user = "Guest"
         self.translator = Translator(self.current_language)
         
@@ -152,7 +156,16 @@ class SlideGuardUI:
             self.logger.error(f"Failed to extract slide images: {e}")
             return []
     
-    def _load_criteria(self, criteria_names: List[str]) -> Tuple[List[Criteria], List[Criteria]]:
+    def _refresh_criteria_lists(self) -> None:
+        """Refresh available criteria based on current presentation type."""
+        registry = self.registry_provider.get_for_user()
+        pt = PresentationType.from_string(self.current_presentation_type) if self.current_presentation_type else None
+        slide_all = registry.get_slide_ids(include_service=True, presentation_type=pt)
+        self._service_slide_criteria = [c for c in slide_all if c.is_service_criteria()]
+        self._slide_criteria_list = [c for c in slide_all if not c.is_service_criteria()]
+        self._deck_criteria_list = registry.get_deck_ids(presentation_type=pt)
+
+    def _load_criteria(self, criteria_names: List[str], presentation_type: Optional[str]) -> Tuple[List[Criteria], List[Criteria]]:
         """Load slide and deck criteria based on input criteria list."""
         if criteria_names:
             criterias = [Criteria(c) for c in criteria_names]
@@ -160,8 +173,9 @@ class SlideGuardUI:
             deck_criterias = [c for c in criterias if c.is_deck_criteria()]
         else:
             registry = self.registry_provider.get_for_user()
-            slide_criterias = registry.get_slide_ids()
-            deck_criterias = registry.get_deck_ids()
+            pt = PresentationType.from_string(presentation_type) if presentation_type else None
+            slide_criterias = registry.get_slide_ids(presentation_type=pt)
+            deck_criterias = registry.get_deck_ids(presentation_type=pt)
         
         return slide_criterias, deck_criterias
 
@@ -184,6 +198,22 @@ class SlideGuardUI:
 
     def _get_criteria_choices(self, criteria_list: List[Criteria]) -> List[str]:
         return [self._get_criteria_display_name(c) for c in criteria_list]
+
+    def _get_presentation_type_display(self, presentation_type: str) -> str:
+        key = f"presentation_type_{presentation_type}"
+        return self.translator.t(key)
+
+    def _get_presentation_type_choices(self) -> List[str]:
+        return [self._get_presentation_type_display(pt) for pt in PRESENTATION_TYPES]
+
+    def _decode_presentation_type(self, selected: Optional[str]) -> Optional[str]:
+        if not selected:
+            return None
+        mapping: Dict[str, str] = {}
+        for pt in PRESENTATION_TYPES:
+            mapping[pt] = pt
+            mapping[self._get_presentation_type_display(pt)] = pt
+        return mapping.get(selected)
 
     def _decode_criteria_selection(self, selected: Optional[List[str]], criteria_list: List[Criteria]) -> List[Criteria]:
         mapping: Dict[str, Criteria] = {}
@@ -267,11 +297,21 @@ class SlideGuardUI:
         slide_selected = selected_slide or getattr(self, "_selected_slide_criteria", self._slide_criteria_list)
         deck_selected = selected_deck or getattr(self, "_selected_deck_criteria", self._deck_criteria_list)
 
+        slide_selected = [c for c in slide_selected if c in self._slide_criteria_list]
+        deck_selected = [c for c in deck_selected if c in self._deck_criteria_list]
+
+        if not slide_selected:
+            slide_selected = self._slide_criteria_list
+        if not deck_selected:
+            deck_selected = self._deck_criteria_list
+
         self._selected_slide_criteria = slide_selected
         self._selected_deck_criteria = deck_selected
 
         slide_choices = self._get_criteria_choices(self._slide_criteria_list)
         deck_choices = self._get_criteria_choices(self._deck_criteria_list)
+        presentation_choices = self._get_presentation_type_choices()
+        presentation_selected = self._get_presentation_type_display(self.current_presentation_type)
 
         slide_selected_display = [self._get_criteria_display_name(c) for c in slide_selected if c in self._slide_criteria_list]
         deck_selected_display = [self._get_criteria_display_name(c) for c in deck_selected if c in self._deck_criteria_list]
@@ -301,6 +341,7 @@ class SlideGuardUI:
                 ],
             ),
             texts["criteria_md"],
+            gr.update(label=texts["presentation_type_label"], choices=presentation_choices, value=presentation_selected),
             gr.update(label=texts["slide_criteria_label"], choices=slide_choices, value=slide_selected_display),
             gr.update(label=texts["deck_criteria_label"], choices=deck_choices, value=deck_selected_display),
             gr.update(value=texts["evaluate_btn"]),
@@ -363,7 +404,7 @@ class SlideGuardUI:
             self._selected_deck_criteria = deck_selected_list
 
             selected_values = [c.value for c in slide_selected_list + service_needed + deck_selected_list]
-            slide_criterias, deck_criterias = self._load_criteria(selected_values)
+            slide_criterias, deck_criterias = self._load_criteria(selected_values, self.current_presentation_type)
 	    
             # Get registry for user
             registry = self.registry_provider.get_for_user(user_id)	            
@@ -854,16 +895,13 @@ class SlideGuardUI:
         texts = self._get_ui_texts()
 
         # Available criteria (exclude internal helper criteria)
-        registry = self.registry_provider.get_for_user()
-        slide_criteria = [c for c in registry.get_slide_ids() if not c.is_service_criteria()]
-        deck_criteria = registry.get_deck_ids()
-        self._service_slide_criteria = [c for c in slide_criteria if c.is_service_criteria()]
-        self._slide_criteria_list = [c for c in slide_criteria if not c.is_service_criteria()]
-        self._deck_criteria_list = deck_criteria
+        self._refresh_criteria_lists()
         self._selected_slide_criteria = self._slide_criteria_list.copy()
-        self._selected_deck_criteria = deck_criteria.copy()
+        self._selected_deck_criteria = self._deck_criteria_list.copy()
         slide_choices_display = self._get_criteria_choices(self._slide_criteria_list)
-        deck_choices_display = self._get_criteria_choices(deck_criteria)
+        deck_choices_display = self._get_criteria_choices(self._deck_criteria_list)
+        presentation_type_choices = self._get_presentation_type_choices()
+        presentation_type_display = self._get_presentation_type_display(self.current_presentation_type)
 
         with gr.Blocks(
             title="SlideGuard - Presentation Evaluation",
@@ -933,6 +971,12 @@ class SlideGuardUI:
                     )
 
                     criteria_md = gr.Markdown(texts["criteria_md"])
+                    presentation_type_input = gr.Dropdown(
+                        choices=presentation_type_choices,
+                        value=presentation_type_display,
+                        label=texts["presentation_type_label"],
+                        interactive=True,
+                    )
                     slide_criteria_input = gr.CheckboxGroup(
                         choices=slide_choices_display,
                         label=texts["slide_criteria_label"],
@@ -1092,6 +1136,31 @@ class SlideGuardUI:
                                 updates = self._language_updates(slide_selected_criteria, deck_selected_criteria)
                                 return (*updates, new_lang)
 
+                            def on_presentation_type_change(selected_label, slide_selected_values: List[str], deck_selected_values: List[str]):
+                                new_pt = self._decode_presentation_type(selected_label) or self.current_presentation_type
+                                self.current_presentation_type = new_pt
+                                self._refresh_criteria_lists()
+                                slide_selected_criteria = self._decode_criteria_selection(slide_selected_values, self._slide_criteria_list)
+                                deck_selected_criteria = self._decode_criteria_selection(deck_selected_values, self._deck_criteria_list)
+
+                                if not slide_selected_criteria:
+                                    slide_selected_criteria = self._slide_criteria_list.copy()
+                                if not deck_selected_criteria:
+                                    deck_selected_criteria = self._deck_criteria_list.copy()
+
+                                self._selected_slide_criteria = slide_selected_criteria
+                                self._selected_deck_criteria = deck_selected_criteria
+
+                                slide_choices = self._get_criteria_choices(self._slide_criteria_list)
+                                deck_choices = self._get_criteria_choices(self._deck_criteria_list)
+
+                                return (
+                                    gr.update(choices=slide_choices, value=[self._get_criteria_display_name(c) for c in slide_selected_criteria]),
+                                    gr.update(choices=deck_choices, value=[self._get_criteria_display_name(c) for c in deck_selected_criteria]),
+                                    gr.update(interactive=bool(slide_selected_criteria or deck_selected_criteria)),
+                                    gr.update(value=self._get_presentation_type_display(self.current_presentation_type)),
+                                )
+
                             def admin_register(u, p, r, req: gr.Request):
                                 if get_role(req.username) != Role.ADMIN:
                                     return self.translator.t("admin_not_authorized")
@@ -1153,6 +1222,7 @@ class SlideGuardUI:
                                     presentation_type_md,
                                     presentation_type_dropdown,
                                     criteria_md,
+                                    presentation_type_input,
                                     slide_criteria_input,
                                     deck_criteria_input,
                                     evaluate_btn,
@@ -1198,6 +1268,7 @@ class SlideGuardUI:
                                     presentation_type_md,
                                     presentation_type_dropdown,
                                     criteria_md,
+                                    presentation_type_input,
                                     slide_criteria_input,
                                     deck_criteria_input,
                                     evaluate_btn,
@@ -1228,6 +1299,11 @@ class SlideGuardUI:
                                     admin_action_status,
                                     lang_state,
                                 ],
+                            )
+                            presentation_type_input.change(
+                                on_presentation_type_change,
+                                inputs=[presentation_type_input, slide_criteria_input, deck_criteria_input],
+                                outputs=[slide_criteria_input, deck_criteria_input, evaluate_btn, presentation_type_input],
                             )
                             register_btn.click(admin_register, inputs=[username_input, password_input, role_input], outputs=[register_status])
                             interface.load(admin_list, outputs=[users_table, user_select])
