@@ -73,6 +73,7 @@ class CriterionConfig(BaseModel):
             pydantic=out_model,
             applicable_slide_types=a.applicable_slide_types,
             exclude_slide_types=a.exclude_slide_types,
+            presentation_types=a.presentation_types,
             priority=self.priority,
             requires_infographics=a.requires_infographics,
             category=self.category,
@@ -94,12 +95,24 @@ class CriteriaRegistry(BaseModel):
     def get_info(self, crit: Criteria) -> CriterionInfo:
         return self.by_id[crit]
 
-    def get_slide_ids(self, include_service: bool = False) -> List[Criteria]:
-        ids = [c for c, i in self.by_id.items() if i.type == CriteriaTarget.slide]
+    def get_slide_ids(self, include_service: bool = False, presentation_type: Optional[str] = None) -> List[Criteria]:
+        ids = []
+        for c, info in self.by_id.items():
+            if info.type != CriteriaTarget.slide:
+                continue
+            if presentation_type and info.presentation_types and presentation_type not in info.presentation_types:
+                continue
+            ids.append(c)
         return ids if include_service else [c for c in ids if not c.is_service_criteria()]
 
-    def get_deck_ids(self, include_service: bool = False) -> List[Criteria]:
-        ids = [c for c, i in self.by_id.items() if i.type == CriteriaTarget.deck]
+    def get_deck_ids(self, include_service: bool = False, presentation_type: Optional[str] = None) -> List[Criteria]:
+        ids = []
+        for c, info in self.by_id.items():
+            if info.type != CriteriaTarget.deck:
+                continue
+            if presentation_type and info.presentation_types and presentation_type not in info.presentation_types:
+                continue
+            ids.append(c)
         return ids if include_service else [c for c in ids if not c.is_service_criteria()]
 
 

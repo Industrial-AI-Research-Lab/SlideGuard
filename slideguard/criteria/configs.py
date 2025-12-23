@@ -8,6 +8,8 @@ from slideguard.criteria.types import (
     PostProcessorContext,
     OutputKind,
     CriteriaTarget,
+    ALL_PRESENTATION_TYPES,
+    PresentationType,
 )
 from slideguard.criteria.postprocessors import filter_sort_by_severity, abbreviations_whitelist
 from slideguard.criteria.slide_types import SlideType, generate_slide_helper_type_prompt
@@ -21,6 +23,7 @@ from slideguard.criteria.slide_orphography_correctness import prompt as slide_or
 from slideguard.criteria.slide_title_content_match import prompt as slide_title_content_match_prompt
 from slideguard.criteria.slide_title_slide_quality import prompt as slide_title_slide_quality_prompt
 from slideguard.criteria.slide_visual_arrangement import prompt as slide_visual_arrangement_prompt
+from slideguard.criteria.slide_scientific_track_justification import prompt as slide_scientific_track_justification_prompt
 from slideguard.criteria.deck_storytelling import prompt as deck_storytelling_prompt
 from slideguard.criteria.deck_structure_analysis import prompt as deck_structure_analysis_prompt
 from slideguard.criteria.deck_research_quality import prompt as deck_research_quality_prompt
@@ -56,6 +59,7 @@ PRESET_CRITERIA_CONFIGS = [
         category="visual",
         applicability=Applicability(
             exclude_slide_types=[SlideType.TITLE_SLIDE, SlideType.END_SLIDE, SlideType.SEPARATOR],
+            presentation_types=ALL_PRESENTATION_TYPES,
             requires_infographics=True,
         ),
         postprocessor_funcs=[filter_sort_by_severity],
@@ -76,7 +80,9 @@ PRESET_CRITERIA_CONFIGS = [
         ),
         priority=4,
         category="content",
-        applicability=Applicability(),
+        applicability=Applicability(
+            presentation_types=ALL_PRESENTATION_TYPES,
+        ),
         postprocessor_funcs=[make_abbreviations_postprocessor, filter_sort_by_severity],
     ),
 
@@ -91,6 +97,7 @@ PRESET_CRITERIA_CONFIGS = [
         category="visual",
         applicability=Applicability(
             applicable_slide_types=[SlideType.CURRENT_STATE, SlideType.PROPOSED_SOLUTION, SlideType.EXPERIMENTAL_RESULTS, SlideType.EXPERIMENT_SETTINGS, SlideType.MOTIVATION],
+            presentation_types=ALL_PRESENTATION_TYPES,
         ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
@@ -112,6 +119,7 @@ PRESET_CRITERIA_CONFIGS = [
         category="visual",
         applicability=Applicability(
             exclude_slide_types=[SlideType.END_SLIDE, SlideType.TITLE_SLIDE],
+            presentation_types=ALL_PRESENTATION_TYPES,
         ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
@@ -127,6 +135,7 @@ PRESET_CRITERIA_CONFIGS = [
         category="visual",
         applicability=Applicability(
             exclude_slide_types=[SlideType.TITLE_SLIDE, SlideType.END_SLIDE, SlideType.SEPARATOR],
+            presentation_types=ALL_PRESENTATION_TYPES,
         ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
@@ -142,6 +151,7 @@ PRESET_CRITERIA_CONFIGS = [
         category="visual",
         applicability=Applicability(
             applicable_slide_types=[SlideType.TITLE_SLIDE],
+            presentation_types=ALL_PRESENTATION_TYPES,
         ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
@@ -161,7 +171,31 @@ PRESET_CRITERIA_CONFIGS = [
         ),
         priority=2,
         category="visual",
-        applicability=Applicability(),
+        applicability=Applicability(
+            presentation_types=ALL_PRESENTATION_TYPES,
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_scientific_track_justification,
+        target=CriteriaTarget.slide,
+        description="Analyzing whether the slide explicitly justifies the scientific nature of the work or explains why the scientific track was chosen",
+        agent_prompt_template=slide_scientific_track_justification_prompt,
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with scientific track justification",
+                suggestion_description="Suggestion for improving scientific justification",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.SCIENTIFIC_TRACK_JUSTIFICATION],
+            presentation_types=[PresentationType.scientific.value],
+        ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
 
@@ -180,7 +214,9 @@ PRESET_CRITERIA_CONFIGS = [
         ),
         priority=1,
         category="structure",
-        applicability=Applicability(),
+        applicability=Applicability(
+            presentation_types=ALL_PRESENTATION_TYPES,
+        ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
 
@@ -199,7 +235,9 @@ PRESET_CRITERIA_CONFIGS = [
         ),
         priority=1,
         category="structure",
-        applicability=Applicability(),
+        applicability=Applicability(
+            presentation_types=ALL_PRESENTATION_TYPES,
+        ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
 
@@ -218,7 +256,9 @@ PRESET_CRITERIA_CONFIGS = [
         ),
         priority=3,
         category="research",
-        applicability=Applicability(),
+        applicability=Applicability(
+            presentation_types=ALL_PRESENTATION_TYPES,
+        ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),
 ]
@@ -234,7 +274,9 @@ SERVICE_CRITERIA_CONFIGS = [
         output_model=SlideTypeModel,
         priority=0,
         category="service",
-        applicability=Applicability(),
+        applicability=Applicability(
+            presentation_types=ALL_PRESENTATION_TYPES,
+        ),
         postprocessor_funcs=[],
     ),
 
@@ -248,7 +290,9 @@ SERVICE_CRITERIA_CONFIGS = [
         output_model=SlideDescription,
         priority=0,
         category="service",
-        applicability=Applicability(),
+        applicability=Applicability(
+            presentation_types=ALL_PRESENTATION_TYPES,
+        ),
         postprocessor_funcs=[],
     ),
 ]

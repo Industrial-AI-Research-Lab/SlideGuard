@@ -18,6 +18,11 @@ TRANSLATIONS = {
         "slide_criteria_label": "Slide criteria",
         "deck_criteria_label": "Deck criteria",
         "criteria_validation_error": "Please select at least one criteria.",
+        "presentation_type_label": "Presentation type",
+        "presentation_type_collaborative": "Collaborative",
+        "presentation_type_industrial": "Industrial",
+        "presentation_type_scientific": "Scientific",
+        "presentation_type_technological": "Technological",
         
         # Buttons
         "start_evaluation": "🚀 Start Evaluation",
@@ -151,6 +156,11 @@ TRANSLATIONS = {
         "slide_criteria_label": "Критерии слайдов",
         "deck_criteria_label": "Критерии презентации",
         "criteria_validation_error": "Пожалуйста, выберите хотя бы один критерий.",
+        "presentation_type_label": "Тип презентации",
+        "presentation_type_collaborative": "Коллаборативный",
+        "presentation_type_industrial": "Индустриальный",
+        "presentation_type_scientific": "Научный",
+        "presentation_type_technological": "Технологический",
         
         # Buttons
         "start_evaluation": "🚀 Начать оценку",

@@ -9,6 +9,17 @@ class CriteriaTarget(str, Enum):
     deck = "deck"
 
 
+class PresentationType(str, Enum):
+    collaborative = "collaborative"
+    industrial = "industrial"
+    scientific = "scientific"
+    technological = "technological"
+
+
+ALL_PRESENTATION_TYPES: List[str] = [p.value for p in PresentationType]
+DEFAULT_PRESENTATION_TYPE: str = PresentationType.scientific.value
+
+
 class OutputKind(str, Enum):
     scored_list = "scored_list"
     custom = "custom"
@@ -39,8 +50,9 @@ class Applicability(BaseModel):
     applicable_slide_types: Optional[List[str]] = None
     exclude_slide_types: Optional[List[str]] = None
     requires_infographics: bool = False
+    presentation_types: Optional[List[str]] = None
 
-    @field_validator('applicable_slide_types', 'exclude_slide_types', mode='before')
+    @field_validator('applicable_slide_types', 'exclude_slide_types', 'presentation_types', mode='before')
     @classmethod
     def convert_enum_to_string(cls, v: Optional[List[Union[str, Enum]]]) -> Optional[List[str]]:
         """Convert enum values to their string representations."""

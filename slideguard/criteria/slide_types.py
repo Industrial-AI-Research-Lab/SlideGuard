@@ -25,6 +25,7 @@ class SlideType(Enum):
     CONCLUSION = "Conclusion"
     END_SLIDE = "End slide"
     Q_AND_A = "Q&A"
+    SCIENTIFIC_TRACK_JUSTIFICATION = "Scientific Track Justification"
 
 @dataclass
 class SlideTypeInfo:
@@ -104,6 +105,11 @@ class SlideTypeManager:
                 name=SlideType.Q_AND_A.value,
                 description="this is a slide that contains the question and answer session.",
                 category="interactive"
+            ),
+            SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value: SlideTypeInfo(
+                name=SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value,
+                description="this is a slide that explicitly justifies the scientific nature of the work or explains why the scientific track was chosen. It contains reasoning about the scientific contribution, research methodology, or academic value of the project.",
+                category="content"
             )
         }
         
