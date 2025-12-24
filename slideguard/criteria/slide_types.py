@@ -16,6 +16,7 @@ class SlideType(Enum):
     TITLE_SLIDE = "Title slide"
     SEPARATOR = "Separator"
     MOTIVATION = "Motivation"
+    PROBLEM_STATEMENT = "Problem Statement"
     GOAL = "Goal"
     TASKS = "Tasks"
     CURRENT_STATE = "Current State"
@@ -59,6 +60,11 @@ class SlideTypeManager:
             SlideType.MOTIVATION.value: SlideTypeInfo(
                 name=SlideType.MOTIVATION.value,
                 description="this is a slide that contains information about the motivation for the project.",
+                category="content"
+            ),
+            SlideType.PROBLEM_STATEMENT.value: SlideTypeInfo(
+                name=SlideType.PROBLEM_STATEMENT.value,
+                description="this is a slide that defines the main problem being solved by the project. It usually contains a clear statement of the problem, often titled 'Statement of the Problem' or 'Problem Definition'. The slide should justify the relevance of the problem and explain why it is important to solve.",
                 category="content"
             ),
             SlideType.CURRENT_STATE.value: SlideTypeInfo(

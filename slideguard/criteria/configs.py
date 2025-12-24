@@ -23,13 +23,14 @@ from slideguard.criteria.slide_orphography_correctness import prompt as slide_or
 from slideguard.criteria.slide_title_content_match import prompt as slide_title_content_match_prompt
 from slideguard.criteria.slide_title_slide_quality import prompt as slide_title_slide_quality_prompt
 from slideguard.criteria.slide_visual_arrangement import prompt as slide_visual_arrangement_prompt
-from slideguard.criteria.slide_scientific_track_justification import prompt as slide_scientific_track_justification_prompt
+from slideguard.criteria.slide_track_justification import generate_prompt as generate_track_justification_prompt
+from slideguard.criteria.slide_related_works_review import generate_prompt as generate_related_works_prompt
 from slideguard.criteria.deck_storytelling import prompt as deck_storytelling_prompt
 from slideguard.criteria.deck_structure_analysis import prompt as deck_structure_analysis_prompt
 from slideguard.criteria.deck_research_quality import prompt as deck_research_quality_prompt
 
 ABBREVIATIONS_WHITELIST = {
-    'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag', 'к.т.н.'
+    'итмо', 'itmo', 'iTMO', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag', 'к.т.н.'
 }
 
 
@@ -178,23 +179,177 @@ PRESET_CRITERIA_CONFIGS = [
     ),
 
     CriterionConfig(
-        id=Criteria.slide_scientific_track_justification,
+        id=Criteria.slide_track_justification_scientific,
         target=CriteriaTarget.slide,
-        description="Analyzing whether the slide explicitly justifies the scientific nature of the work or explains why the scientific track was chosen",
-        agent_prompt_template=slide_scientific_track_justification_prompt,
+        description="Analyzing problem statement and justification of its scientific nature for scientific presentations",
+        agent_prompt_template=generate_track_justification_prompt("scientific"),
         task_prompt_template=BASE_SLIDE_TASK_PROMPT,
         output=OutputSpec(
             kind=OutputKind.scored_list,
             item_spec=ScoredListItemSpec(
-                element_description="Issue with scientific track justification",
-                suggestion_description="Suggestion for improving scientific justification",
+                element_description="Issue with problem statement or track justification",
+                suggestion_description="Suggestion for improving problem description and scientific justification",
             ),
         ),
         priority=3,
         category="content",
         applicability=Applicability(
-            applicable_slide_types=[SlideType.SCIENTIFIC_TRACK_JUSTIFICATION],
+            applicable_slide_types=[SlideType.PROBLEM_STATEMENT],
             presentation_types=[PresentationType.scientific.value],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_track_justification_collaborative,
+        target=CriteriaTarget.slide,
+        description="Analyzing problem statement and justification of collaborative nature for collaborative presentations",
+        agent_prompt_template=generate_track_justification_prompt("collaborative"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with problem statement or track justification",
+                suggestion_description="Suggestion for improving problem description and collaborative justification",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.PROBLEM_STATEMENT],
+            presentation_types=[PresentationType.collaborative.value],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_track_justification_industrial,
+        target=CriteriaTarget.slide,
+        description="Analyzing problem statement and justification of industrial relevance for industrial presentations",
+        agent_prompt_template=generate_track_justification_prompt("industrial"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with problem statement or track justification",
+                suggestion_description="Suggestion for improving problem description and industrial justification",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.PROBLEM_STATEMENT],
+            presentation_types=[PresentationType.industrial.value],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_track_justification_technological,
+        target=CriteriaTarget.slide,
+        description="Analyzing problem statement and justification of technological relevance for technological presentations",
+        agent_prompt_template=generate_track_justification_prompt("technological"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with problem statement or track justification",
+                suggestion_description="Suggestion for improving problem description and technological justification",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.PROBLEM_STATEMENT],
+            presentation_types=[PresentationType.technological.value],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_related_works_review_scientific,
+        target=CriteriaTarget.slide,
+        description="Analyzing the quality of related works review for scientific presentations (3-5 papers with limitations)",
+        agent_prompt_template=generate_related_works_prompt("scientific"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with related works review",
+                suggestion_description="Suggestion for improving related works presentation",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.CURRENT_STATE],
+            presentation_types=[PresentationType.scientific.value],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_related_works_review_technological,
+        target=CriteriaTarget.slide,
+        description="Analyzing the quality of related works comparison for technological presentations",
+        agent_prompt_template=generate_related_works_prompt("technological"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with related works comparison",
+                suggestion_description="Suggestion for improving solutions comparison",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.CURRENT_STATE],
+            presentation_types=[PresentationType.technological.value],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_related_works_review_collaborative,
+        target=CriteriaTarget.slide,
+        description="Analyzing the quality of related works comparison for collaborative presentations",
+        agent_prompt_template=generate_related_works_prompt("collaborative"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with related works comparison",
+                suggestion_description="Suggestion for improving solutions comparison",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.CURRENT_STATE],
+            presentation_types=[PresentationType.collaborative.value],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_related_works_review_industrial,
+        target=CriteriaTarget.slide,
+        description="Analyzing the quality of related works comparison for industrial presentations",
+        agent_prompt_template=generate_related_works_prompt("industrial"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with related works comparison",
+                suggestion_description="Suggestion for improving solutions comparison",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.CURRENT_STATE],
+            presentation_types=[PresentationType.industrial.value],
         ),
         postprocessor_funcs=[filter_sort_by_severity],
     ),

@@ -41,7 +41,14 @@ CRITERIA_LABELS: Dict[Criteria, Tuple[str, str]] = {
     Criteria.slide_orphography_correctness: ("Orphography correctness", "Качество орфографии"),
     Criteria.slide_title_content_match: ("Title content match", "Соответствие заголовка содержанию слайда"),
     Criteria.slide_title_slide_quality: ("Slide title quality", "Качество титульного слайда"),
-    Criteria.slide_scientific_track_justification: ("Scientific track justification", "Обоснование выбора научного трека"),
+    Criteria.slide_track_justification_scientific: ("Scientific track justification", "Обоснование выбора научного трека"),
+    Criteria.slide_track_justification_collaborative: ("Collaborative track justification", "Обоснование выбора коллаборативного трека"),
+    Criteria.slide_track_justification_industrial: ("Industrial track justification", "Обоснование выбора индустриального трека"),
+    Criteria.slide_track_justification_technological: ("Technological track justification", "Обоснование выбора технологического трека"),
+    Criteria.slide_related_works_review_scientific: ("Related works review", "Обзор существующих работ"),
+    Criteria.slide_related_works_review_technological: ("Related works review", "Обзор существующих работ"),
+    Criteria.slide_related_works_review_collaborative: ("Related works review", "Обзор существующих работ"),
+    Criteria.slide_related_works_review_industrial: ("Related works review", "Обзор существующих работ"),
     Criteria.deck_storytelling: ("Storytelling quality", "Связность рассказа"),
     Criteria.deck_structure_analysis: ("Structure analysis", "Анализ структуры"),
     Criteria.deck_research_quality: ("Research quality", "Качество исследования"),
@@ -1101,11 +1108,46 @@ class SlideGuardUI:
 
                             def on_presentation_type_change(selected_label, slide_selected_values: List[str], deck_selected_values: List[str]):
                                 new_pt = self._decode_presentation_type(selected_label) or self.current_presentation_type
+                                
+                                # Decode current selections BEFORE refreshing criteria lists
+                                old_slide_selected = self._decode_criteria_selection(slide_selected_values, self._slide_criteria_list)
+                                
+                                # Check which presentation-type-specific criteria were selected
+                                had_track_justification = any(
+                                    "track_justification" in c.value for c in old_slide_selected
+                                )
+                                had_related_works = any(
+                                    "related_works_review" in c.value for c in old_slide_selected
+                                )
+                                
+                                # Now update presentation type and refresh criteria lists
                                 self.current_presentation_type = new_pt
                                 self._refresh_criteria_lists()
+                                
+                                # Decode selections against NEW criteria list (keeps criteria that exist in both)
                                 slide_selected_criteria = self._decode_criteria_selection(slide_selected_values, self._slide_criteria_list)
                                 deck_selected_criteria = self._decode_criteria_selection(deck_selected_values, self._deck_criteria_list)
 
+                                # Auto-select presentation-type-specific criteria if they were selected before
+                                if had_track_justification:
+                                    track_justification_criteria = [
+                                        c for c in self._slide_criteria_list 
+                                        if "track_justification" in c.value and new_pt in c.value
+                                    ]
+                                    for crit in track_justification_criteria:
+                                        if crit not in slide_selected_criteria:
+                                            slide_selected_criteria.append(crit)
+                                
+                                if had_related_works:
+                                    related_works_criteria = [
+                                        c for c in self._slide_criteria_list 
+                                        if "related_works_review" in c.value and new_pt in c.value
+                                    ]
+                                    for crit in related_works_criteria:
+                                        if crit not in slide_selected_criteria:
+                                            slide_selected_criteria.append(crit)
+
+                                # If no criteria selected, select all by default
                                 if not slide_selected_criteria:
                                     slide_selected_criteria = self._slide_criteria_list.copy()
                                 if not deck_selected_criteria:
