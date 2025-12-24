@@ -33,27 +33,53 @@ class SlideGuardReportGenerator:
     def _register_fonts(self):
         try:
             base_dir = str(Path(__file__).resolve().parent.parent)
-            candidates = [
+            # Candidates for fonts that support Unicode (including Cyrillic/Russian)
+            regular_candidates = [
                 os.path.join(base_dir, "resources", "fonts", "DejaVuSans.ttf"),
                 os.path.join(base_dir, "resources", "fonts", "DejaVuSansCondensed.ttf"),
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux (Debian/Ubuntu)
+                "/usr/share/fonts/dejavu/DejaVuSans.ttf",  # Linux (Red Hat/Fedora)
+                "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",  # macOS
+                "/System/Library/Fonts/Supplemental/Arial.ttf",  # macOS fallback
+                "C:\\Windows\\Fonts\\arial.ttf",  # Windows
                 "C:\\Windows\\Fonts\\DejaVuSans.ttf",
-                "C:\\Windows\\Fonts\\arial.ttf",
             ]
-            chosen = None
-            for p in candidates:
+            bold_candidates = [
+                os.path.join(base_dir, "resources", "fonts", "DejaVuSans-Bold.ttf"),
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Linux (Debian/Ubuntu)
+                "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",  # Linux (Red Hat/Fedora)
+                "/System/Library/Fonts/Supplemental/Arial Bold.ttf",  # macOS
+                "C:\\Windows\\Fonts\\arialbd.ttf",  # Windows
+            ]
+            
+            chosen_regular = None
+            chosen_bold = None
+            
+            for p in regular_candidates:
                 if os.path.exists(p):
-                    chosen = p
+                    chosen_regular = p
                     break
-            if chosen:
-                pdfmetrics.registerFont(TTFont("SGSans", chosen))
-                pdfmetrics.registerFont(TTFont("SGSans-Bold", chosen))
+            
+            for p in bold_candidates:
+                if os.path.exists(p):
+                    chosen_bold = p
+                    break
+            
+            if chosen_regular:
+                pdfmetrics.registerFont(TTFont("SGSans", chosen_regular))
+                # If no separate bold font found, use regular for bold too
+                if chosen_bold:
+                    pdfmetrics.registerFont(TTFont("SGSans-Bold", chosen_bold))
+                else:
+                    pdfmetrics.registerFont(TTFont("SGSans-Bold", chosen_regular))
                 self._font_regular = "SGSans"
                 self._font_bold = "SGSans-Bold"
             else:
+                # Fallback to default fonts (won't work for Russian)
                 self._font_regular = "Helvetica"
                 self._font_bold = "Helvetica-Bold"
         except Exception:
+            # Fallback to default fonts (won't work for Russian)
             self._font_regular = "Helvetica"
             self._font_bold = "Helvetica-Bold"
     
@@ -418,7 +444,7 @@ class SlideGuardReportGenerator:
                 fontSize=16,
                 textColor=HexColor(overall_color),
                 alignment=TA_CENTER,
-                fontName='Helvetica-Bold'
+                fontName=self._font_bold
             )
             
             story.append(Spacer(1, 20))

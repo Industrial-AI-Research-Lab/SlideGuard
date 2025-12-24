@@ -182,6 +182,9 @@ class SlideGuardUI:
         lang = lang if lang in ("en", "ru") else "en"
         self.current_language = lang
         self.translator.set_language(lang)
+        # Update report generator with new translator language
+        if hasattr(self, 'report_generator') and self.report_generator:
+            self.report_generator.translator = self.translator
         try:
             if self.evaluator and self.evaluator.llm:
                 self.evaluator.llm.set_language(lang)
