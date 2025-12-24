@@ -564,6 +564,12 @@ def ui_run(
         "--eval-debug",
         help="Enable debug mode (Save graph images)",
     ),
+    lang: str = typer.Option(
+        "en",
+        "--lang",
+        "-l",
+        help="Default UI language: 'en' for English or 'ru' for Russian",
+    ),
 ) -> None:
     """Run the Gradio UI"""
     header = "=" * 60
@@ -574,7 +580,7 @@ def ui_run(
     typer.echo(f"Open: http://{host}:{port}?__theme={theme}")
     typer.echo()
     try:
-        app = create_app(auth=auth, use_langfuse=use_langfuse, eval_debug=eval_debug)
+        app = create_app(auth=auth, use_langfuse=use_langfuse, eval_debug=eval_debug, lang=lang)
         auth_func = verify_user_db if auth else None
         app.launch(
             server_name=host,
