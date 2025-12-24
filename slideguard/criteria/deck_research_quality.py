@@ -28,6 +28,7 @@ Your task is to assess whether the presentation demonstrates a strong research f
 - Statistical or analytical techniques are used appropriately (e.g., significance testing, error margins)
 - Are the experiments, datasets, or analyses adequate in number and depth for the research question?
 - Future research directions (if available) are suggested and logically flow from the findings
+
 {presentation_type_specific_content}
 
 ## Common Problems to Identify:
@@ -56,16 +57,35 @@ In the Answer section, provide the final evaluation strictly following the forma
     # Define presentation type specific content
     type_specific_content = {
         PresentationType.SCIENTIFIC: """
-
+## Scientific Presentation Specific Requirements:
+- The scientific novelty is clearly articulated: it is explicit what is new compared to existing research and why it is significant in the research landscape
+- The work demonstrates readiness for publication:
+  - Presence of a prepared or planned preprint (paper, extended abstract, or thesis-style manuscript)
+  - Clear identification of target journals or conferences
+  - Evidence of preliminary reviews, feedback, or revised versions (if available)
+- An open-access repository with the implementation code and experimental setup is provided
 """,
         PresentationType.INDUSTRIAL: """
-
+## Industrial Presentation Specific Requirements:
+- The industrial relevance of the problem is clearly justified, including potential real-world impact and applicability
+- The presentation explains how the proposed solution can be used or integrated in an industrial setting
+- A publicly accessible description of the technological solution is provided
+- An official review or feedback from an industry representative is explicitly provided and referenced
 """,
         PresentationType.COLLABORATIVE: """
-
+## Collaborative Presentation Specific Requirements:
+- The relevance of the problem is justified from a team perspective, showing why it requires collaborative effort
+- The presentation explicitly demonstrates teamwork:
+  - Clear role distribution among team members
+  - Description of collaboration and communication processes
+- A publicly accessible description of the implemented solution is provided
 """,
         PresentationType.TECHNOLOGICAL: """
-
+## Technological Presentation Specific Requirements:
+- The technological contribution is clearly justified: the presentation explains how the solution differs from existing technologies and what new technical principles or approaches are introduced
+- The practical and technological advantages of the solution are explicitly demonstrated
+- A publicly accessible description of the technological solution is provided (e.g., technical document, README, demo page)
+- An open-access repository with implementation code and experimental validation is provided
 """,
     }
     

@@ -83,7 +83,7 @@ In the Answer section, provide the final evaluation strictly following the forma
 8. **Industrial Potential → Experimental Results Connection**: Do results demonstrate practical industrial applicability?
 """,
         PresentationType.COLLABORATIVE: """
-
+8. **Collaborative Progress → Experimental Results Connection**: Does team communication progress lead to collaborative outcomes?
 """,
         PresentationType.TECHNOLOGICAL: """
 8. **Current State → Technological Novelty Connection**: Does similar solutions review justify claimed technological novelty?
