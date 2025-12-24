@@ -10,6 +10,7 @@
 - Use enum lists, not strings:
   - `Applicability.applicable_presentation_types: Optional[List[PresentationType]]`
   - `Applicability.exclude_presentation_types: Optional[List[PresentationType]]`
+- Do not introduce alternative config fields like `presentation_types` (string lists).
 - Registry filtering uses enums:
   - `CriteriaRegistry.get_slide_ids(..., presentation_type: Optional[PresentationType])`
   - `CriteriaRegistry.get_deck_ids(..., presentation_type: Optional[PresentationType])`
@@ -25,6 +26,12 @@
 - Keep the config/registry architecture:
   - `DEFAULT_CRITERIA_CONFIGS` → `CriteriaRegistryProvider` → `CriteriaRegistry`
 - Do not reintroduce direct per-file `CriterionInfo` singletons for each criterion.
+
+### Track justification + slide taxonomy decision
+
+- Evaluate track justification via `slide_track_justification_*` on `SlideType.PROBLEM_STATEMENT`.
+- Do not keep a dedicated `SCIENTIFIC_TRACK_JUSTIFICATION` slide type.
+- Do not keep `slide_scientific_track_justification.py`; it is redundant with `slide_track_justification.py`.
 
 ### Security rule
 

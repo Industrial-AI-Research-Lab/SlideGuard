@@ -41,15 +41,16 @@
 
 ### `slideguard/criteria/slide_types.py`
 
-- Keep all slide types, including presentation-type-specific taxonomy plus `Scientific Track Justification`.
+- Keep all slide types, including presentation-type-specific taxonomy.
 - Ensure presentation-type-specific slide types are tagged with `presentation_type=PresentationType.<TYPE>`.
 
 ### `slideguard/criteria/configs.py`
 
 - Keep deck criteria prompt generators (`generate_prompt`) so prompts remain presentation-type aware.
-- Integrate new slide criterion (`slide_scientific_track_justification`) with:
-  - applicability restricted to `applicable_presentation_types=[PresentationType.SCIENTIFIC]`
-  - slide type restriction to `SlideType.SCIENTIFIC_TRACK_JUSTIFICATION`
+- Integrate track justification + related works criteria using prompt generators:
+  - `slide_track_justification_*` apply to `SlideType.PROBLEM_STATEMENT` and are restricted by `applicable_presentation_types=[PresentationType.<TYPE>]`
+  - `slide_related_works_review_*` apply to `SlideType.CURRENT_STATE` and are restricted by `applicable_presentation_types=[PresentationType.<TYPE>]`
+- Do not use string-list fields like `presentation_types` in configs; the registry/applicability model is enum-based.
 
 ### `slideguard/ui/app.py`
 

@@ -31,7 +31,14 @@ class Criteria(str, Enum):
     slide_orphography_correctness = "slide_orphography_correctness"
     slide_title_content_match = "slide_title_content_match"
     slide_title_slide_quality = "slide_title_slide_quality"
-    slide_scientific_track_justification = "slide_scientific_track_justification"
+    slide_track_justification_scientific = "slide_track_justification_scientific"
+    slide_track_justification_collaborative = "slide_track_justification_collaborative"
+    slide_track_justification_industrial = "slide_track_justification_industrial"
+    slide_track_justification_technological = "slide_track_justification_technological"
+    slide_related_works_review_scientific = "slide_related_works_review_scientific"
+    slide_related_works_review_technological = "slide_related_works_review_technological"
+    slide_related_works_review_collaborative = "slide_related_works_review_collaborative"
+    slide_related_works_review_industrial = "slide_related_works_review_industrial"
 
     # deck criteria
     deck_storytelling = "deck_storytelling"

@@ -23,8 +23,9 @@
 
 ## What the rebased branch adds / changes
 
-- **New slide criterion**
-  - Adds `Criteria.slide_scientific_track_justification` + prompt file `slideguard/criteria/slide_scientific_track_justification.py`.
+- **New slide criteria (presentation-type-specific)**
+  - Adds `slide_track_justification_*` criteria with prompt generator `slideguard/criteria/slide_track_justification.py`.
+  - Adds `slide_related_works_review_*` criteria with prompt generator `slideguard/criteria/slide_related_works_review.py`.
 
 - **New postprocessing utilities**
   - Adds `slideguard/criteria/postprocessors.py` with:
@@ -37,7 +38,7 @@
 
 - **Slide type taxonomy extensions**
   - Adds slide taxonomy entries that are presentation-type-specific (scientific/industrial/collaborative/technological).
-  - Adds `Scientific Track Justification` slide type.
+  - A dedicated `Scientific Track Justification` slide type was considered but removed; track justification is evaluated on `Problem Statement` slides.
 
 ## Conflicts / duplications discovered while rebasing
 

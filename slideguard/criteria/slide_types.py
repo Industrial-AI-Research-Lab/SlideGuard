@@ -18,6 +18,7 @@ class SlideType(Enum):
     TITLE_SLIDE = "Title slide"
     SEPARATOR = "Separator"
     MOTIVATION = "Motivation"
+    PROBLEM_STATEMENT = "Problem Statement"
     GOAL = "Goal"
     TASKS = "Tasks"
     CURRENT_STATE = "Current State"
@@ -27,7 +28,6 @@ class SlideType(Enum):
     CONCLUSION = "Conclusion"
     END_SLIDE = "End slide"
     Q_AND_A = "Q&A"
-    SCIENTIFIC_TRACK_JUSTIFICATION = "Scientific Track Justification"
     SCIENTIFIC_NOVELTY = "Scientific Novelty"
     PUBLICATION_READINESS = "Publication Readiness"
     TECHNOLOGICAL_NOVELTY = "Technological Novelty"
@@ -68,6 +68,11 @@ class SlideTypeManager:
             SlideType.MOTIVATION.value: SlideTypeInfo(
                 name=SlideType.MOTIVATION.value,
                 description="this is a slide that contains information about the motivation for the project.",
+                category="content"
+            ),
+            SlideType.PROBLEM_STATEMENT.value: SlideTypeInfo(
+                name=SlideType.PROBLEM_STATEMENT.value,
+                description="this is a slide that defines the main problem being solved by the project. It usually contains a clear statement of the problem, often titled 'Statement of the Problem' or 'Problem Definition'. The slide should justify the relevance of the problem and explain why it is important to solve.",
                 category="content"
             ),
             SlideType.CURRENT_STATE.value: SlideTypeInfo(
@@ -150,12 +155,6 @@ class SlideTypeManager:
                 description="this is a slide that summarizes team progress, listing completed stages, current ongoing work, and describing the communication flow within the team and with any external clients or partners.",
                 category="content",
                 presentation_type=PresentationType.COLLABORATIVE
-            ),
-            SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value: SlideTypeInfo(
-                name=SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value,
-                description="this is a slide that explicitly justifies the scientific nature of the work or explains why the scientific track was chosen. It contains reasoning about the scientific contribution, research methodology, or academic value of the project.",
-                category="content",
-                presentation_type=PresentationType.SCIENTIFIC
             )
         }
         
