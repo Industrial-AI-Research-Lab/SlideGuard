@@ -13,6 +13,16 @@ TRANSLATIONS = {
         "upload_section": "📁 Upload Presentation",
         "upload_label": "Upload PDF Presentation",
         
+        # Presentation type selection
+        "presentation_type_md": "📋 Select Presentation Type",
+        "presentation_type_label": "Presentation Type",
+        "presentation_type_scientific": "Scientific",
+        "presentation_type_industrial": "Industrial",
+        "presentation_type_collaborative": "Collaborative",
+        "presentation_type_technological": "Technological",
+        "presentation_type_required": "Please select a presentation type.",
+        "invalid_presentation_type": "Invalid presentation type selected.",
+        
         # Criteria selection
         "criteria_section": "🎯 Select Evaluation Criteria",
         "slide_criteria_label": "Slide criteria",
@@ -145,6 +155,16 @@ TRANSLATIONS = {
         # Upload section
         "upload_section": "📁 Загрузка презентации",
         "upload_label": "Загрузить PDF-презентацию",
+        
+        # Presentation type selection
+        "presentation_type_md": "📋 Выбор типа презентации",
+        "presentation_type_label": "Тип презентации",
+        "presentation_type_scientific": "Научный",
+        "presentation_type_industrial": "Индустриальный",
+        "presentation_type_collaborative": "Коллаборативный",
+        "presentation_type_technological": "Технологический",
+        "presentation_type_required": "Пожалуйста, выберите тип презентации.",
+        "invalid_presentation_type": "Выбран неверный тип презентации.",
         
         # Criteria selection
         "criteria_section": "🎯 Выбор критериев оценки",

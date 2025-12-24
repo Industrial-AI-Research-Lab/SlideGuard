@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 import json
 from pathlib import Path
 
+from slideguard.criteria.presentation_types import PresentationType
+
 class SlideType(Enum):
     """Enum for slide types to provide type safety and better IDE support"""
     TITLE_SLIDE = "Title slide"
@@ -25,6 +27,13 @@ class SlideType(Enum):
     CONCLUSION = "Conclusion"
     END_SLIDE = "End slide"
     Q_AND_A = "Q&A"
+    # Ppt type-specific slide types 
+    SCIENTIFIC_NOVELTY = "Scientific Novelty"
+    PUBLICATION_READINESS = "Publication Readiness"
+    TECHNOLOGICAL_NOVELTY = "Technological Novelty"
+    TECHNOLOGICAL_REALIZATION_LEVEL = "Technological Realization Level"
+    INDUSTRIAL_POTENTIAL = "Industrial Potential"
+    COLLABORATIVE_PROGRESS = "Collaborative Progress"
 
 @dataclass
 class SlideTypeInfo:
@@ -34,6 +43,7 @@ class SlideTypeInfo:
     category: str = "general"
     aliases: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    presentation_type: Optional[PresentationType] = None  # If None, applies to all presentation types
 
 class SlideTypeManager:
     """Manager for slide types with convenient extension methods"""
@@ -104,14 +114,52 @@ class SlideTypeManager:
                 name=SlideType.Q_AND_A.value,
                 description="this is a slide that contains the question and answer session.",
                 category="interactive"
-            )
+            ),
+            # New slide types 
+            SlideType.SCIENTIFIC_NOVELTY.value: SlideTypeInfo(
+                name=SlideType.SCIENTIFIC_NOVELTY.value,
+                description="this is a slide that explains what makes the project unique by detailing how its approach differs from known solutions, outlining the proposed new data, methods, or models, specifying which gaps in the field it closes, and stating its potential scientific or practical consequences.",
+                category="content",
+                presentation_type=PresentationType.SCIENTIFIC  
+            ),
+            SlideType.PUBLICATION_READINESS.value: SlideTypeInfo(
+                name=SlideType.PUBLICATION_READINESS.value,
+                description="this is a slide that demonstrates readiness for academic publication, indicating the status of preprints, drafts, or abstracts; identifying target journals or conferences; and noting any preliminary reviews or revised manuscript versions.",
+                category="content",
+                presentation_type=PresentationType.SCIENTIFIC  
+            ),
+            SlideType.TECHNOLOGICAL_NOVELTY.value: SlideTypeInfo(
+                name=SlideType.TECHNOLOGICAL_NOVELTY.value,
+                description="this is a slide that describes how the project differs from existing solutions, highlighting the new technological principles or approaches it implements and the concrete practical advantage this provides.",
+                category="content",
+                presentation_type=PresentationType.TECHNOLOGICAL
+            ),
+            SlideType.TECHNOLOGICAL_REALIZATION_LEVEL.value: SlideTypeInfo(
+                name=SlideType.TECHNOLOGICAL_REALIZATION_LEVEL.value,
+                description="this is a slide that defines the project's maturity by detailing the system architecture and components, the specific technologies, APIs, and equipment used, and presenting metrics for performance and scalability.",
+                category="content",
+                presentation_type=PresentationType.TECHNOLOGICAL
+            ),
+            SlideType.INDUSTRIAL_POTENTIAL.value: SlideTypeInfo(
+                name=SlideType.INDUSTRIAL_POTENTIAL.value,
+                description="this is a slide that specifies where and how the project can be implemented in industry, outlining its expected economic benefits and technological impact.",
+                category="content",
+                presentation_type=PresentationType.INDUSTRIAL
+            ),
+            SlideType.COLLABORATIVE_PROGRESS.value: SlideTypeInfo(
+                name=SlideType.COLLABORATIVE_PROGRESS.value,
+                description="this is a slide that summarizes team progress, listing completed stages, current ongoing work, and describing the communication flow within the team and with any external clients or partners.",
+                category="content",
+                presentation_type=PresentationType.COLLABORATIVE
+            ),
         }
         
         for slide_type, info in default_types.items():
             self._slide_types[slide_type] = info
     
     def add_slide_type(self, name: str, description: str, category: str = "general", 
-                      aliases: Optional[List[str]] = None, metadata: Optional[Dict[str, Any]] = None) -> bool:
+                      aliases: Optional[List[str]] = None, metadata: Optional[Dict[str, Any]] = None,
+                      presentation_type: Optional[PresentationType] = None) -> bool:
         """
         Add a new slide type
         
@@ -133,7 +181,8 @@ class SlideTypeManager:
             description=description,
             category=category,
             aliases=aliases or [],
-            metadata=metadata or {}
+            metadata=metadata or {},
+            presentation_type=presentation_type
         )
         return True
     
@@ -211,19 +260,52 @@ class SlideTypeManager:
         
         return imported_count
     
-    def generate_slide_type_prompt_section(self) -> str:
+    def get_slide_types_for_presentation_type(self, presentation_type: Optional[PresentationType] = None) -> List[str]:
+        """
+        Get slide types filtered by presentation type.
+        If presentation_type is None, returns all slide types.
+        
+        Args:
+            presentation_type: The presentation type to filter by, or None for all types
+            
+        Returns:
+            List of slide type names that are applicable to the given presentation type
+        """
+        if presentation_type is None:
+            return self.get_all_slide_types()
+        
+        result = []
+        for name, info in self._slide_types.items():
+            # Include slide types that are not restricted to a specific presentation type
+            # or are specifically for this presentation type
+            if info.presentation_type is None or info.presentation_type == presentation_type:
+                result.append(name)
+        return result
+    
+    def generate_slide_type_prompt_section(self, presentation_type: Optional[PresentationType] = None) -> str:
         """
         Generate the slide type descriptions section for the prompt.
         This creates the numbered list of slide types with their descriptions.
         """
         prompt_sections = []
-        
-        for i, (name, info) in enumerate(self._slide_types.items(), 1):
-            prompt_sections.append(f"{i}) {name} - {info.description}")
+
+        # First add generic slide types (applicable to all presentation types)
+        for name, info in self._slide_types.items():
+            if info.presentation_type is None:
+                prompt_sections.append(f"{name} - {info.description}")
+
+        # Then add slide types specific to the given presentation type
+        if presentation_type is not None:
+            for name, info in self._slide_types.items():
+                if info.presentation_type == presentation_type:
+                    prompt_sections.append(f"{name} - {info.description}")
+
+        # Add numbering
+        prompt_sections = [f"{i}) {text}" for i, text in enumerate(prompt_sections, 1)]
         
         return "\n\n".join(prompt_sections)
     
-    def generate_slide_helper_type_prompt(self) -> str:
+    def generate_slide_helper_type_prompt(self, presentation_type: Optional[PresentationType] = None) -> str:
         """
         Generate the complete slide helper type prompt with dynamic slide type descriptions.
         
@@ -234,7 +316,7 @@ class SlideTypeManager:
         Returns:
             Complete prompt with dynamic slide type descriptions
         """
-        slide_types_section = self.generate_slide_type_prompt_section()
+        slide_types_section = self.generate_slide_type_prompt_section(presentation_type=presentation_type)
         
         prompt = f"""
 You are an expert in detailed presentation analysis. You are provided with a single slide.
@@ -264,9 +346,14 @@ def get_slide_types() -> List[str]:
     return slide_type_manager.get_all_slide_types()
 
 def add_slide_type(name: str, description: str, category: str = "general", 
-                  aliases: Optional[List[str]] = None, metadata: Optional[Dict[str, Any]] = None) -> bool:
+                  aliases: Optional[List[str]] = None, metadata: Optional[Dict[str, Any]] = None,
+                  presentation_type: Optional[PresentationType] = None) -> bool:
     """Add a new slide type"""
-    return slide_type_manager.add_slide_type(name, description, category, aliases, metadata)
+    return slide_type_manager.add_slide_type(name, description, category, aliases, metadata, presentation_type)
+
+def get_slide_types_for_presentation_type(presentation_type: Optional[PresentationType] = None) -> List[str]:
+    """Get slide types filtered by presentation type"""
+    return slide_type_manager.get_slide_types_for_presentation_type(presentation_type)
 
 def get_slide_types_by_category(category: str) -> List[str]:
     """Get slide types by category"""
@@ -276,10 +363,10 @@ def validate_slide_type(name: str) -> bool:
     """Validate if a slide type exists"""
     return slide_type_manager.validate_slide_type(name)
 
-def generate_slide_helper_type_prompt() -> str:
+def generate_slide_helper_type_prompt(presentation_type: Optional[PresentationType] = None) -> str:
     """Generate the complete slide helper type prompt with dynamic slide type descriptions"""
-    return slide_type_manager.generate_slide_helper_type_prompt()
+    return slide_type_manager.generate_slide_helper_type_prompt(presentation_type=presentation_type)
 
-def get_slide_type_prompt_section() -> str:
+def get_slide_type_prompt_section(presentation_type: Optional[PresentationType] = None) -> str:
     """Get the slide type descriptions section for prompts"""
-    return slide_type_manager.generate_slide_type_prompt_section()
+    return slide_type_manager.generate_slide_type_prompt_section(presentation_type=presentation_type)

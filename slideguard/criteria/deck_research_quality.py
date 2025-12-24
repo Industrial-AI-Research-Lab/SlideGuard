@@ -1,4 +1,18 @@
-prompt = """
+from typing import Optional
+from slideguard.criteria.presentation_types import PresentationType
+
+
+def generate_prompt(presentation_type: Optional[PresentationType] = None) -> str:
+    """
+    Generate research quality evaluation prompt based on presentation type.
+    
+    Args:
+        presentation_type: The type of presentation, or None for default prompt
+        
+    Returns:
+        Prompt string tailored to the presentation type
+    """
+    base_prompt = """
 You are an expert in evaluating the research quality of students' presentations.
 You will be provided with information about all slides in the presentation.
 
@@ -14,6 +28,7 @@ Your task is to assess whether the presentation demonstrates a strong research f
 - Statistical or analytical techniques are used appropriately (e.g., significance testing, error margins)
 - Are the experiments, datasets, or analyses adequate in number and depth for the research question?
 - Future research directions (if available) are suggested and logically flow from the findings
+{presentation_type_specific_content}
 
 ## Common Problems to Identify:
 - Abscence of a slide with overall proposed approach / method / solution that can ease the understanding of what exactly was done
@@ -26,7 +41,7 @@ Your task is to assess whether the presentation demonstrates a strong research f
 
 ## Evaluation Guidelines:
 - Always point to the exact slide where the issue or strength is observed
-- Provide specific, actionable suggestions (e.g., “On Slide 5, the methodology is vague; specify the sample size and justify why it is sufficient”)
+- Provide specific, actionable suggestions (e.g., "On Slide 5, the methodology is vague; specify the sample size and justify why it is sufficient")
 - Provide concrete examples and suggestions for improvement
 - Focus on research design principles (evidence-based approach, clarity of the proposed solution, scientific rigor)
 - Only report issues you are confident about
@@ -37,3 +52,29 @@ Evaluate the presentation's research quality by examining the evidence-based app
 Provide specific suggestions for improving the research quality of the presentation.
 In the Answer section, provide the final evaluation strictly following the format instructions.
 """
+    
+    # Define presentation type specific content
+    type_specific_content = {
+        PresentationType.SCIENTIFIC: """
+
+""",
+        PresentationType.INDUSTRIAL: """
+
+""",
+        PresentationType.COLLABORATIVE: """
+
+""",
+        PresentationType.TECHNOLOGICAL: """
+
+""",
+    }
+    
+    # Get specific content for the presentation type, or empty string if None
+    specific_content = type_specific_content.get(presentation_type, "")
+    
+    # Format the prompt with the specific content
+    return base_prompt.format(presentation_type_specific_content=specific_content)
+
+
+# Default prompt for backward compatibility
+prompt = generate_prompt()

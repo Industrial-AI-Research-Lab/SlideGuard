@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Dict
+from typing import List, Optional, Type, Dict, Callable, Union
 import sys
 from pydantic import BaseModel, Field, create_model
 
@@ -12,13 +12,14 @@ from slideguard.criteria.types import (
     ScoredListItemSpec,
     PostProcessorFunc,
 )
+from slideguard.criteria.presentation_types import PresentationType
 
 
 class CriterionConfig(BaseModel):
     id: Criteria
     target: CriteriaTarget
     description: str
-    agent_prompt_template: str
+    agent_prompt_template: Union[str, Callable[[Optional[PresentationType]], str]]  # Can be string or function
     task_prompt_template: str
     output_model: Optional[Type[BaseModel]] = None
     output: OutputSpec = Field(default_factory=OutputSpec)
@@ -73,6 +74,8 @@ class CriterionConfig(BaseModel):
             pydantic=out_model,
             applicable_slide_types=a.applicable_slide_types,
             exclude_slide_types=a.exclude_slide_types,
+            applicable_presentation_types=a.applicable_presentation_types,
+            exclude_presentation_types=a.exclude_presentation_types,
             priority=self.priority,
             requires_infographics=a.requires_infographics,
             category=self.category,
@@ -94,13 +97,38 @@ class CriteriaRegistry(BaseModel):
     def get_info(self, crit: Criteria) -> CriterionInfo:
         return self.by_id[crit]
 
-    def get_slide_ids(self, include_service: bool = False) -> List[Criteria]:
-        ids = [c for c, i in self.by_id.items() if i.type == CriteriaTarget.slide]
-        return ids if include_service else [c for c in ids if not c.is_service_criteria()]
+    def _is_applicable_to_presentation_type(self, info: CriterionInfo, presentation_type: Optional[PresentationType]) -> bool:
+        """Check if criterion is applicable to the given presentation type"""
+        if presentation_type is None:
+            return True
+        
+        # Check exclude list first
+        if info.exclude_presentation_types:
+            if presentation_type in info.exclude_presentation_types:
+                return False
+        
+        # Check include list
+        if info.applicable_presentation_types:
+            return presentation_type in info.applicable_presentation_types
+        
+        # If no restrictions, applicable to all
+        return True
 
-    def get_deck_ids(self, include_service: bool = False) -> List[Criteria]:
+    def get_slide_ids(self, include_service: bool = False, presentation_type: Optional[PresentationType] = None) -> List[Criteria]:
+        ids = [c for c, i in self.by_id.items() if i.type == CriteriaTarget.slide]
+        if not include_service:
+            ids = [c for c in ids if not c.is_service_criteria()]
+        if presentation_type is not None:
+            ids = [c for c in ids if self._is_applicable_to_presentation_type(self.by_id[c], presentation_type)]
+        return ids
+
+    def get_deck_ids(self, include_service: bool = False, presentation_type: Optional[PresentationType] = None) -> List[Criteria]:
         ids = [c for c, i in self.by_id.items() if i.type == CriteriaTarget.deck]
-        return ids if include_service else [c for c in ids if not c.is_service_criteria()]
+        if not include_service:
+            ids = [c for c in ids if not c.is_service_criteria()]
+        if presentation_type is not None:
+            ids = [c for c in ids if self._is_applicable_to_presentation_type(self.by_id[c], presentation_type)]
+        return ids
 
 
 class RegistryScope(BaseModel):

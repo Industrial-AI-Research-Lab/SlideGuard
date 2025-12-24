@@ -4,6 +4,7 @@ import json
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
+from slideguard.criteria.presentation_types import PresentationType
 
 T = TypeVar('T', bound=BaseModel)
 

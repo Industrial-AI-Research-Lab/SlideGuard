@@ -21,9 +21,9 @@ from slideguard.criteria.slide_orphography_correctness import prompt as slide_or
 from slideguard.criteria.slide_title_content_match import prompt as slide_title_content_match_prompt
 from slideguard.criteria.slide_title_slide_quality import prompt as slide_title_slide_quality_prompt
 from slideguard.criteria.slide_visual_arrangement import prompt as slide_visual_arrangement_prompt
-from slideguard.criteria.deck_storytelling import prompt as deck_storytelling_prompt
-from slideguard.criteria.deck_structure_analysis import prompt as deck_structure_analysis_prompt
-from slideguard.criteria.deck_research_quality import prompt as deck_research_quality_prompt
+from slideguard.criteria.deck_storytelling import generate_prompt as deck_storytelling_generate_prompt
+from slideguard.criteria.deck_structure_analysis import generate_prompt as deck_structure_analysis_generate_prompt
+from slideguard.criteria.deck_research_quality import generate_prompt as deck_research_quality_generate_prompt
 
 ABBREVIATIONS_WHITELIST = {
     'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag', 'к.т.н.'
@@ -169,7 +169,7 @@ PRESET_CRITERIA_CONFIGS = [
         id=Criteria.deck_storytelling,
         target=CriteriaTarget.deck,
         description="Evaluating the storytelling quality of students' presentations",
-        agent_prompt_template=deck_storytelling_prompt,
+        agent_prompt_template=deck_storytelling_generate_prompt,
         task_prompt_template=BASE_DECK_TASK_PROMPT,
         output=OutputSpec(
             kind=OutputKind.scored_list,
@@ -188,7 +188,7 @@ PRESET_CRITERIA_CONFIGS = [
         id=Criteria.deck_structure_analysis,
         target=CriteriaTarget.deck,
         description="Evaluating the completeness of presentation structure",
-        agent_prompt_template=deck_structure_analysis_prompt,
+        agent_prompt_template=deck_structure_analysis_generate_prompt,
         task_prompt_template=BASE_DECK_TASK_PROMPT,
         output=OutputSpec(
             kind=OutputKind.scored_list,
@@ -207,7 +207,7 @@ PRESET_CRITERIA_CONFIGS = [
         id=Criteria.deck_research_quality,
         target=CriteriaTarget.deck,
         description="Evaluating the research quality of students' presentations",
-        agent_prompt_template=deck_research_quality_prompt,
+        agent_prompt_template=deck_research_quality_generate_prompt,
         task_prompt_template=BASE_DECK_TASK_PROMPT,
         output=OutputSpec(
             kind=OutputKind.scored_list,
@@ -228,7 +228,8 @@ SERVICE_CRITERIA_CONFIGS = [
         id=Criteria.slide_type,
         target=CriteriaTarget.slide,
         description="Type of the slide",
-        agent_prompt_template=generate_slide_helper_type_prompt(),
+        # Pass function here so that prompt can be adapted based on PresentationType
+        agent_prompt_template=generate_slide_helper_type_prompt,
         task_prompt_template=BASE_SLIDE_TASK_PROMPT,
         output=OutputSpec(kind=OutputKind.custom),
         output_model=SlideTypeModel,
