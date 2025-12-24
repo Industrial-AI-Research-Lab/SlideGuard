@@ -123,6 +123,20 @@ slideguard eval multirun -f /path/to/pdfs \
 - `evaluations_<filename>.error` - Error details
 - `evaluations_<filename>.log` - Logs
 
+### UI Commands
+
+```bash
+# Launch UI with default English language
+slideguard ui run
+
+# Launch UI with Russian language
+slideguard ui run --lang ru
+slideguard ui run -l ru
+
+# Full example with all options
+slideguard ui run --host 127.0.0.1 --port 7860 --lang ru --theme dark
+```
+
 ### Admin Commands
 
 ```bash
@@ -141,7 +155,14 @@ slideguard admin delete -u username
 ### Launch
 
 ```bash
+# Launch with default English UI
 slideguard ui run --host 127.0.0.1 --port 7860
+
+# Launch with Russian UI
+slideguard ui run --host 127.0.0.1 --port 7860 --lang ru
+
+# Or using short flag
+slideguard ui run -l ru
 ```
 
 Access at `http://localhost:7860`
@@ -157,7 +178,8 @@ Access at `http://localhost:7860`
 - **Admin Panel**: User management (visible to admins only)
 
 **Language Support**:
-- Click the EN/RU button in the top-right corner to switch languages
+- Set default language at startup with `--lang` flag: `--lang en` (English) or `--lang ru` (Russian)
+- Click the EN/RU button in the top-right corner to switch languages dynamically
 - All UI elements, evaluation results, and PDF reports are translated
 - LLM prompts automatically switch to Russian when Russian is selected
 - Criteria friendly names displayed in the selected language
