@@ -1,4 +1,18 @@
-prompt = """
+from typing import Optional
+from slideguard.criteria.presentation_types import PresentationType
+
+
+def generate_prompt(presentation_type: Optional[PresentationType] = None) -> str:
+    """
+    Generate storytelling quality evaluation prompt based on presentation type.
+    
+    Args:
+        presentation_type: The type of presentation, or None for default prompt
+        
+    Returns:
+        Prompt string tailored to the presentation type
+    """
+    base_prompt = """
 You are an expert in evaluating the storytelling quality of students' presentations.
 You will be provided with information about all slides in the presentation.
 
@@ -27,6 +41,7 @@ B[Goal] <--> C[Proposed Solution]
 D[Tasks] --> F[Experiment Settings]
 F[Experiment Settings] --> G[Experiment Results]
 A[Motivation] --> G[Experiment Results]
+{mermaid_extra}
 ```
 
 ## Evaluation Criteria:
@@ -37,6 +52,7 @@ A[Motivation] --> G[Experiment Results]
 5. **Solution → Experiments Connection**: Do experiments test the proposed solution and provide explicit result that this approach is better than the current state in some way?
 6. **Experiments → Results Connection**: Do results relate to the experimental setup?
 7. **Motivation → Results Connection**: Do results address the original motivation?
+{presentation_type_specific_content}
 
 ## Common Problems to Identify:
 - If Goal does not mention improvement of Current State → violation
@@ -58,3 +74,36 @@ Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall assessment of the deck storytelling.
 In the Answer section, provide the final evaluation strictly following the format instructions.
 """
+
+    type_specific_content = {
+        PresentationType.SCIENTIFIC: """
+8. **Current State → Scientific Novelty Connection**: Does literature review justify claimed scientific novelty?
+""",
+        PresentationType.INDUSTRIAL: """
+8. **Industrial Potential → Experimental Results Connection**: Do results demonstrate practical industrial applicability?
+""",
+        PresentationType.COLLABORATIVE: """
+8. **Collaborative Progress → Experimental Results Connection**: Does team communication progress lead to collaborative outcomes?
+""",
+        PresentationType.TECHNOLOGICAL: """
+8. **Current State → Technological Novelty Connection**: Does similar solutions review justify claimed technological novelty?
+""",
+    }
+
+    type_specific_mermaid_extra = {
+        PresentationType.SCIENTIFIC: "\nE[Current State] --> H[Scientific Novelty]",
+        PresentationType.INDUSTRIAL: "\nI[Industrial Potential] --> G[Experiment Results]",
+        PresentationType.COLLABORATIVE: "\nJ[Collaborative Progress] --> G[Experiment Results]",
+        PresentationType.TECHNOLOGICAL: "\nE[Current State] --> K[Technological Novelty]",
+    }
+
+    specific_content = type_specific_content.get(presentation_type, "")
+    mermaid_extra = type_specific_mermaid_extra.get(presentation_type, "")
+    return base_prompt.format(
+        presentation_type_specific_content=specific_content,
+        mermaid_extra=mermaid_extra,
+    )
+
+
+# Default prompt for backward compatibility
+prompt = generate_prompt()

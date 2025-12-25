@@ -37,7 +37,8 @@ from slideguard.schemes import (
     SlideEvaluationResult,
     SlideType,
     SummaryOutput,
-    TLDROutput
+    TLDROutput,
+    PresentationType,
 )
 from slideguard.crew.summary_processor import SummaryProcessor, SUMMARY_AGENT_BACKSTORY
 from slideguard.utils.file_manager import FileManager
@@ -82,6 +83,7 @@ class EvaluationState(BaseModel):
     presentation_path: Annotated[str, _take_any]
     slide_criterias: Annotated[List[Criteria], _merge_lists]
     deck_criterias: Annotated[Optional[List[Criteria]], _merge_lists] = None
+    presentation_type: Annotated[Optional[PresentationType], _take_any] = None
 
     slides: Annotated[Optional[SlideDeckImages], _take_any] = None
     slide_service: Annotated[Dict[Criteria, List[BaseModel]], _merge_dicts] = Field(default_factory=dict)
@@ -136,6 +138,7 @@ class SlideGuardEvaluator:
         langfuse_client: Langfuse | None = None,
         registry: Optional[CriteriaRegistry] = None,
         user_id: Optional[str] = None,
+        presentation_type: Optional[PresentationType] = None,
     ) -> FullEvaluation:
         with langfuse_callback_cm(langfuse_client) as cbs:
             self._callbacks = cbs
@@ -157,6 +160,7 @@ class SlideGuardEvaluator:
             presentation_path=presentation_path,
             slide_criterias=slide_criterias,
             deck_criterias=deck_criterias,
+            presentation_type=presentation_type,
         )
         
         app = self._setup_app(initial.slide_criterias, initial.deck_criterias)
@@ -301,7 +305,9 @@ class SlideGuardEvaluator:
                 return {}
             registry = self._registry
             info = registry.get_info(crit)
-            chain = info.to_runnable(self.llm)
+            # Pass presentation_type so that service criteria (e.g., slide_type helper)
+            # can adapt their prompts based on selected presentation type
+            chain = info.to_runnable(self.llm, presentation_type=state.presentation_type)
             entities = await self._eval_criterion_with_cache(
                 info=info,
                 deck=state.slides,
@@ -439,7 +445,7 @@ class SlideGuardEvaluator:
                 return {}
             registry = self._registry
             info = registry.get_info(crit)
-            chain = info.to_runnable(self.llm)
+            chain = info.to_runnable(self.llm, presentation_type=state.presentation_type)
             try:
                 res_list = await self._eval_criterion_with_cache(info, state.deck_descriptions, chain, config)
                 if res_list and res_list[0] is not None:

@@ -3,6 +3,8 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, runtime_checkable, Type, Union
 from pydantic import BaseModel, Field, field_validator
 
+from slideguard.criteria.presentation_types import PresentationType
+
 
 class CriteriaTarget(str, Enum):
     slide = "slide"
@@ -38,6 +40,8 @@ PostProcessorFunc = Callable[[CriterionResult, PostProcessorContext], CriterionR
 class Applicability(BaseModel):
     applicable_slide_types: Optional[List[str]] = None
     exclude_slide_types: Optional[List[str]] = None
+    applicable_presentation_types: Optional[List[PresentationType]] = None
+    exclude_presentation_types: Optional[List[PresentationType]] = None
     requires_infographics: bool = False
 
     @field_validator('applicable_slide_types', 'exclude_slide_types', mode='before')

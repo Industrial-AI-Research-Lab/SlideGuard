@@ -15,7 +15,7 @@ from PIL import Image
 import fitz  # PyMuPDF
 
 from slideguard.criteria import get_registry_provider
-from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult
+from slideguard.schemes import Criteria, FullEvaluation, UIEvaluationResult, PresentationType
 from slideguard.utils.config import load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
@@ -215,6 +215,12 @@ class SlideGuardUI:
             "description_md": t('app_description'),
             "upload_md": f"## {t('upload_section')}",
             "upload_label": t('upload_label'),
+            "presentation_type_md": f"## {t('presentation_type_md')}",
+            "presentation_type_label": t('presentation_type_label'),
+            "presentation_type_scientific": t('presentation_type_scientific'),
+            "presentation_type_industrial": t('presentation_type_industrial'),
+            "presentation_type_collaborative": t('presentation_type_collaborative'),
+            "presentation_type_technological": t('presentation_type_technological'),
             "criteria_md": f"## {t('criteria_section')}",
             "slide_criteria_label": t('slide_criteria_label'),
             "deck_criteria_label": t('deck_criteria_label'),
@@ -284,6 +290,16 @@ class SlideGuardUI:
             texts["description_md"],
             texts["upload_md"],
             gr.update(label=texts["upload_label"]),
+            texts["presentation_type_md"],
+            gr.update(
+                label=texts["presentation_type_label"],
+                choices=[
+                    (texts["presentation_type_scientific"], PresentationType.SCIENTIFIC.value),
+                    (texts["presentation_type_industrial"], PresentationType.INDUSTRIAL.value),
+                    (texts["presentation_type_collaborative"], PresentationType.COLLABORATIVE.value),
+                    (texts["presentation_type_technological"], PresentationType.TECHNOLOGICAL.value),
+                ],
+            ),
             texts["criteria_md"],
             gr.update(label=texts["slide_criteria_label"], choices=slide_choices, value=slide_selected_display),
             gr.update(label=texts["deck_criteria_label"], choices=deck_choices, value=deck_selected_display),
@@ -316,16 +332,24 @@ class SlideGuardUI:
         )
         return updates
     
-    async def evaluate_presentation(self, pdf_file, slide_selected, deck_selected, user_id: Optional[str] = None) -> UIEvaluationResult:
+    async def evaluate_presentation(self, pdf_file, slide_selected, deck_selected, presentation_type_value: Optional[str] = None, user_id: Optional[str] = None) -> UIEvaluationResult:
         """Evaluate a presentation and return results."""
         if not pdf_file:
             return UIEvaluationResult.error(self.translator.t("no_pdf"))
+        
+        if not presentation_type_value:
+            return UIEvaluationResult.error(self.translator.t("presentation_type_required"))
         
         if not self.evaluator:
             return UIEvaluationResult.error(self.translator.t("evaluator_not_initialized"))
         
         try:
             self.current_evaluation = None
+            
+            # Parse presentation type
+            presentation_type = PresentationType.from_string(presentation_type_value)
+            if not presentation_type:
+                return UIEvaluationResult.error(self.translator.t("invalid_presentation_type"))
             
             # Load criteria
             slide_selected_list = self._decode_criteria_selection(slide_selected, self._slide_criteria_list + self._service_slide_criteria)
@@ -343,9 +367,9 @@ class SlideGuardUI:
 	    
             # Get registry for user
             registry = self.registry_provider.get_for_user(user_id)	            
-
+            
             # Run evaluation
-            self.logger.info(f"Starting evaluation with {len(slide_criterias)} slide criteria and {len(deck_criterias)} deck criteria")
+            self.logger.info(f"Starting evaluation with {len(slide_criterias)} slide criteria and {len(deck_criterias)} deck criteria for presentation type {presentation_type.value}")
             
             evaluation = await self.evaluator.evaluate_presentation(
                 presentation_path=pdf_file.name,
@@ -353,7 +377,8 @@ class SlideGuardUI:
                 deck_criterias=deck_criterias,
                 langfuse_client=self.langfuse_client,
                 registry=registry,
-                user_id=user_id
+                user_id=user_id,
+                presentation_type=presentation_type
             )
             
             self.current_evaluation = evaluation
@@ -893,6 +918,20 @@ class SlideGuardUI:
                         height=100,
                     )
 
+                    presentation_type_md = gr.Markdown(texts["presentation_type_md"])
+                    presentation_type_dropdown = gr.Dropdown(
+                        choices=[
+                            (texts["presentation_type_scientific"], PresentationType.SCIENTIFIC.value),
+                            (texts["presentation_type_industrial"], PresentationType.INDUSTRIAL.value),
+                            (texts["presentation_type_collaborative"], PresentationType.COLLABORATIVE.value),
+                            (texts["presentation_type_technological"], PresentationType.TECHNOLOGICAL.value),
+                        ],
+                        label=texts["presentation_type_label"],
+                        value=None,
+                        interactive=True,
+                        allow_custom_value=False,
+                    )
+
                     criteria_md = gr.Markdown(texts["criteria_md"])
                     slide_criteria_input = gr.CheckboxGroup(
                         choices=slide_choices_display,
@@ -1111,6 +1150,8 @@ class SlideGuardUI:
                                     description_md,
                                     upload_md,
                                     pdf_input,
+                                    presentation_type_md,
+                                    presentation_type_dropdown,
                                     criteria_md,
                                     slide_criteria_input,
                                     deck_criteria_input,
@@ -1154,6 +1195,8 @@ class SlideGuardUI:
                                     description_md,
                                     upload_md,
                                     pdf_input,
+                                    presentation_type_md,
+                                    presentation_type_dropdown,
                                     criteria_md,
                                     slide_criteria_input,
                                     deck_criteria_input,
@@ -1195,7 +1238,9 @@ class SlideGuardUI:
 
             
             # Event handlers
-            def _validate_criteria(s, d):
+            def _validate_criteria(s, d, pt):
+                if not pt:
+                    raise gr.Error(self.translator.t("presentation_type_required"))
                 if not (s or d):
                     raise gr.Error(self.translator.t("criteria_validation_error"))
 
@@ -1215,7 +1260,7 @@ class SlideGuardUI:
 
             evaluate_btn.click(
                 fn=_validate_criteria,
-                inputs=[slide_criteria_input, deck_criteria_input],
+                inputs=[slide_criteria_input, deck_criteria_input, presentation_type_dropdown],
                 outputs=[]
             ).then(
                 fn=self._clear_slide_navigation_state,
@@ -1232,7 +1277,7 @@ class SlideGuardUI:
                 outputs=[slide_evaluation]
             ).then(
                 fn=self.evaluate_presentation,
-                inputs=[pdf_input, slide_criteria_input, deck_criteria_input],
+                inputs=[pdf_input, slide_criteria_input, deck_criteria_input, presentation_type_dropdown],
                 outputs=[result_state]
             ).then(
                 fn=lambda r: tuple(r),
