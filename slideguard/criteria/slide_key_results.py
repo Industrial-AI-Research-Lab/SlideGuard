@@ -34,7 +34,7 @@ A good key results slide for scientific presentation should contain:
   * Formatted README.MD describing the repository
 
 ## Evaluation Guidelines for Scientific:
-- If the slide presents clear achievements AND quantified metrics (accuracy, F1, ROC-AUC, etc.) AND link to repository with README → severity: 0 (excellent)
+- If the slide presents clear achievements AND quantified metrics (accuracy, F1, ROC-AUC, etc.) AND link to repository → severity: 0 (excellent)
 - If achievements and metrics are present but repository link is missing → severity: 1-2
 - If metrics are vague or not quantified (e.g., "good results" instead of "92% accuracy") → severity: 2
 - If the benefit or practical result is unclear or missing → severity: 2-3
