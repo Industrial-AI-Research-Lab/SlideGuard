@@ -26,7 +26,8 @@ from slideguard.criteria.deck_structure_analysis import generate_prompt as deck_
 from slideguard.criteria.deck_research_quality import generate_prompt as deck_research_quality_generate_prompt
 
 ABBREVIATIONS_WHITELIST = {
-    'итмо', 'itmo', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag', 'к.т.н.'
+    'итмо', 'itmo', 'vitmo', 'scopus', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag',
+    'к.т.н.', 'bert', 'knn', 'pdf', 'csv', 'xls', 'xlsx' 'txt', 'doc', 'docx', 'xml', 'nlp'
 }
 
 
@@ -76,7 +77,9 @@ PRESET_CRITERIA_CONFIGS = [
         ),
         priority=4,
         category="content",
-        applicability=Applicability(),
+        applicability=Applicability(
+            exclude_slide_types=[SlideType.TITLE_SLIDE, SlideType.END_SLIDE, SlideType.SEPARATOR]
+        ),
         postprocessor_funcs=[make_abbreviations_postprocessor, filter_sort_by_severity],
     ),
 

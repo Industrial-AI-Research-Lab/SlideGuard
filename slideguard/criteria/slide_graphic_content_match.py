@@ -16,6 +16,7 @@ Your task is to analyze the slide and determine if the textual elements of the s
 
 ## What is not a problem:
 - Slide may contain some background images which are decorative and not a part of the slide content - they should be ignored
+- Slide may be numbered in the bottom right corner 
 
 ## Evaluation Guidelines:
 - determine which idea on the slide is illustrated by the visualization, how it corresponds to the text content of the slide, if it does not correspond, write in what exactly the problem is

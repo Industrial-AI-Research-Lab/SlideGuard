@@ -8,14 +8,16 @@ Fix if the link is missing, invalid, or the data is unjustified.
 - Links to the sources for numerical data (including data presented in the form of diagrams, graphs, tables)
 
 ## Common Problems to Identify:
+- Missing sources for numerical data that represents external facts, statistics, benchmarks, or real-world measurements not produced by the student.
 - Links to the sources are missing while they should be present to justify the numerical data
 
 ## What is not a problem:
-- Slides may contain experimental results made by the student - this data will not have links to sources and it is not a problem
+- Numerical values that are clearly part of the student's own experiment, implementation, or setup (e.g., number of epochs, batch size, sample size, model parameters, training duration) do NOT require external sources and are NOT a problem
 
 ## Evaluation Guidelines:
 - determine if there are any pictures of infographics on the slide that represent numerical data
 - **very carefully** check the slide for the presence of sources of information, explicitly write in the 'Thought' section of the reasoning on the task which sources you found
+- Do NOT require sources for numerical data if it is clearly generated or chosen by the student as part of their own experimental setup
 
 ## Response Format:
 Your answer should have two sections: Thought and Answer.
