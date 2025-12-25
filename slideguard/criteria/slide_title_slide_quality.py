@@ -9,6 +9,9 @@ On it, you need to check the presence of the following elements:
 
 If some of the elements are missing, then you need to make a remark and suggest to fix it.
 
+## What is not a problem:
+- Slide may have the last name, first name and place of work of the scientific consultant as well
+
 ## Evaluation Guidelines:
 - Be specific about what needs to be changed and where on the slide
 - Provide concrete examples and suggestions for improvement
