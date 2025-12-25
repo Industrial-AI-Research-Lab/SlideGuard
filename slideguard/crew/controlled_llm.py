@@ -28,6 +28,15 @@ logger = logging.getLogger(__name__)
 
 LEGACY_CHAT_ENV_FLAG = "SLIDEGUARD_FORCE_LEGACY_CHAT_COMPLETIONS"
 
+DECK_TEXT_SOURCE_ENV_FLAG = "SLIDEGUARD_DECK_TEXT_SOURCE"
+
+
+def _normalize_deck_text_source(value: Optional[str]) -> str:
+    v = (value or "").strip().lower()
+    if v in {"summary", "description"}:
+        return v
+    return "summary"
+
 
 def _flag_enabled(value: Optional[str]) -> bool:
     if value is None:
@@ -156,12 +165,14 @@ class ControlledLLM:
         max_retries: int = 3,
         retry_temperature: float = 0.01,
         preprocessors: Optional[List[Callable[[str], str]]] = None,
+        deck_text_source: str = "summary",
         language: AppLanguage = AppLanguage.EN,
     ) -> None:
         self.chat_model = chat_model
         self.max_retries = max_retries
         self.retry_temperature = retry_temperature
         self.preprocessors = preprocessors or [default_text_cleaner]
+        self.deck_text_source: str = deck_text_source
         self.language: AppLanguage = language
 
     def with_tools(self, tools: List[Any]) -> "ControlledLLM":
@@ -177,6 +188,7 @@ class ControlledLLM:
             max_retries=self.max_retries,
             retry_temperature=self.retry_temperature,
             preprocessors=self.preprocessors,
+            deck_text_source=self.deck_text_source,
             language=self.language,
         )
 
@@ -258,17 +270,13 @@ class OpenAIModel(str, Enum):
     GPT_4O = "gpt-4o"
 
 
-def create_llm_from_config(config: SlideGuardConfig, language: AppLanguage = AppLanguage.EN) -> Optional[ControlledLLM]:
+def create_llm_from_config(config: SlideGuardConfig) -> Optional[ControlledLLM]:
     if not config.is_configured():
         try:
             config = load_config()
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
-            return None
-        
-        # Re-check if config is valid after loading
-        if not config.is_configured():
-            return None
+        return None
 
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
@@ -284,6 +292,15 @@ def create_llm_from_config(config: SlideGuardConfig, language: AppLanguage = App
             model=selected.value,
             temperature=0.01,
             max_tokens=5000,
+            extra_body={
+            "cache": {
+                "ttl": 30, # ттл кеша
+                "no-cache": True, # отключает проверку кеша
+                "no-store": True, # не добавляет в кеш
+            "s-maxage": 600  # Кеш только для свежих запросов (до 10 минут)
+            },  
+        }
+
         )
     else:
         llm_config = config.get_llm_config()
@@ -303,4 +320,4 @@ def create_llm_from_config(config: SlideGuardConfig, language: AppLanguage = App
             temperature=0.01,
             max_tokens=5000
         )
-    return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01, language=language)
+    return ControlledLLM(chat_model=chat, max_retries=3, retry_temperature=0.01, deck_text_source=_normalize_deck_text_source(os.getenv(DECK_TEXT_SOURCE_ENV_FLAG)))
