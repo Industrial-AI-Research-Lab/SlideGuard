@@ -1,8 +1,3 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_SLIDE_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
-from slideguard.criteria.slide_types import SlideType
-
 prompt = """You are an expert in working with students' presentations.
 You will be provided with a screenshot of a presentation slide.
 Your task is to check whether the slide has any orthographic or grammatical errors.
@@ -20,13 +15,15 @@ The plan of the solution of the task:
 
 Common problems that can be found on a slide:
 - Lists may have ending periods which is not correct
-- Titles should may have periods at the end which is not correct
+- Titles may have periods at the end which is not correct
 
 ## Evaluation Guidelines:
-- Be specific about what needs to be changed and where on the slide
+- Be specific about what is needed to be changed and where on the slide
 - Provide concrete examples and suggestions for improvement
+- DO NOT address hyphenating
 - usually in presentations there are very few orthographic and grammatical errors, so make sure you are sure you have found them
-- Only report issues you are confident about
+- Only report issues you are very confident about, keep in mind that you can yourself make mistakes in OCR part
+- In thought part of your answer also generate an example of your final answer and make sure that all your considerations make sense and correspond to the slide
 
 ## Response Format:
 Your answer should have two sections: «Thought» and «Answer».
@@ -35,26 +32,3 @@ Then, in the «Answer:» section, write the final answer for the user in Russian
 
 Return the final answer strictly following the format instructions.
 """
-
-class SlideOrphographyCorrectnessResult(BaseAttributes):
-    evaluation_element: str = Field(description="Found Orphographic or grammatical error")
-    evaluation_suggestion: str = Field(description="Fix the word <<incorrect word>>")
-
-class SlideOrphographyCorrectness(BaseModel):
-    evaluation_results: list[SlideOrphographyCorrectnessResult] = Field(description="List of identified content issues")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5", ge=1, le=5)
-
-exclude_st = [SlideType.END_SLIDE, SlideType.TITLE_SLIDE]
-
-SLIDE_ORPHOGRAPHY_CORRECTNESS = CriterionInfo(
-    criteria=Criteria.slide_orphography_correctness,
-    type="slide",
-    criterion_description="Analyzing whether the slide has any typographical or grammatical errors and provide appropriate suggestions",
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_SLIDE_TASK_PROMPT,
-    pydantic=SlideOrphographyCorrectness,
-    applicable_slide_types=[st.value for st in SlideType if st not in exclude_st],
-    priority=4,
-    requires_slide_type=False,
-    category="visual"
-)

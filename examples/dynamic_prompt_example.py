@@ -79,13 +79,13 @@ def demonstrate_slide_type_info():
     # Get info about a specific slide type
     goal_info = slide_type_manager.get_slide_type_info("Goal")
     if goal_info:
-        print(f"Goal slide type info:")
+        print("Goal slide type info:")
         print(f"  Name: {goal_info.name}")
         print(f"  Description: {goal_info.description}")
         print(f"  Category: {goal_info.category}")
     
     # Show how this description appears in the prompt
-    print(f"\nThis description appears in the prompt as:")
+    print("\nThis description appears in the prompt as:")
     print(f"5) Goal - {goal_info.description}")
 
 def demonstrate_extended_workflow():
@@ -124,7 +124,7 @@ def demonstrate_extended_workflow():
     print(complete_prompt)
     
     # Show slide types by category
-    print(f"\nSlide types by category:")
+    print("\nSlide types by category:")
     for category in slide_type_manager.get_categories():
         types = slide_type_manager.get_slide_types_by_category(category)
         print(f"  {category}: {types}")

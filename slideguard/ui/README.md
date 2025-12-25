@@ -6,6 +6,8 @@ This module provides a Gradio-based web interface for SlideGuard, allowing users
 
 - **PDF Upload**: Upload presentation files in PDF format
 - **Criteria Selection**: Choose which evaluation criteria to apply
+- **Presentation Type Selection**: Filters available criteria and enables type-aware prompts
+- **Criteria Language Selection**: Choose EN/RU for LLM output language independent of UI language
 - **Deck-Level Results**: View overall presentation evaluation results
 - **Interactive Presentation Viewer**: Navigate through slides with corresponding evaluations
 - **PDF Report Generation**: Generate comprehensive PDF reports with all evaluation results for download
@@ -46,6 +48,12 @@ You can launch the UI in several ways:
    python -c "from slideguard.ui.app import create_app; create_app().launch()"
    ```
 
+4. **Via CLI**:
+   ```bash
+   slideguard ui run --lang en
+   slideguard ui run --lang ru
+   ```
+
 ### Configuration
 
 Before using the UI, make sure you have configured your environment variables or `.env` file with the necessary API keys and settings. See the main SlideGuard documentation for configuration details.
@@ -53,11 +61,13 @@ Before using the UI, make sure you have configured your environment variables or
 ### UI Components
 
 1. **Upload Section**: Drag and drop or select a PDF file to upload
-2. **Criteria Selection**: Check/uncheck the criteria you want to evaluate
-3. **Results Tabs**:
+2. **Presentation Type**: Select the presentation type to filter available criteria
+3. **Criteria Language**: Select EN/RU for evaluation output language
+4. **Criteria Selection**: Check/uncheck the criteria you want to evaluate
+5. **Results Tabs**:
    - **Interactive Presentation Viewer**: Navigate slides with evaluations (first tab)
    - **Deck-Level Results**: Overall presentation evaluation
-4. **Report Generation**: Generate and download comprehensive PDF reports
+6. **Report Generation**: Generate and download comprehensive PDF reports
 
 ### Navigation
 

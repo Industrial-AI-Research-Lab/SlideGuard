@@ -1,8 +1,18 @@
-from pydantic import BaseModel, Field
-from slideguard.criteria.base import BASE_DECK_TASK_PROMPT, BaseAttributes, CriterionInfo
-from slideguard.schemes import Criteria
+from typing import Optional
+from slideguard.criteria.presentation_types import PresentationType
 
-prompt = """
+
+def generate_prompt(presentation_type: Optional[PresentationType] = None) -> str:
+    """
+    Generate storytelling quality evaluation prompt based on presentation type.
+    
+    Args:
+        presentation_type: The type of presentation, or None for default prompt
+        
+    Returns:
+        Prompt string tailored to the presentation type
+    """
+    base_prompt = """
 You are an expert in evaluating the storytelling quality of students' presentations.
 You will be provided with information about all slides in the presentation.
 
@@ -31,6 +41,7 @@ B[Goal] <--> C[Proposed Solution]
 D[Tasks] --> F[Experiment Settings]
 F[Experiment Settings] --> G[Experiment Results]
 A[Motivation] --> G[Experiment Results]
+{mermaid_extra}
 ```
 
 ## Evaluation Criteria:
@@ -41,6 +52,7 @@ A[Motivation] --> G[Experiment Results]
 5. **Solution → Experiments Connection**: Do experiments test the proposed solution and provide explicit result that this approach is better than the current state in some way?
 6. **Experiments → Results Connection**: Do results relate to the experimental setup?
 7. **Motivation → Results Connection**: Do results address the original motivation?
+{presentation_type_specific_content}
 
 ## Common Problems to Identify:
 - If Goal does not mention improvement of Current State → violation
@@ -63,27 +75,35 @@ In the Thought section, provide your reasoning and analysis including an overall
 In the Answer section, provide the final evaluation strictly following the format instructions.
 """
 
+    type_specific_content = {
+        PresentationType.SCIENTIFIC: """
+8. **Current State → Scientific Novelty Connection**: Does literature review justify claimed scientific novelty?
+""",
+        PresentationType.INDUSTRIAL: """
+8. **Industrial Potential → Experimental Results Connection**: Do results demonstrate practical industrial applicability?
+""",
+        PresentationType.COLLABORATIVE: """
+8. **Collaborative Progress → Experimental Results Connection**: Does team communication progress lead to collaborative outcomes?
+""",
+        PresentationType.TECHNOLOGICAL: """
+8. **Current State → Technological Novelty Connection**: Does similar solutions review justify claimed technological novelty?
+""",
+    }
 
-class DeckStorytellingResult(BaseAttributes):
-    evaluation_element: str = Field(description="Issue description")
-    evaluation_suggestion: str = Field(description="Detailed description of the issue and suggestion for improvement")
+    type_specific_mermaid_extra = {
+        PresentationType.SCIENTIFIC: "\nE[Current State] --> H[Scientific Novelty]",
+        PresentationType.INDUSTRIAL: "\nI[Industrial Potential] --> G[Experiment Results]",
+        PresentationType.COLLABORATIVE: "\nJ[Collaborative Progress] --> G[Experiment Results]",
+        PresentationType.TECHNOLOGICAL: "\nE[Current State] --> K[Technological Novelty]",
+    }
+
+    specific_content = type_specific_content.get(presentation_type, "")
+    mermaid_extra = type_specific_mermaid_extra.get(presentation_type, "")
+    return base_prompt.format(
+        presentation_type_specific_content=specific_content,
+        mermaid_extra=mermaid_extra,
+    )
 
 
-class DeckStorytelling(BaseModel):
-    evaluation_results: list[DeckStorytellingResult] = Field(description="List of evaluation results with specific elements and suggestions")
-    score: int = Field(description="Score from 1 to 5. If no issues found, always give 5")
-
-
-DECK_STORYTELLING = CriterionInfo(
-    criteria=Criteria.deck_storytelling,
-    type="deck",
-    criterion_description='You are an expert in evaluating the storytelling quality of students\' presentations. Your task is to assess whether the presentation tells a coherent, logical story by evaluating: Logical progression from introduction to conclusion, Clear cause-and-effect relationships between ideas, Smooth transitions between related topics, Proper topic separation when switching between unrelated subjects, No contradictions or conflicting information',
-    agent_prompt_template=prompt,
-    task_prompt_template=BASE_DECK_TASK_PROMPT,
-    pydantic=DeckStorytelling,
-    applicable_slide_types=None,  # Applies to entire deck
-    priority=1,
-    requires_slide_type=True,  # Needs slide types to evaluate structure
-    category="structure"
-)
-
+# Default prompt for backward compatibility
+prompt = generate_prompt()

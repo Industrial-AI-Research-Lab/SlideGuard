@@ -30,6 +30,21 @@ class Criteria(str, Enum):
     slide_orphography_correctness = "slide_orphography_correctness"
     slide_title_content_match = "slide_title_content_match"
     slide_title_slide_quality = "slide_title_slide_quality"
+    slide_track_justification_scientific = "slide_track_justification_scientific"
+    slide_track_justification_collaborative = "slide_track_justification_collaborative"
+    slide_track_justification_industrial = "slide_track_justification_industrial"
+    slide_track_justification_technological = "slide_track_justification_technological"
+    slide_novelty_scientific = "slide_novelty_scientific"
+    slide_novelty_technological = "slide_novelty_technological"
+    slide_related_works_review_scientific = "slide_related_works_review_scientific"
+    slide_related_works_review_technological = "slide_related_works_review_technological"
+    slide_related_works_review_collaborative = "slide_related_works_review_collaborative"
+    slide_related_works_review_industrial = "slide_related_works_review_industrial"
+    slide_industrial_applicability = "slide_industrial_applicability"
+    slide_key_results_scientific = "slide_key_results_scientific"
+    slide_key_results_technological = "slide_key_results_technological"
+    slide_key_results_collaborative = "slide_key_results_collaborative"
+    slide_key_results_industrial = "slide_key_results_industrial"
 
     # deck criteria
     deck_storytelling = "deck_storytelling"
@@ -53,10 +68,12 @@ class SlideDescription(BaseModel):
 
 
 class SlideType(BaseModel):
-    slide_type: list[str] = Field(description="List of slide types that are most suitable for the slide")
+    slide_type: list[str] = Field(default_factory=list, description="List of slide types that are most suitable for the slide")
+    contains_infographics: bool = Field(default=False, description="Whether the slide contains infographics")
 
-class SlideDescriptionWithType(SlideDescription):
-    slide_type: list[str] = Field(description="List of slide types that are most suitable for the slide")
+class SlideDescriptionWithType(SlideDescription, SlideType):
+    """Combines slide description with type and infographics information"""
+    pass
 
 
 # we inherit from Slideable to make it compatible with cache manager
