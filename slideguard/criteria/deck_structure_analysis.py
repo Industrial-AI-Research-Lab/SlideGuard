@@ -44,16 +44,16 @@ In the Answer section, provide the final evaluation strictly following the forma
     # Define presentation type specific content
     type_specific_content = {
         PresentationType.SCIENTIFIC: """
-1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Scientific Novelty, 7) Experiment Settings, 8) Experimental Results, 9) Conclusion, 10) Publication Readiness 11) End Slide
+1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Scientific Novelty, 7) Experiment Settings, 8) Experimental Results, 9) Conclusion, 10) Publication Readiness, 11) End Slide, 12) [Optional] Q&A 
 """,
         PresentationType.INDUSTRIAL: """
-1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Industrial Potential, 7) Experiment Settings, 8) Experimental Results, 9) Conclusion 10) End Slide
+1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Industrial Potential, 7) Experiment Settings, 8) Experimental Results, 9) Conclusion, 10) End Slide, 11) [Optional] Q&A
 """,
         PresentationType.COLLABORATIVE: """
-1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Collaborative Progress, 7) Experiment Settings, 8) Experimental Results, 9) Conclusion 10) End Slide
+1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Collaborative Progress, 7) Experiment Settings, 8) Experimental Results, 9) Conclusion, 10) End Slide, 11) [Optional] Q&A
 """,
         PresentationType.TECHNOLOGICAL: """
-1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Technological Novelty, 7) Technological Realization Level, 8) Experiment Settings, 9) Experimental Results, 10) Conclusion 11) End Slide
+1) Title Slide , 2) Motivation, 3) Goal and Tasks, 4) Current State, 5) Proposed Solution, 6) Technological Novelty, 7) Technological Realization Level, 8) Experiment Settings, 9) Experimental Results, 10) Conclusion, 11) End Slide, 12) [Optional] Q&A
 """,
     }
     

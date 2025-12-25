@@ -287,23 +287,12 @@ class SlideTypeManager:
         Generate the slide type descriptions section for the prompt.
         This creates the numbered list of slide types with their descriptions.
         """
-        prompt_sections = []
-
-        # First add generic slide types (applicable to all presentation types)
-        for name, info in self._slide_types.items():
-            if info.presentation_type is None:
-                prompt_sections.append(f"{name} - {info.description}")
-
-        # Then add slide types specific to the given presentation type
-        if presentation_type is not None:
-            for name, info in self._slide_types.items():
-                if info.presentation_type == presentation_type:
-                    prompt_sections.append(f"{name} - {info.description}")
-
-        # Add numbering
-        prompt_sections = [f"{i}) {text}" for i, text in enumerate(prompt_sections, 1)]
-        
-        return "\n\n".join(prompt_sections)
+        prompt_sections = [
+            f"{name} - {info.description}"
+            for name, info in self._slide_types.items()
+            if info.presentation_type in (None, presentation_type)
+        ]
+        return "\n\n".join(f"{i}) {text}" for i, text in enumerate(prompt_sections, 1))
     
     def generate_slide_helper_type_prompt(self, presentation_type: Optional[PresentationType] = None) -> str:
         """

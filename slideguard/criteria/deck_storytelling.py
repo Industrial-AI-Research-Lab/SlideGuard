@@ -41,6 +41,7 @@ B[Goal] <--> C[Proposed Solution]
 D[Tasks] --> F[Experiment Settings]
 F[Experiment Settings] --> G[Experiment Results]
 A[Motivation] --> G[Experiment Results]
+{mermaid_extra}
 ```
 
 ## Evaluation Criteria:
@@ -73,8 +74,7 @@ Your response should have two sections: Thought and Answer.
 In the Thought section, provide your reasoning and analysis including an overall assessment of the deck storytelling.
 In the Answer section, provide the final evaluation strictly following the format instructions.
 """
-    
-    # Define presentation type specific content
+
     type_specific_content = {
         PresentationType.SCIENTIFIC: """
 8. **Current State → Scientific Novelty Connection**: Does literature review justify claimed scientific novelty?
@@ -89,12 +89,20 @@ In the Answer section, provide the final evaluation strictly following the forma
 8. **Current State → Technological Novelty Connection**: Does similar solutions review justify claimed technological novelty?
 """,
     }
-    
-    # Get specific content for the presentation type, or empty string if None
+
+    type_specific_mermaid_extra = {
+        PresentationType.SCIENTIFIC: "\nE[Current State] --> H[Scientific Novelty]",
+        PresentationType.INDUSTRIAL: "\nI[Industrial Potential] --> G[Experiment Results]",
+        PresentationType.COLLABORATIVE: "\nJ[Collaborative Progress] --> G[Experiment Results]",
+        PresentationType.TECHNOLOGICAL: "\nE[Current State] --> K[Technological Novelty]",
+    }
+
     specific_content = type_specific_content.get(presentation_type, "")
-    
-    # Format the prompt with the specific content
-    return base_prompt.format(presentation_type_specific_content=specific_content)
+    mermaid_extra = type_specific_mermaid_extra.get(presentation_type, "")
+    return base_prompt.format(
+        presentation_type_specific_content=specific_content,
+        mermaid_extra=mermaid_extra,
+    )
 
 
 # Default prompt for backward compatibility
