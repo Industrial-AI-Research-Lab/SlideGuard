@@ -6,6 +6,7 @@ Based on LangGraph + LangChain.
 import os
 import asyncio
 import logging
+import random
 from textwrap import dedent
 from typing import Any, AsyncIterable, Dict, List, Optional, Tuple, Type
 from itertools import chain
@@ -111,6 +112,15 @@ class SlideGuardEvaluator:
         max_retries: int = 3,
         debug: bool = False,
         registry_provider: Optional[CriteriaRegistryProvider] = None,
+        max_context_tokens: int = 32000,
+        deck_reserved_tokens: int = 8000,
+        deck_chars_per_token: float = 2.5,
+        deck_max_slides: int = 30, #условно потолок по слайдам
+        deck_context_strategy: str = "slide_size", #стратегия обрезки (slide - режем только количество слайдов, size - режем длину слайдов, slide_size - сначала слайды потом объем)
+        random_slide_select: bool = False, #если слайдов много - выбираем рандомно чтобы не обрезать повествовательность
+        random_slide_seed: Optional[int] = None,
+        same_slide: bool = False, #если на обработку не хватает контекста, обрезаем слайды не хронологически, а все пропорционально (если True)
+        deck_text_source: str = "summary", #выбираем откуда берем контекст для deck
     ) -> None:
         self.file_manager = file_manager
         self.cache_manager = cache_manager
@@ -121,6 +131,16 @@ class SlideGuardEvaluator:
         self._compiled_subgraphs: Dict[str, Any] = {}
         self._debug: bool = debug # if true, save graph images (for now)
         self._max_concurrency: Optional[int] = max_concurrency
+        self._max_context_tokens: int = max_context_tokens
+        self._deck_reserved_tokens: int = deck_reserved_tokens
+        self._deck_chars_per_token: float = deck_chars_per_token
+        self._deck_max_slides: int = deck_max_slides
+        self._deck_context_strategy: str = deck_context_strategy
+        self._random_slide_select: bool = random_slide_select
+        self._random_slide_seed: Optional[int] = random_slide_seed
+        self._same_slide: bool = same_slide
+        self._deck_text_source: str = deck_text_source
+
         self.registry_provider = registry_provider
         self._registry: Optional[CriteriaRegistry] = None
         
@@ -406,6 +426,214 @@ class SlideGuardEvaluator:
                 )
         return {"slide_evaluations": out}
 
+
+    def _estimate_tokens_from_chars(self, n_chars: int) -> int:
+        if self._deck_chars_per_token <= 0:
+            return 0
+        return int(n_chars / self._deck_chars_per_token)
+
+    def _deck_description_char_budget(self) -> int:
+        budget_tokens = max(0, int(self._max_context_tokens) - int(self._deck_reserved_tokens))
+        return int(budget_tokens * float(self._deck_chars_per_token))
+
+    def _truncate_text_soft(self, text: str, max_chars: int) -> str:
+        if not text or max_chars <= 0:
+            return ""
+        if len(text) <= max_chars:
+            return text
+        cut = text[:max_chars]
+        window_start = int(max_chars * 0.85)
+        for sep in ["\n\n", "\n", ". ", "; ", ", "]:
+            j = cut.rfind(sep, window_start)
+            if j != -1:
+                return cut[: j + len(sep)].rstrip()
+        return cut.rstrip()
+
+
+    def _slide_text_field_name(self, sd: SlideDescriptionWithType) -> Optional[str]:
+        if getattr(self, "_deck_text_source", "description") == "summary":
+            names = ("summary", "slide_summary", "description", "slide_description", "text")
+        else:
+            names = ("description", "slide_description", "summary", "slide_summary", "text")
+        for name in names:
+            if hasattr(sd, name):
+                v = getattr(sd, name)
+                if isinstance(v, str):
+                    return name
+        return None
+
+    def _prepare_deck_slide_descriptions(self, slide_descriptions: List[SlideDescriptionWithType]) -> List[SlideDescriptionWithType]:
+        if getattr(self, "_deck_text_source", "description") != "summary":
+            return slide_descriptions
+        out: List[SlideDescriptionWithType] = []
+        for sd in slide_descriptions:
+            txt = getattr(sd, "summary", None)
+            if not isinstance(txt, str) or not txt:
+                txt = getattr(sd, "description", "")
+                if not isinstance(txt, str):
+                    txt = str(txt)
+            update = {"description": txt, "summary": txt}
+            if hasattr(sd, "model_copy"):
+                out.append(sd.model_copy(update=update))
+            else:
+                out.append(sd.copy(update=update))
+        return out
+
+    def _limit_slide_descriptions_proportional(
+        self,
+        slide_descriptions: List[SlideDescriptionWithType],
+    ) -> Tuple[List[SlideDescriptionWithType], Optional[str]]:
+        max_chars = self._deck_description_char_budget()
+        if not slide_descriptions or max_chars <= 0:
+            if max_chars <= 0:
+                return slide_descriptions, "deck_description truncated: budget is 0 chars (same_slide=True)"
+            return slide_descriptions, None
+
+        field_names: List[Optional[str]] = []
+        texts: List[str] = []
+        lengths: List[int] = []
+        for sd in slide_descriptions:
+            fname = self._slide_text_field_name(sd)
+            field_names.append(fname)
+            if fname is None:
+                texts.append("")
+                lengths.append(0)
+                continue
+            t = getattr(sd, fname) or ""
+            if not isinstance(t, str):
+                t = str(t)
+            texts.append(t)
+            lengths.append(len(t))
+
+        total_len = sum(lengths)
+        if total_len <= max_chars:
+            return slide_descriptions, None
+
+        n = len(slide_descriptions)
+        alloc = [0] * n
+        remaining = {i for i in range(n) if lengths[i] > 0}
+        budget_remaining = int(max_chars)
+
+        # Saturating proportional allocation:
+        # - slides that are shorter than their share keep full text
+        # - remaining budget is redistributed proportionally among the rest
+        while remaining and budget_remaining > 0:
+            total_remaining = sum(lengths[i] for i in remaining)
+            if total_remaining <= 0:
+                break
+
+            saturated = []
+            for i in remaining:
+                share = budget_remaining * (lengths[i] / float(total_remaining))
+                a = int(share)
+                if a >= lengths[i]:
+                    alloc[i] = lengths[i]
+                    saturated.append(i)
+
+            if saturated:
+                for i in saturated:
+                    budget_remaining -= alloc[i]
+                    remaining.remove(i)
+                continue
+
+            # Final proportional allocation with rounding + exact sum fixup
+            rem = list(remaining)
+            total_remaining = sum(lengths[i] for i in rem)
+            for i in rem:
+                alloc[i] = min(lengths[i], int(round(budget_remaining * lengths[i] / float(total_remaining))))
+
+            s = sum(alloc[i] for i in rem)
+            diff = budget_remaining - s
+
+            if diff != 0:
+                if diff > 0:
+                    order = sorted(rem, key=lambda i: (lengths[i] - alloc[i]), reverse=True)
+                    for i in order:
+                        if diff <= 0:
+                            break
+                        cap = lengths[i] - alloc[i]
+                        if cap <= 0:
+                            continue
+                        add = min(cap, diff)
+                        alloc[i] += add
+                        diff -= add
+                else:
+                    diff = -diff
+                    order = sorted(rem, key=lambda i: alloc[i], reverse=True)
+                    for i in order:
+                        if diff <= 0:
+                            break
+                        if alloc[i] <= 0:
+                            continue
+                        sub = min(alloc[i], diff)
+                        alloc[i] -= sub
+                        diff -= sub
+
+            budget_remaining = 0
+            break
+
+        did_truncate = False
+        new_sds: List[SlideDescriptionWithType] = []
+        for i, sd in enumerate(slide_descriptions):
+            fname = field_names[i]
+            if fname is None:
+                new_sds.append(sd)
+                continue
+            orig = texts[i]
+            lim = int(alloc[i]) if lengths[i] > 0 else 0
+            new_text = self._truncate_text_soft(orig, lim) if lim > 0 else ""
+            if new_text != orig:
+                did_truncate = True
+                if hasattr(sd, "model_copy"):
+                    sd = sd.model_copy(update={fname: new_text})
+                else:
+                    sd = sd.copy(update={fname: new_text})
+            new_sds.append(sd)
+
+        if did_truncate:
+            tok_est = self._estimate_tokens_from_chars(max_chars)
+            return new_sds, f"deck_description truncated: proportional per-slide limit applied (same_slide=True), budget≈{tok_est} tokens (~{max_chars} chars)"
+        return new_sds, None
+
+    def _select_deck_slides(self, slide_descriptions: List[SlideDescriptionWithType]) -> List[SlideDescriptionWithType]:
+        n = len(slide_descriptions)
+        k = int(self._deck_max_slides) if self._deck_max_slides is not None else n
+        if k <= 0 or n <= k:
+            return slide_descriptions
+
+        # Always preserve conclusion/intro when we are forced to cut slides.
+        # For narrative-oriented deck criteria, losing the last slide is usually worse than losing a random middle slide.
+        if k == 1:
+            return [slide_descriptions[n - 1]]
+
+        idxs = {0, n - 1}
+
+        if k > 2:
+            if self._random_slide_select:
+                rng = random.Random(self._random_slide_seed)
+                candidates = list(range(1, n - 1))
+                need = min(k - 2, len(candidates))
+                if need > 0:
+                    idxs.update(rng.sample(candidates, k=need))
+            else:
+                step = (n - 1) / float(k - 1)
+                for i in range(k):
+                    idxs.add(int(round(i * step)))
+
+        return [slide_descriptions[i] for i in sorted(idxs)[:k]]
+    def _limit_deck_description_text(self, deck_text: str) -> Tuple[str, Optional[str]]:
+        max_chars = self._deck_description_char_budget()
+        if max_chars <= 0:
+            return "", "deck_description budget is 0"
+        if deck_text is None:
+            return "", None
+        if len(deck_text) <= max_chars:
+            return deck_text, None
+        limited = self._truncate_text_soft(deck_text, max_chars=max_chars)
+        msg = f"deck_description truncated: chars={len(deck_text)} -> {len(limited)} (~{self._estimate_tokens_from_chars(len(limited))} tokens est)"
+        return limited, msg
+
+
     async def _node_build_deck_descriptions(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         if not state.slides:
             return {}
@@ -433,10 +661,35 @@ class SlideGuardEvaluator:
         if not slide_descriptions:
             logger.warning("No slide descriptions found.")
             return {}
+        slide_descriptions = self._prepare_deck_slide_descriptions(slide_descriptions)
+        if self._deck_context_strategy in ("sample", "sample_truncate"):
+            slide_descriptions = self._select_deck_slides(slide_descriptions)
+
+        errors: List[str] = []
+
+        if self._deck_context_strategy in ("truncate", "sample_truncate") and getattr(self, "_same_slide", False):
+            slide_descriptions, per_err = self._limit_slide_descriptions_proportional(slide_descriptions)
+            if per_err:
+                errors.append(per_err)
+
+        deck_desc = DeckDescription.from_slide_descriptions(slide_descriptions)
+
+        if self._deck_context_strategy in ("truncate", "sample_truncate"):
+            limited_text, tail_err = self._limit_deck_description_text(getattr(deck_desc, "deck_description", "") or "")
+            if limited_text != getattr(deck_desc, "deck_description", ""):
+                if hasattr(deck_desc, "model_copy"):
+                    deck_desc = deck_desc.model_copy(update={"deck_description": limited_text})
+                else:
+                    deck_desc = deck_desc.copy(update={"deck_description": limited_text})
+            if tail_err:
+                errors.append(tail_err)
+
         slide_deck_descriptions = SlideDeckDescriptions(
             slide_deck_path=state.presentation_path,
-            slides=[DeckDescription.from_slide_descriptions(slide_descriptions)],
+            slides=[deck_desc],
         )
+        if errors:
+            return {"deck_descriptions": slide_deck_descriptions, "errors": errors}
         return {"deck_descriptions": slide_deck_descriptions}
 
     def _make_deck_criterion_node(self, crit: Criteria):
@@ -550,22 +803,22 @@ class SlideGuardEvaluator:
 
     def _criterion_applies(self, info: CriterionInfo, slide_types: List[str], contains_infographics: bool) -> bool:
         ts, xs, ri = info.applicable_slide_types, info.exclude_slide_types, info.requires_infographics
-        excluded = set(xs or [])
-        applicable = set(ts or [])
-
-        # Exclusions first: if any slide type is excluded, the criterion doesn't apply
-        if excluded and any(st in excluded for st in slide_types):
-            return False
-
-        # Applicability constraint: if configured, at least one slide type must match
-        if applicable and not any(st in applicable for st in slide_types):
-            return False
-
-        # Infographics constraint: some criteria only apply if the slide contains infographics
+        # Check exclusions first
+        if xs:
+            # Ensure xs contains strings (not enum objects)
+            xs_str = [str(x) for x in xs]
+            if any(st in xs_str for st in slide_types):
+                return False
+        # Check applicable types
+        if ts:
+            # Ensure ts contains strings (not enum objects)
+            ts_str = [str(t) for t in ts]
+            if not any(st in ts_str for st in slide_types):
+                return False
+        # Check infographics requirement
         if ri and not contains_infographics:
             return False
-
-        return True
+            return True
 
     def _is_applicable_result(self, v: Optional[BaseModel]) -> bool:
         if v is None:
@@ -663,7 +916,7 @@ class SlideGuardEvaluator:
                         p = self._create_fallback(info.pydantic)
                     return idx, p
                 except Exception:
-                    logger.warning(f"Exception in response computation for {info.criteria.value} idx={idx}. Creating fallback.")
+                    logger.warning(f"Exception in cache computation for {info.criteria.value} idx={idx}. Creating fallback.")
                     return idx, self._create_fallback(info.pydantic)
 
             payloads: List[Tuple[int, Dict[str, Any]]] = [
