@@ -24,7 +24,7 @@ from tqdm.asyncio import tqdm
 
 from slideguard.criteria import get_registry_provider
 from slideguard.utils.config import SlideGuardConfig, load_config
-from slideguard.crew.controlled_llm import create_llm_from_config
+from slideguard.crew.controlled_llm import create_llm_from_config, AppLanguage
 from slideguard.crew.evaluator import SlideGuardEvaluator
 from slideguard.schemes import Criteria, FullEvaluation
 from slideguard.utils.config import load_langfuse_client
@@ -309,6 +309,12 @@ def eval_run(
         case_sensitive=False,
         help="Presentation type: collaborative, industrial, scientific (default), technological",
     ),
+    lang: str = typer.Option(
+        "en",
+        "--lang",
+        "-l",
+        help="Evaluation language: 'en' for English or 'ru' for Russian",
+    ),
 ) -> None:
     """Start an evaluation for the given presentation."""
     typer.echo("Loading settings...")
@@ -320,7 +326,9 @@ def eval_run(
 
     langfuse_client = load_langfuse_client(use_langfuse)
 
-    llm = create_llm_from_config(config)
+    # Set language for evaluation results
+    language = AppLanguage.RU if lang.lower() == "ru" else AppLanguage.EN
+    llm = create_llm_from_config(config, language=language)
 
     if llm is None:
         _print_config_help(config)
@@ -415,6 +423,12 @@ def eval_multirun(
         case_sensitive=False,
         help="Presentation type: collaborative, industrial, scientific (default), technological",
     ),
+    lang: str = typer.Option(
+        "en",
+        "--lang",
+        "-l",
+        help="Evaluation language: 'en' for English or 'ru' for Russian",
+    ),
 ) -> None:
     """Start evaluations for all PDF files in the given folder."""
     typer.echo("Loading settings...")
@@ -424,7 +438,10 @@ def eval_multirun(
     # Load environment variables from .env file
     config = load_config(max_concurrency)
     langfuse_client = load_langfuse_client(use_langfuse)
-    llm = create_llm_from_config(config)
+    
+    # Set language for evaluation results
+    language = AppLanguage.RU if lang.lower() == "ru" else AppLanguage.EN
+    llm = create_llm_from_config(config, language=language)
     
     if llm is None:
         _print_config_help(config)
