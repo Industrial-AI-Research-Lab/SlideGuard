@@ -27,7 +27,7 @@ services:
     environment:
       UI_HOST: ${UI_HOST:-0.0.0.0}
       UI_PORT: ${UI_PORT:-7860}
-      AUTH_DB_URL: ${AUTH_DB_URL:-postgresql+psycopg2://slideguard:${POSTGRES_PASSWORD:-123456}@db:5432/${POSTGRES_DB:-slideguard}}
+      AUTH_DB_URL: ${AUTH_DB_URL:-postgresql+psycopg2://${POSTGRES_USER:-slideguard}:${POSTGRES_PASSWORD:-123456}@db:5432/${POSTGRES_DB:-slideguard}}
 
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
@@ -37,11 +37,21 @@ services:
       SLIDEGUARD_LLM_API_BASE: ${SLIDEGUARD_LLM_API_BASE:-}
       SLIDEGUARD_LLM_MODEL: ${SLIDEGUARD_LLM_MODEL:-/model}
       SLIDEGUARD_MAX_CONCURRENCY: ${SLIDEGUARD_MAX_CONCURRENCY:-8}
+      SLIDEGUARD_CACHE_DIR: ${SLIDEGUARD_CACHE_DIR:-/app/.slideguard_cache}
+      SLIDEGUARD_FILE_CACHE_DIR: ${SLIDEGUARD_FILE_CACHE_DIR:-/app/.file_cache}
+      SLIDEGUARD_USE_LANGFUSE: ${SLIDEGUARD_USE_LANGFUSE:-0}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
+      OTEL_EXPORTER_OTLP_COMPRESSION: ${OTEL_EXPORTER_OTLP_COMPRESSION:-gzip}
+      OTEL_BSP_MAX_EXPORT_BATCH_SIZE: ${OTEL_BSP_MAX_EXPORT_BATCH_SIZE:-128}
+      OTEL_BSP_MAX_QUEUE_SIZE: ${OTEL_BSP_MAX_QUEUE_SIZE:-2048}
+      OTEL_BSP_SCHEDULE_DELAY: ${OTEL_BSP_SCHEDULE_DELAY:-5000}
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "${UI_PORT:-7860}:7860"
+      - "${UI_PORT:-7860}:${UI_PORT:-7860}"
     volumes:
       - slideguard_cache:/app/.slideguard_cache
       - file_cache:/app/.file_cache

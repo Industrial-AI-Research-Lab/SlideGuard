@@ -1,7 +1,10 @@
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    UI_HOST=0.0.0.0 \
+    UI_PORT=7860 \
+    SLIDEGUARD_USE_LANGFUSE=0
 
 WORKDIR /app
 
@@ -18,4 +21,4 @@ RUN poetry config virtualenvs.create false && \
 COPY . .
 RUN poetry install --no-interaction --no-ansi
 
-CMD poetry run python deploy/bootstrap_admin.py && poetry run python -m slideguard.main ui run --host ${UI_HOST} --port ${UI_PORT} --auth --no-share --no-debug --hide-error --quiet --hide-api
+CMD poetry run python deploy/bootstrap_admin.py && EXTRA=""; if [ "${SLIDEGUARD_USE_LANGFUSE}" = "1" ] || [ "${SLIDEGUARD_USE_LANGFUSE}" = "true" ] || [ "${SLIDEGUARD_USE_LANGFUSE}" = "yes" ] || [ "${SLIDEGUARD_USE_LANGFUSE}" = "on" ]; then EXTRA="--use-langfuse"; fi; poetry run python -m slideguard.main ui run --host ${UI_HOST} --port ${UI_PORT} --auth --no-share --no-debug --hide-error --quiet --hide-api ${EXTRA}
