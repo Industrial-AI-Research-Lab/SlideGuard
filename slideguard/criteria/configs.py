@@ -11,7 +11,7 @@ from slideguard.criteria.types import (
     ALL_PRESENTATION_TYPES,
     PresentationType,
 )
-from slideguard.criteria.postprocessors import filter_sort_by_severity, abbreviations_whitelist
+from slideguard.criteria.postprocessors import filter_sort_by_severity, abbreviations_whitelist, combine_abbreviations
 from slideguard.criteria.slide_types import SlideType, generate_slide_helper_type_prompt
 from slideguard.criteria.slide_helper_description import prompt as slide_helper_description_prompt
 from slideguard.schemes import SlideType as SlideTypeModel, SlideDescription
@@ -87,7 +87,7 @@ PRESET_CRITERIA_CONFIGS = [
         applicability=Applicability(
             applicable_presentation_types=ALL_PRESENTATION_TYPES,
         ),
-        postprocessor_funcs=[make_abbreviations_postprocessor, filter_sort_by_severity],
+        postprocessor_funcs=[make_abbreviations_postprocessor, filter_sort_by_severity, combine_abbreviations],
     ),
 
     CriterionConfig(
