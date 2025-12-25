@@ -33,6 +33,9 @@ TRANSLATIONS = {
         "presentation_type_industrial": "Industrial",
         "presentation_type_scientific": "Scientific",
         "presentation_type_technological": "Technological",
+        "criteria_language_label": "Criteria language",
+        "criteria_language_en": "English",
+        "criteria_language_ru": "Russian",
         
         # Buttons
         "start_evaluation": "🚀 Start Evaluation",
@@ -181,6 +184,9 @@ TRANSLATIONS = {
         "presentation_type_industrial": "Индустриальный",
         "presentation_type_scientific": "Научный",
         "presentation_type_technological": "Технологический",
+        "criteria_language_label": "Язык критериев",
+        "criteria_language_en": "Английский",
+        "criteria_language_ru": "Русский",
         
         # Buttons
         "start_evaluation": "🚀 Начать оценку",

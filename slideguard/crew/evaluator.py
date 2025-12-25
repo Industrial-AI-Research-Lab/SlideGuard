@@ -662,8 +662,9 @@ class SlideGuardEvaluator:
                         logger.warning(f"Failed to parse output for {info.criteria.value} idx={idx}. Creating fallback.")
                         p = self._create_fallback(info.pydantic)
                     return idx, p
-                except Exception:
-                    logger.warning(f"Exception in response computation for {info.criteria.value} idx={idx}. Creating fallback.")
+                except Exception as e:
+                    logger.warning(f"Exception in response computation for {info.criteria.value} idx={idx}. Creating fallback. Error: {e}")
+                    logger.exception(f"Full traceback for {info.criteria.value} idx={idx}:")
                     return idx, self._create_fallback(info.pydantic)
 
             payloads: List[Tuple[int, Dict[str, Any]]] = [
@@ -681,9 +682,13 @@ class SlideGuardEvaluator:
                 yield await coro
 
         try:
+            # Include language in cache key to differentiate evaluations in different languages
+            language_suffix = f"_{self.llm.language.value}" if hasattr(self.llm, 'language') else ""
+            criteria_id_with_lang = f"{info.criteria.value}{language_suffix}"
+            
             entities = await self.cache_manager.compute_with_cache(
                 deck_name=deck.slide_deck_path,
-                criteria_id=info.criteria.value,
+                criteria_id=criteria_id_with_lang,
                 inputs=deck.slides,
                 func=compute,
             )

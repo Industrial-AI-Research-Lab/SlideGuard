@@ -60,3 +60,28 @@
     - `exclude_presentation_types: Optional[List[PresentationType]]`
   - UI/CLI are allowed to use strings, but must convert at the boundary via `PresentationType.from_string(...)` before filtering.
 
+## Rebase checkpoint: commit `f25e751` conflict resolution notes (this step)
+
+- **Conflicts resolved in**:
+  - `slideguard/criteria/configs.py`
+  - `slideguard/criteria/slide_types.py`
+  - `slideguard/ui/app.py`
+
+- **Kept (develop architecture)**:
+  - `CriterionConfig` + registry provider flow (no per-file `CriterionInfo` singletons reintroduced).
+  - Enum-based applicability: `Applicability.applicable_presentation_types=[PresentationType.<TYPE>]`.
+  - Deck criteria still use `generate_prompt` functions (presentation-type-aware prompts).
+
+- **Rejected / removed (design drift)**:
+  - Any `presentation_types=[...]` field in configs (string-list model).
+  - `SlideType.SCIENTIFIC_TRACK_JUSTIFICATION` taxonomy entry (track justification remains evaluated on `SlideType.PROBLEM_STATEMENT` via criteria).
+
+- **Additions kept**:
+  - New criteria wiring in `configs.py`: novelty, industrial applicability, key results (all gated via enum presentation types).
+  - Slide taxonomy extensions kept as additive: `PUBLICATION_READINESS`, `TECHNOLOGICAL_REALIZATION_LEVEL`, `INDUSTRIAL_POTENTIAL`, `COLLABORATIVE_PROGRESS`, `INDUSTRIAL_APPLICABILITY`, `KEY_RESULTS`.
+  - `INDUSTRIAL_APPLICABILITY` slide type is tagged with `presentation_type=PresentationType.INDUSTRIAL`.
+  - `KEY_RESULTS` slide type is left generic (no presentation-type restriction).
+
+- **Gotcha fixed during resolution**:
+  - `configs.py` temporarily had a duplicated `applicable_presentation_types=` keyword argument inside one `Applicability(...)` block; removed the duplicate and verified compile clean.
+

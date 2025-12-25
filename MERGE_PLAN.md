@@ -67,6 +67,12 @@
   - accept new features only when they improve behavior or add missing capability
   - reject duplicate/older pathways
 
+## Rebase checkpoint notes (for next commits)
+
+- If any future conflict reintroduces `presentation_types=[...]` in `configs.py`, always convert it into `Applicability.applicable_presentation_types=[PresentationType.<TYPE>]`.
+- Slide type taxonomy is allowed to grow, but do not add a `SCIENTIFIC_TRACK_JUSTIFICATION` slide type; use the existing `slide_track_justification_*` criteria applied to `SlideType.PROBLEM_STATEMENT`.
+- When resolving UI conflicts, keep all expected translation keys used by the UI (e.g., both `presentation_type_*` and `criteria_language_label`) and avoid removing one side’s keys.
+
 ## Safety checks
 
 - Remove any local test scripts containing keys/tokens from version control.

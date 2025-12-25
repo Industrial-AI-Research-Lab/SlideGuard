@@ -27,7 +27,10 @@ from slideguard.criteria.deck_storytelling import generate_prompt as deck_storyt
 from slideguard.criteria.deck_structure_analysis import generate_prompt as deck_structure_analysis_generate_prompt
 from slideguard.criteria.deck_research_quality import generate_prompt as deck_research_quality_generate_prompt
 from slideguard.criteria.slide_track_justification import generate_prompt as generate_track_justification_prompt
+from slideguard.criteria.slide_novelty import generate_prompt as generate_novelty_prompt
 from slideguard.criteria.slide_related_works_review import generate_prompt as generate_related_works_prompt
+from slideguard.criteria.slide_industrial_applicability import prompt as slide_industrial_applicability_prompt
+from slideguard.criteria.slide_key_results import generate_prompt as generate_key_results_prompt
 
 ABBREVIATIONS_WHITELIST = {
     'итмо', 'itmo', 'iTMO', 'vitmo', 'json', 'phd', 'ai', 'ml', 'gan', 'gpt', 'cnn', 'lstm', 'rag', 'llm', 'graphrag', 'к.т.н.'
@@ -267,6 +270,50 @@ PRESET_CRITERIA_CONFIGS = [
     ),
 
     CriterionConfig(
+        id=Criteria.slide_novelty_scientific,
+        target=CriteriaTarget.slide,
+        description="Analyzing the quality of scientific novelty presentation",
+        agent_prompt_template=generate_novelty_prompt("scientific"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with scientific novelty presentation",
+                suggestion_description="Suggestion for improving scientific novelty description",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.SCIENTIFIC_NOVELTY],
+            applicable_presentation_types=[PresentationType.SCIENTIFIC],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_novelty_technological,
+        target=CriteriaTarget.slide,
+        description="Analyzing the quality of technological novelty presentation",
+        agent_prompt_template=generate_novelty_prompt("technological"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with technological novelty presentation",
+                suggestion_description="Suggestion for improving technological novelty description",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.TECHNOLOGICAL_NOVELTY],
+            applicable_presentation_types=[PresentationType.TECHNOLOGICAL],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
         id=Criteria.slide_related_works_review_scientific,
         target=CriteriaTarget.slide,
         description="Analyzing the quality of related works review for scientific presentations (3-5 papers with limitations)",
@@ -349,6 +396,116 @@ PRESET_CRITERIA_CONFIGS = [
         category="content",
         applicability=Applicability(
             applicable_slide_types=[SlideType.CURRENT_STATE],
+            applicable_presentation_types=[PresentationType.INDUSTRIAL],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_industrial_applicability,
+        target=CriteriaTarget.slide,
+        description="Analyzing industrial applicability: where/how the project can be implemented, economic and technological impact",
+        agent_prompt_template=slide_industrial_applicability_prompt,
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with industrial applicability presentation",
+                suggestion_description="Suggestion for improving industrial applicability description",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.INDUSTRIAL_APPLICABILITY],
+            applicable_presentation_types=[PresentationType.INDUSTRIAL],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_key_results_scientific,
+        target=CriteriaTarget.slide,
+        description="Analyzing key results for scientific presentations: achieved metrics, practical results, and repository links",
+        agent_prompt_template=generate_key_results_prompt("scientific"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with key results presentation",
+                suggestion_description="Suggestion for improving key results description",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.KEY_RESULTS],
+            applicable_presentation_types=[PresentationType.SCIENTIFIC],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_key_results_technological,
+        target=CriteriaTarget.slide,
+        description="Analyzing key results for technological presentations: achieved metrics, practical benefits, working examples, and repository links",
+        agent_prompt_template=generate_key_results_prompt("technological"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with key results presentation",
+                suggestion_description="Suggestion for improving key results description",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.KEY_RESULTS],
+            applicable_presentation_types=[PresentationType.TECHNOLOGICAL],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_key_results_collaborative,
+        target=CriteriaTarget.slide,
+        description="Analyzing key results for collaborative presentations: achieved metrics, team engagement, personal contribution, and feedback",
+        agent_prompt_template=generate_key_results_prompt("collaborative"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with key results presentation",
+                suggestion_description="Suggestion for improving key results description",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.KEY_RESULTS],
+            applicable_presentation_types=[PresentationType.COLLABORATIVE],
+        ),
+        postprocessor_funcs=[filter_sort_by_severity],
+    ),
+
+    CriterionConfig(
+        id=Criteria.slide_key_results_industrial,
+        target=CriteriaTarget.slide,
+        description="Analyzing key results for industrial presentations: achieved metrics, real-world proof, repository links, and mandatory industry representative review",
+        agent_prompt_template=generate_key_results_prompt("industrial"),
+        task_prompt_template=BASE_SLIDE_TASK_PROMPT,
+        output=OutputSpec(
+            kind=OutputKind.scored_list,
+            item_spec=ScoredListItemSpec(
+                element_description="Issue with key results presentation",
+                suggestion_description="Suggestion for improving key results description",
+            ),
+        ),
+        priority=3,
+        category="content",
+        applicability=Applicability(
+            applicable_slide_types=[SlideType.KEY_RESULTS],
             applicable_presentation_types=[PresentationType.INDUSTRIAL],
         ),
         postprocessor_funcs=[filter_sort_by_severity],
