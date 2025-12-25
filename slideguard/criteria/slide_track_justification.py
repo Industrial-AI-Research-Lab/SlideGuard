@@ -99,7 +99,7 @@ A good problem statement slide for technological presentation should contain:
 - Generic problem descriptions without track-specific justification
 - Vague statements about importance without explaining WHY this specific track
 - Missing connection between the problem and the chosen track
-- Simply stating "this is a {track} project" without justification
+- Simply stating "this is a {{track}} project" without justification
 
 ## Response Format:
 Your answer should have two sections: «Thought» and «Answer».

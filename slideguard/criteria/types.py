@@ -60,10 +60,15 @@ class Applicability(BaseModel):
             return None
         out: List[str] = []
         for item in v:
-            try:
+            if isinstance(item, str):
+                # Already a string, use it directly
+                out.append(item)
+            elif isinstance(item, Enum):
+                # It's an enum, extract the value
                 out.append(item.value)
-            except AttributeError:
-                logging.warning(f"Wrong slide type passed in config: {item}. Converting to string directly, which could lead to unexpected behavior")
+            else:
+                # Fallback for unexpected types
+                logging.warning(f"Unexpected type passed in config: {item} (type: {type(item)}). Converting to string directly.")
                 out.append(str(item))
         return out
 

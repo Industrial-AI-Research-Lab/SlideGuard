@@ -45,6 +45,8 @@ CRITERIA_LABELS: Dict[Criteria, Tuple[str, str]] = {
     Criteria.slide_track_justification_collaborative: ("Collaborative track justification", "Обоснование выбора коллаборативного трека"),
     Criteria.slide_track_justification_industrial: ("Industrial track justification", "Обоснование выбора индустриального трека"),
     Criteria.slide_track_justification_technological: ("Technological track justification", "Обоснование выбора технологического трека"),
+    Criteria.slide_novelty_scientific: ("Scientific novelty", "Научная новизна"),
+    Criteria.slide_novelty_technological: ("Technological novelty", "Технологическая новизна"),
     Criteria.slide_related_works_review_scientific: ("Related works review", "Обзор существующих работ"),
     Criteria.slide_related_works_review_technological: ("Related works review", "Обзор существующих работ"),
     Criteria.slide_related_works_review_collaborative: ("Related works review", "Обзор существующих работ"),
@@ -69,6 +71,7 @@ class SlideGuardUI:
         self.temp_files = []  # Track temporary files for cleanup
         self.current_presentation_name = "Unknown"
         self.current_language = "en"
+        self.current_criteria_language = "en"  # Language for criteria evaluation
         self.current_presentation_type = DEFAULT_PRESENTATION_TYPE
         self.current_user = "Guest"
         self.translator = Translator(self.current_language)
@@ -184,19 +187,47 @@ class SlideGuardUI:
         
         return slide_criterias, deck_criterias
 
-    def _set_language(self, lang: str):
-        """Set current language and update translator."""
+    def _set_language(self, lang: str, update_criteria_language: bool = True):
+        """Set current language and update translator.
+        
+        Args:
+            lang: Interface language (en/ru)
+            update_criteria_language: If True, also update criteria language to match interface language
+        """
         lang = lang if lang in ("en", "ru") else "en"
         self.current_language = lang
         self.translator.set_language(lang)
+        
+        # Update criteria language to match interface language by default
+        if update_criteria_language:
+            self.current_criteria_language = lang
+        
         # Update report generator with new translator language
         if hasattr(self, 'report_generator') and self.report_generator:
             self.report_generator.translator = self.translator
+        
+        # Set LLM language based on criteria language
         try:
             if self.evaluator and self.evaluator.llm:
-                self.evaluator.llm.set_language(lang)
+                self.evaluator.llm.set_language(self.current_criteria_language)
         except Exception:
-            self.logger.warning("Failed to set evaluator LLM language to %s", lang, exc_info=True)
+            self.logger.warning("Failed to set evaluator LLM language to %s", self.current_criteria_language, exc_info=True)
+
+    def _set_criteria_language(self, lang: str):
+        """Set criteria language independently from interface language.
+        
+        Args:
+            lang: Criteria language (en/ru)
+        """
+        lang = lang if lang in ("en", "ru") else "en"
+        self.current_criteria_language = lang
+        
+        # Update LLM language
+        try:
+            if self.evaluator and self.evaluator.llm:
+                self.evaluator.llm.set_language(self.current_criteria_language)
+        except Exception:
+            self.logger.warning("Failed to set evaluator LLM language to %s", self.current_criteria_language, exc_info=True)
 
     def _get_criteria_display_name(self, criteria: Criteria) -> str:
         labels = CRITERIA_LABELS.get(criteria)
@@ -221,6 +252,24 @@ class SlideGuardUI:
         for pt in PRESENTATION_TYPES:
             mapping[pt] = pt
             mapping[self._get_presentation_type_display(pt)] = pt
+        return mapping.get(selected)
+
+    def _get_criteria_language_display(self, lang: str) -> str:
+        key = f"criteria_language_{lang}"
+        return self.translator.t(key)
+
+    def _get_criteria_language_choices(self) -> List[str]:
+        return [self._get_criteria_language_display(lang) for lang in ["en", "ru"]]
+
+    def _decode_criteria_language(self, selected: Optional[str]) -> Optional[str]:
+        if not selected:
+            return None
+        mapping: Dict[str, str] = {
+            "en": "en",
+            "ru": "ru",
+            self.translator.t("criteria_language_en"): "en",
+            self.translator.t("criteria_language_ru"): "ru",
+        }
         return mapping.get(selected)
 
     def _decode_criteria_selection(self, selected: Optional[List[str]], criteria_list: List[Criteria]) -> List[Criteria]:
@@ -255,6 +304,7 @@ class SlideGuardUI:
             "upload_label": t('upload_label'),
             "criteria_md": f"## {t('criteria_section')}",
             "presentation_type_label": t('presentation_type_label'),
+            "criteria_language_label": t('criteria_language_label'),
             "slide_criteria_label": t('slide_criteria_label'),
             "deck_criteria_label": t('deck_criteria_label'),
             "evaluate_btn": t('start_evaluation'),
@@ -315,6 +365,8 @@ class SlideGuardUI:
         deck_choices = self._get_criteria_choices(self._deck_criteria_list)
         presentation_choices = self._get_presentation_type_choices()
         presentation_selected = self._get_presentation_type_display(self.current_presentation_type)
+        criteria_language_choices = self._get_criteria_language_choices()
+        criteria_language_selected = self._get_criteria_language_display(self.current_criteria_language)
 
         slide_selected_display = [self._get_criteria_display_name(c) for c in slide_selected if c in self._slide_criteria_list]
         deck_selected_display = [self._get_criteria_display_name(c) for c in deck_selected if c in self._deck_criteria_list]
@@ -335,6 +387,7 @@ class SlideGuardUI:
             gr.update(label=texts["upload_label"]),
             texts["criteria_md"],
             gr.update(label=texts["presentation_type_label"], choices=presentation_choices, value=presentation_selected),
+            gr.update(label=texts["criteria_language_label"], choices=criteria_language_choices, value=criteria_language_selected),
             gr.update(label=texts["slide_criteria_label"], choices=slide_choices, value=slide_selected_display),
             gr.update(label=texts["deck_criteria_label"], choices=deck_choices, value=deck_selected_display),
             gr.update(value=texts["evaluate_btn"]),
@@ -886,6 +939,8 @@ class SlideGuardUI:
         deck_choices_display = self._get_criteria_choices(self._deck_criteria_list)
         presentation_type_choices = self._get_presentation_type_choices()
         presentation_type_display = self._get_presentation_type_display(self.current_presentation_type)
+        criteria_language_choices = self._get_criteria_language_choices()
+        criteria_language_display = self._get_criteria_language_display(self.current_criteria_language)
 
         with gr.Blocks(
             title="SlideGuard - Presentation Evaluation",
@@ -945,6 +1000,12 @@ class SlideGuardUI:
                         choices=presentation_type_choices,
                         value=presentation_type_display,
                         label=texts["presentation_type_label"],
+                        interactive=True,
+                    )
+                    criteria_language_input = gr.Dropdown(
+                        choices=criteria_language_choices,
+                        value=criteria_language_display,
+                        label=texts["criteria_language_label"],
                         interactive=True,
                     )
                     slide_criteria_input = gr.CheckboxGroup(
@@ -1116,6 +1177,9 @@ class SlideGuardUI:
                                 had_track_justification = any(
                                     "track_justification" in c.value for c in old_slide_selected
                                 )
+                                had_novelty = any(
+                                    "novelty" in c.value and c.value.startswith("slide_novelty") for c in old_slide_selected
+                                )
                                 had_related_works = any(
                                     "related_works_review" in c.value for c in old_slide_selected
                                 )
@@ -1135,6 +1199,15 @@ class SlideGuardUI:
                                         if "track_justification" in c.value and new_pt in c.value
                                     ]
                                     for crit in track_justification_criteria:
+                                        if crit not in slide_selected_criteria:
+                                            slide_selected_criteria.append(crit)
+                                
+                                if had_novelty:
+                                    novelty_criteria = [
+                                        c for c in self._slide_criteria_list 
+                                        if "novelty" in c.value and c.value.startswith("slide_novelty") and new_pt in c.value
+                                    ]
+                                    for crit in novelty_criteria:
                                         if crit not in slide_selected_criteria:
                                             slide_selected_criteria.append(crit)
                                 
@@ -1165,6 +1238,11 @@ class SlideGuardUI:
                                     gr.update(interactive=bool(slide_selected_criteria or deck_selected_criteria)),
                                     gr.update(value=self._get_presentation_type_display(self.current_presentation_type)),
                                 )
+
+                            def on_criteria_language_change(selected_label):
+                                new_lang = self._decode_criteria_language(selected_label) or self.current_criteria_language
+                                self._set_criteria_language(new_lang)
+                                return gr.update(value=self._get_criteria_language_display(self.current_criteria_language))
 
                             def admin_register(u, p, r, req: gr.Request):
                                 if get_role(req.username) != Role.ADMIN:
@@ -1226,6 +1304,7 @@ class SlideGuardUI:
                                     pdf_input,
                                     criteria_md,
                                     presentation_type_input,
+                                    criteria_language_input,
                                     slide_criteria_input,
                                     deck_criteria_input,
                                     evaluate_btn,
@@ -1270,6 +1349,7 @@ class SlideGuardUI:
                                     pdf_input,
                                     criteria_md,
                                     presentation_type_input,
+                                    criteria_language_input,
                                     slide_criteria_input,
                                     deck_criteria_input,
                                     evaluate_btn,
@@ -1305,6 +1385,11 @@ class SlideGuardUI:
                                 on_presentation_type_change,
                                 inputs=[presentation_type_input, slide_criteria_input, deck_criteria_input],
                                 outputs=[slide_criteria_input, deck_criteria_input, evaluate_btn, presentation_type_input],
+                            )
+                            criteria_language_input.change(
+                                on_criteria_language_change,
+                                inputs=[criteria_language_input],
+                                outputs=[criteria_language_input],
                             )
                             register_btn.click(admin_register, inputs=[username_input, password_input, role_input], outputs=[register_status])
                             interface.load(admin_list, outputs=[users_table, user_select])
@@ -1345,8 +1430,14 @@ class SlideGuardUI:
                 fn=self._clear_ui_state,
                 outputs=[deck_results, tldr_output, overall_score_output, status_output]
             ).then(
-                fn=lambda: gr.update(interactive=False, value=self.translator.t("evaluating")),
-                outputs=[evaluate_btn]
+                fn=lambda: (
+                    gr.update(interactive=False, value=self.translator.t("evaluating")),
+                    gr.update(interactive=False),  # presentation_type_input
+                    gr.update(interactive=False),  # criteria_language_input
+                    gr.update(interactive=False),  # slide_criteria_input
+                    gr.update(interactive=False),  # deck_criteria_input
+                ),
+                outputs=[evaluate_btn, presentation_type_input, criteria_language_input, slide_criteria_input, deck_criteria_input]
             ).then(
                 fn=self._clear_slide_evaluation_display,
                 outputs=[slide_evaluation]
@@ -1362,8 +1453,14 @@ class SlideGuardUI:
                 fn=lambda: self.get_slide_evaluation(self.current_slide_index),
                 outputs=[slide_evaluation]
             ).then(
-                fn=lambda: gr.update(interactive=True, value=self.translator.t("start_evaluation")),
-                outputs=[evaluate_btn]
+                fn=lambda: (
+                    gr.update(interactive=True, value=self.translator.t("start_evaluation")),
+                    gr.update(interactive=True),  # presentation_type_input
+                    gr.update(interactive=True),  # criteria_language_input
+                    gr.update(interactive=True),  # slide_criteria_input
+                    gr.update(interactive=True),  # deck_criteria_input
+                ),
+                outputs=[evaluate_btn, presentation_type_input, criteria_language_input, slide_criteria_input, deck_criteria_input]
             )
             
             # Report generation handlers

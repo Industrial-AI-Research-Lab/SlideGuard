@@ -21,12 +21,16 @@ class SlideType(Enum):
     TASKS = "Tasks"
     CURRENT_STATE = "Current State"
     PROPOSED_SOLUTION = "Proposed Solution"
+    SCIENTIFIC_NOVELTY = "Scientific Novelty"
+    TECHNOLOGICAL_NOVELTY = "Technological Novelty"
     EXPERIMENT_SETTINGS = "Experiment Settings"
     EXPERIMENTAL_RESULTS = "Experimental Results"
     CONCLUSION = "Conclusion"
     END_SLIDE = "End slide"
     Q_AND_A = "Q&A"
     SCIENTIFIC_TRACK_JUSTIFICATION = "Scientific Track Justification"
+    INDUSTRIAL_APPLICABILITY = "Industrial Applicability"
+    KEY_RESULTS = "Key Results"
 
 @dataclass
 class SlideTypeInfo:
@@ -87,6 +91,16 @@ class SlideTypeManager:
                 description="this is a slide that contains information about the proposed solution to the problem. Can be shown as a workflow or a diagram with description.",
                 category="content"
             ),
+            SlideType.SCIENTIFIC_NOVELTY.value: SlideTypeInfo(
+                name=SlideType.SCIENTIFIC_NOVELTY.value,
+                description="this is a slide that describes the scientific novelty of the work. Usually titled 'Scientific Novelty'. It should reflect what makes the project unique and significant in the context of existing research, how the approach differs from existing solutions, what new data/methods/models are proposed, what gaps in the scientific field the work addresses, and potential scientific or practical implications.",
+                category="content"
+            ),
+            SlideType.TECHNOLOGICAL_NOVELTY.value: SlideTypeInfo(
+                name=SlideType.TECHNOLOGICAL_NOVELTY.value,
+                description="this is a slide that describes the technological novelty of the work. Usually titled 'Technological Novelty'. It should explain how the project differs from existing solutions, what new technological principles or approaches are implemented, and what practical advantages the development provides.",
+                category="content"
+            ),
             SlideType.EXPERIMENT_SETTINGS.value: SlideTypeInfo(
                 name=SlideType.EXPERIMENT_SETTINGS.value,
                 description="slide with description of used for experiments datasets or description of hyperparameters of used methods and models.",
@@ -115,6 +129,16 @@ class SlideTypeManager:
             SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value: SlideTypeInfo(
                 name=SlideType.SCIENTIFIC_TRACK_JUSTIFICATION.value,
                 description="this is a slide that explicitly justifies the scientific nature of the work or explains why the scientific track was chosen. It contains reasoning about the scientific contribution, research methodology, or academic value of the project.",
+                category="content"
+            ),
+            SlideType.INDUSTRIAL_APPLICABILITY.value: SlideTypeInfo(
+                name=SlideType.INDUSTRIAL_APPLICABILITY.value,
+                description="this is a slide that shows potential impact of the project on industry. It usually has title 'Potential for using the obtained results in industry' and contains information about where and how the project can be implemented, economic and technological impact, application areas, and links to industrial project descriptions.",
+                category="content"
+            ),
+            SlideType.KEY_RESULTS.value: SlideTypeInfo(
+                name=SlideType.KEY_RESULTS.value,
+                description="this is a slide that describes the main results and achievements of the project. It usually has title 'Key Results' or 'Main Results' and contains information about achieved metrics, practical effects, and outcomes of the research or development work.",
                 category="content"
             )
         }
