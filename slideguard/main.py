@@ -2,9 +2,11 @@
 CLI entrypoint for SlideGuard using Typer.
 
 Usage examples:
-  - slideguard eval run path/to/presentation.pdf
-  - slideguard eval run path/to/presentation.pdf --slide-criteria "Slide Visual Arrangement" \
-      --deck-criteria "Deck Structure Analysis" --json-output
+  - slideguard eval list-criterias --presentation-type scientific
+  - slideguard eval run -p path/to/presentation.pdf -t scientific
+  - slideguard eval run -p path/to/presentation.pdf -t scientific --criteria slide_visual_arrangement --criteria deck_structure_analysis
+  - slideguard eval multirun -f path/to/folder -t scientific
+  - slideguard ui run --lang en
 """
 
 from __future__ import annotations
@@ -103,26 +105,21 @@ def _print_config_help(config: SlideGuardConfig) -> None:
     )
 
 
-def _load_criterias(criteria: Optional[List[str]], presentation_type: Optional[str]) -> Tuple[List[Criteria], List[Criteria]]:
-    """Load slide and deck criteria based on input criteria list and presentation type."""
+def _load_criterias(criteria: Optional[List[str]], presentation_type: Optional[PresentationType]) -> Tuple[List[Criteria], List[Criteria]]:
     provider = get_registry_provider()
     registry = provider.get_for_user()
-
-    def _validate_applicability(selected: List[Criteria]) -> None:
-        if not presentation_type:
-            return
-        for crit in selected:
-            info = registry.get_info(crit)
-            if info.presentation_types and presentation_type not in info.presentation_types:
-                raise typer.BadParameter(
-                    f"Criterion '{crit.value}' is not available for presentation type '{presentation_type}'."
-                )
 
     if criteria:
         criterias = [Criteria(c) for c in criteria]
         slide_criterias = [c for c in criterias if c.is_slide_criteria()]
         deck_criterias = [c for c in criterias if c.is_deck_criteria()]
-        _validate_applicability(slide_criterias + deck_criterias)
+        if presentation_type is not None:
+            allowed_slide = set(registry.get_slide_ids(include_service=True, presentation_type=presentation_type))
+            allowed_deck = set(registry.get_deck_ids(include_service=True, presentation_type=presentation_type))
+            invalid = [c for c in slide_criterias if c not in allowed_slide] + [c for c in deck_criterias if c not in allowed_deck]
+            if invalid:
+                invalid_str = ", ".join(c.value for c in invalid)
+                raise typer.BadParameter(f"Selected criteria are not applicable to presentation type '{presentation_type.value}': {invalid_str}")
     else:
         slide_criterias = registry.get_slide_ids(presentation_type=presentation_type)
         deck_criterias = registry.get_deck_ids(presentation_type=presentation_type)
@@ -135,7 +132,8 @@ async def _process_single_presentation(
     evaluator: SlideGuardEvaluator,
     slide_criterias: List[Criteria],
     deck_criterias: List[Criteria],
-    langfuse_client=None
+    langfuse_client=None,
+    presentation_type: Optional[PresentationType] = None,
 ) -> FullEvaluation:
     """Universal function for processing a single presentation.
     
@@ -145,7 +143,8 @@ async def _process_single_presentation(
         presentation_path=presentation_path,
         slide_criterias=slide_criterias,
         deck_criterias=deck_criterias,
-        langfuse_client=langfuse_client
+        langfuse_client=langfuse_client,
+        presentation_type=presentation_type,
     )
 
 
@@ -156,6 +155,7 @@ async def _process_pdf_with_capture(
     deck_criterias: List[Criteria],
     output_folder: Path,
     langfuse_client=None,
+    presentation_type: Optional[PresentationType] = None,
     semaphore: asyncio.Semaphore = None
 ) -> Tuple[str, bool]:
     """Process a single PDF with stdout/stderr capture and write result files directly.
@@ -185,7 +185,8 @@ async def _process_pdf_with_capture(
                     evaluator=evaluator,
                     slide_criterias=slide_criterias,
                     deck_criterias=deck_criterias,
-                    langfuse_client=langfuse_client
+                    langfuse_client=langfuse_client,
+                    presentation_type=presentation_type,
                 )
             
             result_content = evaluation.model_dump_json(indent=4)
@@ -313,7 +314,7 @@ def eval_run(
     """Start an evaluation for the given presentation."""
     typer.echo("Loading settings...")
 
-    slide_criterias, deck_criterias = _load_criterias(criteria, presentation_type.value)
+    slide_criterias, deck_criterias = _load_criterias(criteria, presentation_type)
 
     # Load environment variables from .env file
     config = load_config(max_concurrency)
@@ -344,7 +345,8 @@ def eval_run(
             evaluator=evaluator,
             slide_criterias=slide_criterias,
             deck_criterias=deck_criterias,
-            langfuse_client=langfuse_client
+            langfuse_client=langfuse_client,
+            presentation_type=presentation_type,
         ))
     except FileNotFoundError as e:
         typer.echo(str(e))
@@ -419,7 +421,7 @@ def eval_multirun(
     """Start evaluations for all PDF files in the given folder."""
     typer.echo("Loading settings...")
     
-    slide_criterias, deck_criterias = _load_criterias(criteria, presentation_type.value)
+    slide_criterias, deck_criterias = _load_criterias(criteria, presentation_type)
     
     # Load environment variables from .env file
     config = load_config(max_concurrency)
@@ -469,6 +471,7 @@ def eval_multirun(
                 deck_criterias=deck_criterias,
                 output_folder=output_path,
                 langfuse_client=langfuse_client,
+                presentation_type=presentation_type,
                 semaphore=semaphore
             )
             for pdf_path in pdf_files

@@ -27,12 +27,6 @@ from slideguard.ui.report_generator import SlideGuardReportGenerator
 from slideguard.ui.auth import verify_user_db, get_role, register_user, Role, list_users, update_user_password, update_user_role, delete_user
 from slideguard.ui.translations import Translator
 
-BILINGUAL_TABS = {
-    "viewer": "🖼️ Viewer / Просмотр",
-    "deck": "📋 Deck Results / Результаты",
-    "admin": "🔒 Admin Panel / Панель администратора",
-}
-
 CRITERIA_LABELS: Dict[Criteria, Tuple[str, str]] = {
     Criteria.slide_visual_arrangement: ("Visual arrangement", "Визуальное оформление"),
     Criteria.slide_abbreviations: ("Abbreviations", "Проверка аббревиатур"),
@@ -51,13 +45,17 @@ CRITERIA_LABELS: Dict[Criteria, Tuple[str, str]] = {
     Criteria.slide_related_works_review_technological: ("Related works review", "Обзор существующих работ"),
     Criteria.slide_related_works_review_collaborative: ("Related works review", "Обзор существующих работ"),
     Criteria.slide_related_works_review_industrial: ("Related works review", "Обзор существующих работ"),
+    Criteria.slide_industrial_applicability: ("Industrial applicability", "Индустриальная применимость"),
+    Criteria.slide_key_results_scientific: ("Key results (Scientific)", "Ключевые результаты (научный)"),
+    Criteria.slide_key_results_technological: ("Key results (Technological)", "Ключевые результаты (технологический)"),
+    Criteria.slide_key_results_collaborative: ("Key results (Collaborative)", "Ключевые результаты (коллаборативный)"),
+    Criteria.slide_key_results_industrial: ("Key results (Industrial)", "Ключевые результаты (индустриальный)"),
     Criteria.deck_storytelling: ("Storytelling quality", "Связность рассказа"),
     Criteria.deck_structure_analysis: ("Structure analysis", "Анализ структуры"),
     Criteria.deck_research_quality: ("Research quality", "Качество исследования"),
 }
 
 SERVICE_CRITERIA: Tuple[Criteria, ...] = (Criteria.slide_type, Criteria.slide_description)
-PRESENTATION_TYPES = [p.value for p in PresentationType]
 
 
 class SlideGuardUI:
@@ -75,6 +73,11 @@ class SlideGuardUI:
         self.current_presentation_type = DEFAULT_PRESENTATION_TYPE
         self.current_user = "Guest"
         self.translator = Translator(self.current_language)
+        self._service_slide_criteria: List[Criteria] = []
+        self._slide_criteria_list: List[Criteria] = []
+        self._deck_criteria_list: List[Criteria] = []
+        self._selected_slide_criteria: List[Criteria] = []
+        self._selected_deck_criteria: List[Criteria] = []
         
         # Initialize logging
         logging.basicConfig(level=logging.INFO)
@@ -240,21 +243,11 @@ class SlideGuardUI:
     def _get_criteria_choices(self, criteria_list: List[Criteria]) -> List[str]:
         return [self._get_criteria_display_name(c) for c in criteria_list]
 
-    def _get_presentation_type_display(self, presentation_type: str) -> str:
-        key = f"presentation_type_{presentation_type}"
-        return self.translator.t(key)
-
-    def _get_presentation_type_choices(self) -> List[str]:
-        return [self._get_presentation_type_display(pt) for pt in PRESENTATION_TYPES]
-
-    def _decode_presentation_type(self, selected: Optional[str]) -> Optional[str]:
-        if not selected:
-            return None
-        mapping: Dict[str, str] = {}
-        for pt in PRESENTATION_TYPES:
-            mapping[pt] = pt
-            mapping[self._get_presentation_type_display(pt)] = pt
-        return mapping.get(selected)
+    def _is_all_selected(self, selected_values: List[str], all_criteria: List[Criteria]) -> bool:
+        if not all_criteria:
+            return False
+        selected = set(self._decode_criteria_selection(selected_values, all_criteria))
+        return selected == set(all_criteria)
 
     def _get_criteria_language_display(self, lang: str) -> str:
         key = f"criteria_language_{lang}"
@@ -325,6 +318,12 @@ class SlideGuardUI:
             "slide_image_label": t('slide_preview_label'),
             "slide_evaluation_placeholder": t('upload_prompt_slides'),
             "deck_results_placeholder": t('upload_prompt'),
+            "tab_viewer": t("tab_viewer"),
+            "tab_deck": t("tab_deck"),
+            "tab_admin": t("tab_admin"),
+            "admin_tab_users": t("admin_tab_users"),
+            "admin_tab_create": t("admin_tab_create"),
+            "admin_tab_manage": t("admin_tab_manage"),
             "admin_users_headers": [t('admin_username'), t('admin_role')],
             "refresh_btn": t('refresh'),
             "username_label": t('admin_username'),
@@ -370,8 +369,6 @@ class SlideGuardUI:
 
         slide_choices = self._get_criteria_choices(self._slide_criteria_list)
         deck_choices = self._get_criteria_choices(self._deck_criteria_list)
-        presentation_choices = self._get_presentation_type_choices()
-        presentation_selected = self._get_presentation_type_display(self.current_presentation_type)
         criteria_language_choices = self._get_criteria_language_choices()
         criteria_language_selected = self._get_criteria_language_display(self.current_criteria_language)
 
@@ -386,7 +383,12 @@ class SlideGuardUI:
 
         updates = (
             self.render_profile_widget(self.current_user),
-            gr.update(visible=is_admin),
+            gr.update(label=texts["tab_viewer"]),
+            gr.update(label=texts["tab_deck"]),
+            gr.update(visible=is_admin, label=texts["tab_admin"]),
+            gr.update(label=texts["admin_tab_users"]),
+            gr.update(label=texts["admin_tab_create"]),
+            gr.update(label=texts["admin_tab_manage"]),
             gr.update(value=texts["lang_button"]),
             texts["title_md"],
             texts["description_md"],
@@ -401,9 +403,9 @@ class SlideGuardUI:
                     (texts["presentation_type_collaborative"], PresentationType.COLLABORATIVE.value),
                     (texts["presentation_type_technological"], PresentationType.TECHNOLOGICAL.value),
                 ],
+                value=self.current_presentation_type,
             ),
             texts["criteria_md"],
-            gr.update(label=texts["presentation_type_label"], choices=presentation_choices, value=presentation_selected),
             gr.update(label=texts["criteria_language_label"], choices=criteria_language_choices, value=criteria_language_selected),
             gr.update(label=texts["slide_criteria_label"], choices=slide_choices, value=slide_selected_display),
             gr.update(label=texts["deck_criteria_label"], choices=deck_choices, value=deck_selected_display),
@@ -501,11 +503,14 @@ class SlideGuardUI:
             score_html = ""
             if evaluation.overall_score is not None:
                 s = evaluation.overall_score
-                if s >= 4:
+                s_percentage = (s / 5.0) * 100
+                if s_percentage >= 90:
                     icon, bg, brd, col = "🟢", "#e8f5e8", "#4caf50", "#2e7d32"
-                elif s >= 3:
+                elif s_percentage >= 70:
+                    icon, bg, brd, col = "🟢", "#e8f5e8", "#66bb6a", "#388e3c"
+                elif s_percentage >= 50:
                     icon, bg, brd, col = "🟡", "#fffde7", "#fbc02d", "#8d6e63"
-                elif s >= 2:
+                elif s_percentage >= 30:
                     icon, bg, brd, col = "🟠", "#fff3e0", "#ff9800", "#e65100"
                 else:
                     icon, bg, brd, col = "🔴", "#ffebee", "#f44336", "#b71c1c"
@@ -547,15 +552,19 @@ class SlideGuardUI:
                     score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                     
                     # Score indicator
-                    if score_percentage >= 80:
+                    if score_percentage >= 90:
                         score_icon = "🟢"
                         score_text = self.translator.t("excellent")
                         score_color = "#4caf50"
-                    elif score_percentage >= 60:
+                    elif score_percentage >= 70:
+                        score_icon = "🟢"
+                        score_text = self.translator.t("pretty_good")
+                        score_color = "#66bb6a"
+                    elif score_percentage >= 50:
                         score_icon = "🟡"
                         score_text = self.translator.t("good")
                         score_color = "#ff9800"
-                    elif score_percentage >= 40:
+                    elif score_percentage >= 30:
                         score_icon = "🟠"
                         score_text = self.translator.t("fair")
                         score_color = "#ff9800"
@@ -577,15 +586,19 @@ class SlideGuardUI:
                     score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                     
                     # Score indicator
-                    if score_percentage >= 80:
+                    if score_percentage >= 90:
                         score_icon = "🟢"
                         score_text = self.translator.t("excellent")
                         score_color = "#4caf50"
-                    elif score_percentage >= 60:
+                    elif score_percentage >= 70:
+                        score_icon = "🟢"
+                        score_text = self.translator.t("pretty_good")
+                        score_color = "#66bb6a"
+                    elif score_percentage >= 50:
                         score_icon = "🟡"
                         score_text = self.translator.t("good")
                         score_color = "#ff9800"
-                    elif score_percentage >= 40:
+                    elif score_percentage >= 30:
                         score_icon = "🟠"
                         score_text = self.translator.t("fair")
                         score_color = "#ff9800"
@@ -617,13 +630,16 @@ class SlideGuardUI:
         
         if evaluation.overall_score:
             overall_percentage = (evaluation.overall_score / 5.0) * 100
-            if overall_percentage >= 80:
+            if overall_percentage >= 90:
                 overall_icon = "🟢"
                 overall_text = self.translator.t("excellent")
-            elif overall_percentage >= 60:
+            elif overall_percentage >= 70:
+                overall_icon = "🟢"
+                overall_text = self.translator.t("pretty_good")
+            elif overall_percentage >= 50:
                 overall_icon = "🟡"
                 overall_text = self.translator.t("good")
-            elif overall_percentage >= 40:
+            elif overall_percentage >= 30:
                 overall_icon = "🟠"
                 overall_text = self.translator.t("fair")
             else:
@@ -710,13 +726,16 @@ class SlideGuardUI:
                         score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                         
                         # Score indicator
-                        if score_percentage >= 80:
+                        if score_percentage >= 90:
                             score_icon = "🟢"
                             score_text = self.translator.t("excellent")
-                        elif score_percentage >= 60:
+                        elif score_percentage >= 70:
+                            score_icon = "🟢"
+                            score_text = self.translator.t("pretty_good")
+                        elif score_percentage >= 50:
                             score_icon = "🟡"
                             score_text = self.translator.t("good")
-                        elif score_percentage >= 40:
+                        elif score_percentage >= 30:
                             score_icon = "🟠"
                             score_text = self.translator.t("fair")
                         else:
@@ -736,13 +755,16 @@ class SlideGuardUI:
                         score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                         
                         # Score indicator
-                        if score_percentage >= 80:
+                        if score_percentage >= 90:
                             score_icon = "🟢"
                             score_text = self.translator.t("excellent")
-                        elif score_percentage >= 60:
+                        elif score_percentage >= 70:
+                            score_icon = "🟢"
+                            score_text = self.translator.t("pretty_good")
+                        elif score_percentage >= 50:
                             score_icon = "🟡"
                             score_text = self.translator.t("good")
-                        elif score_percentage >= 40:
+                        elif score_percentage >= 30:
                             score_icon = "🟠"
                             score_text = self.translator.t("fair")
                         else:
@@ -884,6 +906,10 @@ class SlideGuardUI:
             score_icon = "🟡"
             score_text = self.translator.t("good")
             score_color = "#ffeb3b"
+        elif severity_percentage >= 20:
+            score_icon = "🟢"
+            score_text = self.translator.t("pretty_good")
+            score_color = "#66bb6a"
         else:
             score_icon = "🟢"
             score_text = self.translator.t("excellent")
@@ -963,8 +989,6 @@ class SlideGuardUI:
         self._selected_deck_criteria = self._deck_criteria_list.copy()
         slide_choices_display = self._get_criteria_choices(self._slide_criteria_list)
         deck_choices_display = self._get_criteria_choices(self._deck_criteria_list)
-        presentation_type_choices = self._get_presentation_type_choices()
-        presentation_type_display = self._get_presentation_type_display(self.current_presentation_type)
         criteria_language_choices = self._get_criteria_language_choices()
         criteria_language_display = self._get_criteria_language_display(self.current_criteria_language)
 
@@ -1030,18 +1054,12 @@ class SlideGuardUI:
                             (texts["presentation_type_technological"], PresentationType.TECHNOLOGICAL.value),
                         ],
                         label=texts["presentation_type_label"],
-                        value=None,
+                        value=self.current_presentation_type,
                         interactive=True,
                         allow_custom_value=False,
                     )
 
                     criteria_md = gr.Markdown(texts["criteria_md"])
-                    presentation_type_input = gr.Dropdown(
-                        choices=presentation_type_choices,
-                        value=presentation_type_display,
-                        label=texts["presentation_type_label"],
-                        interactive=True,
-                    )
                     criteria_language_input = gr.Dropdown(
                         choices=criteria_language_choices,
                         value=criteria_language_display,
@@ -1093,7 +1111,7 @@ class SlideGuardUI:
                         )
 
                     with gr.Tabs():
-                        with gr.TabItem(BILINGUAL_TABS["viewer"]):
+                        with gr.TabItem(texts["tab_viewer"]) as viewer_tab:
                             with gr.Row():
                                 with gr.Column(scale=1):
                                     slide_nav_btn = gr.Button(texts["slide_nav_prev"], scale=1)
@@ -1113,14 +1131,14 @@ class SlideGuardUI:
 
                             slide_evaluation = gr.HTML(texts["slide_evaluation_placeholder"])
 
-                        with gr.TabItem(BILINGUAL_TABS["deck"]):
+                        with gr.TabItem(texts["tab_deck"]) as deck_tab:
                             deck_results = gr.HTML(texts["deck_results_placeholder"])
 
-                        with gr.TabItem(BILINGUAL_TABS["admin"], visible=False) as admin_tab:
+                        with gr.TabItem(texts["tab_admin"], visible=False) as admin_tab:
                             admin_panel = gr.Group()
                             with admin_panel:
                                 with gr.Tabs():
-                                    with gr.TabItem("👥 Users / Пользователи"):
+                                    with gr.TabItem(texts["admin_tab_users"]) as admin_users_tab:
                                         with gr.Row():
                                             with gr.Column(scale=1):
                                                 users_table = gr.Dataframe(
@@ -1132,7 +1150,7 @@ class SlideGuardUI:
                                                         value=texts["refresh_btn"],
                                                         variant="secondary",
                                                     )
-                                    with gr.TabItem("➕ Create / Создать"):
+                                    with gr.TabItem(texts["admin_tab_create"]) as admin_create_tab:
                                         with gr.Column():
                                             username_input = gr.Textbox(label=texts["username_label"])
                                             password_input = gr.Textbox(
@@ -1151,7 +1169,7 @@ class SlideGuardUI:
                                                 label=texts["register_status_label"],
                                                 interactive=False,
                                             )
-                                    with gr.TabItem("🛠 Manage / Управление"):
+                                    with gr.TabItem(texts["admin_tab_manage"]) as admin_manage_tab:
                                         with gr.Column():
                                             user_select = gr.Dropdown(
                                                 choices=[],
@@ -1207,60 +1225,24 @@ class SlideGuardUI:
                                 updates = self._language_updates(slide_selected_criteria, deck_selected_criteria)
                                 return (*updates, new_lang)
 
-                            def on_presentation_type_change(selected_label, slide_selected_values: List[str], deck_selected_values: List[str]):
-                                new_pt = self._decode_presentation_type(selected_label) or self.current_presentation_type
-                                
-                                # Decode current selections BEFORE refreshing criteria lists
-                                old_slide_selected = self._decode_criteria_selection(slide_selected_values, self._slide_criteria_list)
-                                
-                                # Check which presentation-type-specific criteria were selected
-                                had_track_justification = any(
-                                    "track_justification" in c.value for c in old_slide_selected
-                                )
-                                had_novelty = any(
-                                    "novelty" in c.value and c.value.startswith("slide_novelty") for c in old_slide_selected
-                                )
-                                had_related_works = any(
-                                    "related_works_review" in c.value for c in old_slide_selected
-                                )
-                                
-                                # Now update presentation type and refresh criteria lists
+                            def on_presentation_type_change(selected_value, slide_selected_values: List[str], deck_selected_values: List[str]):
+                                old_slide_was_all = self._is_all_selected(slide_selected_values, self._slide_criteria_list)
+                                old_deck_was_all = self._is_all_selected(deck_selected_values, self._deck_criteria_list)
+
+                                new_pt = str(selected_value or "").strip().lower() or DEFAULT_PRESENTATION_TYPE
                                 self.current_presentation_type = new_pt
                                 self._refresh_criteria_lists()
-                                
-                                # Decode selections against NEW criteria list (keeps criteria that exist in both)
-                                slide_selected_criteria = self._decode_criteria_selection(slide_selected_values, self._slide_criteria_list)
-                                deck_selected_criteria = self._decode_criteria_selection(deck_selected_values, self._deck_criteria_list)
 
-                                # Auto-select presentation-type-specific criteria if they were selected before
-                                if had_track_justification:
-                                    track_justification_criteria = [
-                                        c for c in self._slide_criteria_list 
-                                        if "track_justification" in c.value and new_pt in c.value
-                                    ]
-                                    for crit in track_justification_criteria:
-                                        if crit not in slide_selected_criteria:
-                                            slide_selected_criteria.append(crit)
-                                
-                                if had_novelty:
-                                    novelty_criteria = [
-                                        c for c in self._slide_criteria_list 
-                                        if "novelty" in c.value and c.value.startswith("slide_novelty") and new_pt in c.value
-                                    ]
-                                    for crit in novelty_criteria:
-                                        if crit not in slide_selected_criteria:
-                                            slide_selected_criteria.append(crit)
-                                
-                                if had_related_works:
-                                    related_works_criteria = [
-                                        c for c in self._slide_criteria_list 
-                                        if "related_works_review" in c.value and new_pt in c.value
-                                    ]
-                                    for crit in related_works_criteria:
-                                        if crit not in slide_selected_criteria:
-                                            slide_selected_criteria.append(crit)
+                                if old_slide_was_all:
+                                    slide_selected_criteria = self._slide_criteria_list.copy()
+                                else:
+                                    slide_selected_criteria = self._decode_criteria_selection(slide_selected_values, self._slide_criteria_list)
 
-                                # If no criteria selected, select all by default
+                                if old_deck_was_all:
+                                    deck_selected_criteria = self._deck_criteria_list.copy()
+                                else:
+                                    deck_selected_criteria = self._decode_criteria_selection(deck_selected_values, self._deck_criteria_list)
+
                                 if not slide_selected_criteria:
                                     slide_selected_criteria = self._slide_criteria_list.copy()
                                 if not deck_selected_criteria:
@@ -1276,7 +1258,7 @@ class SlideGuardUI:
                                     gr.update(choices=slide_choices, value=[self._get_criteria_display_name(c) for c in slide_selected_criteria]),
                                     gr.update(choices=deck_choices, value=[self._get_criteria_display_name(c) for c in deck_selected_criteria]),
                                     gr.update(interactive=bool(slide_selected_criteria or deck_selected_criteria)),
-                                    gr.update(value=self._get_presentation_type_display(self.current_presentation_type)),
+                                    gr.update(value=self.current_presentation_type),
                                 )
 
                             def on_criteria_language_change(selected_label):
@@ -1336,7 +1318,12 @@ class SlideGuardUI:
                                 on_load,
                                 outputs=[
                                     profile_html,
+                                    viewer_tab,
+                                    deck_tab,
                                     admin_tab,
+                                    admin_users_tab,
+                                    admin_create_tab,
+                                    admin_manage_tab,
                                     lang_button,
                                     title_md,
                                     description_md,
@@ -1345,7 +1332,6 @@ class SlideGuardUI:
                                     presentation_type_md,
                                     presentation_type_dropdown,
                                     criteria_md,
-                                    presentation_type_input,
                                     criteria_language_input,
                                     slide_criteria_input,
                                     deck_criteria_input,
@@ -1383,7 +1369,12 @@ class SlideGuardUI:
                                 inputs=[lang_state, slide_criteria_input, deck_criteria_input],
                                 outputs=[
                                     profile_html,
+                                    viewer_tab,
+                                    deck_tab,
                                     admin_tab,
+                                    admin_users_tab,
+                                    admin_create_tab,
+                                    admin_manage_tab,
                                     lang_button,
                                     title_md,
                                     description_md,
@@ -1392,7 +1383,6 @@ class SlideGuardUI:
                                     presentation_type_md,
                                     presentation_type_dropdown,
                                     criteria_md,
-                                    presentation_type_input,
                                     criteria_language_input,
                                     slide_criteria_input,
                                     deck_criteria_input,
@@ -1425,10 +1415,10 @@ class SlideGuardUI:
                                     lang_state,
                                 ],
                             )
-                            presentation_type_input.change(
+                            presentation_type_dropdown.change(
                                 on_presentation_type_change,
-                                inputs=[presentation_type_input, slide_criteria_input, deck_criteria_input],
-                                outputs=[slide_criteria_input, deck_criteria_input, evaluate_btn, presentation_type_input],
+                                inputs=[presentation_type_dropdown, slide_criteria_input, deck_criteria_input],
+                                outputs=[slide_criteria_input, deck_criteria_input, evaluate_btn, presentation_type_dropdown],
                             )
                             criteria_language_input.change(
                                 on_criteria_language_change,
@@ -1478,12 +1468,12 @@ class SlideGuardUI:
             ).then(
                 fn=lambda: (
                     gr.update(interactive=False, value=self.translator.t("evaluating")),
-                    gr.update(interactive=False),  # presentation_type_input
+                    gr.update(interactive=False),  # presentation_type_dropdown
                     gr.update(interactive=False),  # criteria_language_input
                     gr.update(interactive=False),  # slide_criteria_input
                     gr.update(interactive=False),  # deck_criteria_input
                 ),
-                outputs=[evaluate_btn, presentation_type_input, criteria_language_input, slide_criteria_input, deck_criteria_input]
+                outputs=[evaluate_btn, presentation_type_dropdown, criteria_language_input, slide_criteria_input, deck_criteria_input]
             ).then(
                 fn=self._clear_slide_evaluation_display,
                 outputs=[slide_evaluation]
@@ -1501,12 +1491,12 @@ class SlideGuardUI:
             ).then(
                 fn=lambda: (
                     gr.update(interactive=True, value=self.translator.t("start_evaluation")),
-                    gr.update(interactive=True),  # presentation_type_input
+                    gr.update(interactive=True),  # presentation_type_dropdown
                     gr.update(interactive=True),  # criteria_language_input
                     gr.update(interactive=True),  # slide_criteria_input
                     gr.update(interactive=True),  # deck_criteria_input
                 ),
-                outputs=[evaluate_btn, presentation_type_input, criteria_language_input, slide_criteria_input, deck_criteria_input]
+                outputs=[evaluate_btn, presentation_type_dropdown, criteria_language_input, slide_criteria_input, deck_criteria_input]
             )
             
             # Report generation handlers
@@ -1576,21 +1566,9 @@ def create_app(auth:bool = True, use_langfuse: bool = False, eval_debug: bool = 
         init_db()
 
     ui = SlideGuardUI(use_langfuse=use_langfuse, eval_debug=eval_debug)
-    # Set language before creating UI
-    ui.translator.set_language(lang)
+    ui.current_language = lang if lang in ("en", "ru") else "en"
+    ui._set_language(ui.current_language)
     interface = ui.create_ui()
-    
-    # Add middleware to handle language switching via URL reload
-    def language_middleware(request):
-        # Get language from query parameter
-        import urllib.parse
-        query = urllib.parse.parse_qs(urllib.parse.urlparse(str(request.url)).query)
-        requested_lang = query.get('lang', ['en'])[0]
-        if requested_lang != lang and requested_lang in ['en', 'ru']:
-            # Need to recreate app with new language
-            # This is handled by the JavaScript redirect
-            pass
-        return request
     
     return interface
 

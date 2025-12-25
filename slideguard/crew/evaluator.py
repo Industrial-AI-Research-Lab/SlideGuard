@@ -24,6 +24,7 @@ from slideguard.crew.callbacks import langfuse_callback_cm
 from slideguard.crew.controlled_llm import ControlledLLM
 from slideguard.criteria.base import CriterionInfo
 from slideguard.criteria.factory import CriteriaRegistry, CriteriaRegistryProvider
+from slideguard.criteria.presentation_types import PresentationType
 from slideguard.criteria.types import CriterionResult, PostProcessorContext
 from slideguard.schemes import (
     Criteria,
@@ -38,7 +39,6 @@ from slideguard.schemes import (
     SlideType,
     SummaryOutput,
     TLDROutput,
-    PresentationType,
 )
 from slideguard.crew.summary_processor import SummaryProcessor, SUMMARY_AGENT_BACKSTORY
 from slideguard.utils.file_manager import FileManager
@@ -305,14 +305,13 @@ class SlideGuardEvaluator:
                 return {}
             registry = self._registry
             info = registry.get_info(crit)
-            # Pass presentation_type so that service criteria (e.g., slide_type helper)
-            # can adapt their prompts based on selected presentation type
             chain = info.to_runnable(self.llm, presentation_type=state.presentation_type)
             entities = await self._eval_criterion_with_cache(
                 info=info,
                 deck=state.slides,
                 chain=chain,
                 config=config,
+                presentation_type=state.presentation_type,
             )
             if not entities:
                 logger.error(f"No entities found for {crit}.")
@@ -325,7 +324,7 @@ class SlideGuardEvaluator:
                 return {}
             registry = self._registry
             info = registry.get_info(crit)
-            chain = info.to_runnable(self.llm)
+            chain = info.to_runnable(self.llm, presentation_type=state.presentation_type)
             total = len(state.slides.slides)
             needs_filtering = (
                 info.applicable_slide_types or 
@@ -347,7 +346,7 @@ class SlideGuardEvaluator:
                 return {"slide_results": {crit: [NotApplicableResult() for _ in range(total)]}}
 
             if len(eligible) == total:
-                entities = await self._eval_criterion_with_cache(info=info, deck=state.slides, chain=chain, config=config)
+                entities = await self._eval_criterion_with_cache(info=info, deck=state.slides, chain=chain, config=config, presentation_type=state.presentation_type)
                 processed = [self._postprocess_result(crit, r) for r in entities]
                 return {"slide_results": {crit: processed}}
 
@@ -356,7 +355,7 @@ class SlideGuardEvaluator:
                 png_dir=state.slides.png_dir,
                 slides=[state.slides.slides[i] for i in eligible],
             )
-            subset_entities = await self._eval_criterion_with_cache(info=info, deck=subset, chain=chain, config=config)
+            subset_entities = await self._eval_criterion_with_cache(info=info, deck=subset, chain=chain, config=config, presentation_type=state.presentation_type)
             merged: List[BaseModel] = [NotApplicableResult() for _ in range(total)]
             for j, idx in enumerate(eligible):
                 merged[idx] = self._postprocess_result(crit, subset_entities[j])
@@ -447,7 +446,7 @@ class SlideGuardEvaluator:
             info = registry.get_info(crit)
             chain = info.to_runnable(self.llm, presentation_type=state.presentation_type)
             try:
-                res_list = await self._eval_criterion_with_cache(info, state.deck_descriptions, chain, config)
+                res_list = await self._eval_criterion_with_cache(info, state.deck_descriptions, chain, config, presentation_type=state.presentation_type)
                 if res_list and res_list[0] is not None:
                     val = self._postprocess_result(crit, res_list[0])
                 else:
@@ -471,6 +470,7 @@ class SlideGuardEvaluator:
             logger.warning(f"Failed to gather deck results: {e}", exc_info=True)
             return {"deck_evaluations": DeckEvaluationResult(evaluations={})}
 
+    # TODO: retrieve from cache if all criteria were retrieved from cache
     async def _node_build_summary(self, state: EvaluationState, config: RunnableConfig) -> Dict[str, Any]:
         payload = self.summary_processor.get_summary_payload(
             state.slide_evaluations or [],
@@ -577,7 +577,7 @@ class SlideGuardEvaluator:
         try:
             if isinstance(obj, CriterionResult):
                 info = self._registry.get_info(criteria)
-                ctx = PostProcessorContext(criteria_id=criteria.value)
+                ctx = PostProcessorContext(criteria_id=criteria.value, params={"language": self.llm.language.value})
                 result = obj
                 for postprocessor_func in info.postprocessors:
                     result = postprocessor_func(result, ctx)
@@ -647,6 +647,7 @@ class SlideGuardEvaluator:
         deck: Any,
         chain: Runnable,
         config: RunnableConfig,
+        presentation_type: Optional[PresentationType] = None,
     ) -> List[BaseModel]:
         async def compute(inputs: List[Tuple[int, Any]]) -> AsyncIterable[Tuple[int, BaseModel]]:
             async def _ainvoke_one(idx: int, payload: Dict[str, Any]) -> Tuple[int, BaseModel]:
@@ -682,13 +683,14 @@ class SlideGuardEvaluator:
                 yield await coro
 
         try:
-            # Include language in cache key to differentiate evaluations in different languages
-            language_suffix = f"_{self.llm.language.value}" if hasattr(self.llm, 'language') else ""
-            criteria_id_with_lang = f"{info.criteria.value}{language_suffix}"
-            
+            criteria_id = info.criteria.value
+            if presentation_type is not None:
+                criteria_id = f"{criteria_id}_{presentation_type.value}"
+            criteria_id = f"{criteria_id}_{self.llm.language.value}"
+
             entities = await self.cache_manager.compute_with_cache(
                 deck_name=deck.slide_deck_path,
-                criteria_id=criteria_id_with_lang,
+                criteria_id=criteria_id,
                 inputs=deck.slides,
                 func=compute,
             )

@@ -100,12 +100,14 @@ class SlideTypeManager:
             SlideType.SCIENTIFIC_NOVELTY.value: SlideTypeInfo(
                 name=SlideType.SCIENTIFIC_NOVELTY.value,
                 description="this is a slide that describes the scientific novelty of the work. Usually titled 'Scientific Novelty'. It should reflect what makes the project unique and significant in the context of existing research, how the approach differs from existing solutions, what new data/methods/models are proposed, what gaps in the scientific field the work addresses, and potential scientific or practical implications.",
-                category="content"
+                category="content",
+                presentation_type=PresentationType.SCIENTIFIC
             ),
             SlideType.TECHNOLOGICAL_NOVELTY.value: SlideTypeInfo(
                 name=SlideType.TECHNOLOGICAL_NOVELTY.value,
                 description="this is a slide that describes the technological novelty of the work. Usually titled 'Technological Novelty'. It should explain how the project differs from existing solutions, what new technological principles or approaches are implemented, and what practical advantages the development provides.",
-                category="content"
+                category="content",
+                presentation_type=PresentationType.TECHNOLOGICAL
             ),
             SlideType.EXPERIMENT_SETTINGS.value: SlideTypeInfo(
                 name=SlideType.EXPERIMENT_SETTINGS.value,

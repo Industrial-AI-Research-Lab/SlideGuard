@@ -56,13 +56,10 @@ class Applicability(BaseModel):
         out: List[str] = []
         for item in v:
             if isinstance(item, str):
-                # Already a string, use it directly
                 out.append(item)
             elif isinstance(item, Enum):
-                # It's an enum, extract the value
                 out.append(item.value)
             else:
-                # Fallback for unexpected types
                 logging.warning(f"Unexpected type passed in config: {item} (type: {type(item)}). Converting to string directly.")
                 out.append(str(item))
         return out

@@ -580,7 +580,6 @@ SERVICE_CRITERIA_CONFIGS = [
         id=Criteria.slide_type,
         target=CriteriaTarget.slide,
         description="Type of the slide",
-        # Pass function here so that prompt can be adapted based on PresentationType
         agent_prompt_template=generate_slide_helper_type_prompt,
         task_prompt_template=BASE_SLIDE_TASK_PROMPT,
         output=OutputSpec(kind=OutputKind.custom),

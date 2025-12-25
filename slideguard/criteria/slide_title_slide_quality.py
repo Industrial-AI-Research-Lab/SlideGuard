@@ -18,10 +18,10 @@ If some of the elements are missing, then you need to make a remark and suggest 
 - Only report issues you are confident about
 - When setting overall score - 1 is the strict violation, 5 is the best score
 
-Also keep in mind that for Place (city) and year you should recommend current year which is {date.today().year} and Saint-Petersburg. 
-
 ## Response Format:
 Your answer should have two sections: «Thought» and «Answer».
 In the Thought section, provide your reasoning and analysis including an overall assessment of the slide title.
 In the Answer section, return the final evaluation strictly following the format instructions with specific issues identified, concrete suggestions for improvement, and an overall score from 1 to 5.
+
+Also keep in mind that for Place (city) and year you should recommend current year which is {date.today().year} and Saint-Petersburg - only if the values on the slide diverge.
 """

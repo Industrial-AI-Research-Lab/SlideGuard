@@ -219,11 +219,13 @@ class SlideGuardReportGenerator:
     def _get_score_color(self, score: float, max_score: float = 5.0, higher_better: bool = True) -> str:
         percentage = (score / max_score) * 100
         if higher_better:
-            if percentage >= 80:
+            if percentage >= 90:
                 return '#4CAF50'
-            elif percentage >= 60:
+            elif percentage >= 70:
+                return '#66BB6A'
+            elif percentage >= 50:
                 return '#FF9800'
-            elif percentage >= 40:
+            elif percentage >= 30:
                 return '#FFC107'
             else:
                 return '#F44336'
@@ -231,8 +233,10 @@ class SlideGuardReportGenerator:
             if percentage <= 20:
                 return '#4CAF50'
             elif percentage <= 40:
-                return '#FF9800'
+                return '#66BB6A'
             elif percentage <= 60:
+                return '#FF9800'
+            elif percentage <= 80:
                 return '#FFC107'
             else:
                 return '#F44336'

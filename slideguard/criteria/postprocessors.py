@@ -24,45 +24,32 @@ def abbreviations_whitelist(result: CriterionResult, ctx: PostProcessorContext) 
 
 
 def combine_abbreviations(result: CriterionResult, ctx: PostProcessorContext) -> CriterionResult:
-    """Combine all found abbreviations into a single entry per slide."""
     if not result.evaluation_results:
         return result
-    
-    # Collect all abbreviations
+
     abbreviations = []
     max_severity = 0
-    
     for item in result.evaluation_results:
         abbr = str(item.evaluation_element).strip()
         if abbr:
             abbreviations.append(abbr)
             if item.severity > max_severity:
                 max_severity = item.severity
-    
     if not abbreviations:
         result.evaluation_results = []
         result.score = 5
         return result
-    
-    # Create a single combined entry
-    # Remove duplicates and sort for consistent display
+
     unique_abbreviations = sorted(set(abbreviations))
     combined_abbr_list = ", ".join(unique_abbreviations)
-    
-    # Use the first item as a template and modify it
     combined_item = result.evaluation_results[0]
     combined_item.evaluation_element = combined_abbr_list
-    
-    # Create a bilingual suggestion that works for both EN and RU
+    language = str((ctx.params or {}).get("language") or "").lower()
     if len(unique_abbreviations) == 1:
-        combined_item.evaluation_suggestion = "Provide an explicit explanation for this abbreviation."
+        combined_item.evaluation_suggestion = "Расшифруйте эту аббревиатуру." if language == "ru" else "Provide an explicit explanation for this abbreviation."
     else:
-        combined_item.evaluation_suggestion = "Provide explicit explanations for these abbreviations."
-    
+        combined_item.evaluation_suggestion = "Расшифруйте эти аббревиатуры." if language == "ru" else "Provide explicit explanations for these abbreviations."
     combined_item.severity = max_severity
-    
-    # Replace all entries with the single combined entry
     result.evaluation_results = [combined_item]
-    
     return result
 

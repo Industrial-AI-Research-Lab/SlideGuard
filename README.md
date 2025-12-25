@@ -7,13 +7,14 @@ A comprehensive slide deck evaluation system using LangGraph and LangChain that 
 - **LangGraph Integration**: Graph-based workflows for orchestrated evaluation tasks
 - **LangChain Integration**: LLM interactions and structured outputs
 - **CLI Interface**: Command-line interface with Typer
-- **Web UI**: Interactive Gradio-based web interface with multi-language support (EN/RU)
+- **Web UI**: Interactive Gradio-based web interface with multi-language support (EN/RU) and per-run criteria language selection
 - **User Authentication**: Role-based access control (Admin/User/Guest)
 - **Slide Type Filtering**: Apply criteria only to specific slide types (e.g., title slides)
+- **Presentation Types**: Scientific / Industrial / Collaborative / Technological types, with type-specific criteria and slide taxonomy
 - **Category Organization**: Criteria organized by functional categories
 - **Priority-Based Evaluation**: Criteria evaluated in priority order
 - **Async Support**: Synchronous and asynchronous evaluation workflows
-- **Intelligent Caching**: Caching of evaluation results for faster subsequent runs
+- **Intelligent Caching**: Caching keyed by criterion + presentation type + criteria language for safe reuse
 - **PDF Report Generation**: Export evaluation results as professional PDF reports
 - **vLLM Support**: Compatible with vLLM servers and OpenAI-compatible APIs
 - **Langfuse Integration**: Optional observability and tracing support
@@ -51,13 +52,14 @@ python3 -m slideguard.setup setup
 
 ```bash
 # List available criteria
-slideguard eval list-criterias
+slideguard eval list-criterias --presentation-type scientific
 
-# Basic evaluation
-slideguard eval run --presentation-path presentation.pdf
+# Basic evaluation (type-aware)
+slideguard eval run --presentation-path presentation.pdf --presentation-type scientific
 
 # With specific criteria
 slideguard eval run -p presentation.pdf \
+  -t scientific \
   --criteria slide_visual_arrangement \
   --criteria deck_structure_analysis
 
@@ -94,15 +96,15 @@ poetry run python3 -m slideguard.setup example  # Generate example script
 
 ```bash
 # List all criteria
-slideguard eval list-criterias
+slideguard eval list-criterias --presentation-type scientific
 
 # Basic evaluation with all criteria
-slideguard eval run -p presentation.pdf
+slideguard eval run -p presentation.pdf -t scientific
 
 # Specific criteria
 slideguard eval run -p presentation.pdf \
+  -t scientific \
   --criteria slide_visual_arrangement \
-  --criteria slide_color_and_fonts \
   --criteria deck_structure_analysis
 
 # Custom output and options
@@ -113,6 +115,7 @@ slideguard eval run -p presentation.pdf \
 
 # Batch processing multiple PDFs
 slideguard eval multirun -f /path/to/pdfs \
+  -t scientific \
   --output-folder results \
   --deck-concurrency 5 \
   --max-concurrency 10
@@ -121,7 +124,8 @@ slideguard eval multirun -f /path/to/pdfs \
 **Batch Processing Output** (in specified output folder):
 - `evaluations_<filename>.json` - Successful results
 - `evaluations_<filename>.error` - Error details
-- `evaluations_<filename>.log` - Logs
+- `evaluations_<filename>.stdout` - Captured stdout
+- `evaluations_<filename>.stderr` - Captured stderr
 
 ### UI Commands
 
@@ -174,6 +178,8 @@ Access at `http://localhost:7860`
 - **Criteria Selection**: Choose evaluation criteria with friendly display names
 - **Interactive Viewer**: Navigate slides with evaluations
 - **Multi-Language Support**: Switch between English and Russian (EN/RU button)
+- **Presentation Type Selection**: Select a presentation type to filter available criteria and apply type-aware prompts
+- **Criteria Language Selection**: Select EN/RU for LLM output language independent of UI language
 - **PDF Reports**: Generate professional reports in selected language
 - **Admin Panel**: User management (visible to admins only)
 
@@ -181,7 +187,7 @@ Access at `http://localhost:7860`
 - Set default language at startup with `--lang` flag: `--lang en` (English) or `--lang ru` (Russian)
 - Click the EN/RU button in the top-right corner to switch languages dynamically
 - All UI elements, evaluation results, and PDF reports are translated
-- LLM prompts automatically switch to Russian when Russian is selected
+- LLM output language can be selected via the "Criteria language" dropdown
 - Criteria friendly names displayed in the selected language
 
 **Service Criteria**: Technical criteria (`slide_type`, `slide_description`) are automatically included when needed for deck-level evaluations.
@@ -238,13 +244,18 @@ asyncio.run(evaluate())
 
 **Evaluation Criteria**:
 - `slide_visual_arrangement` - Visual design and layout evaluation
-- `slide_color_and_fonts` - Color theory and font choices
 - `slide_abbreviations` - Abbreviations usage and clarity
 - `slide_fact_link_availability` - Factual claims and link availability
 - `slide_graphic_content_match` - Graphic-content alignment
 - `slide_orphography_correctness` - Spelling and grammar
 - `slide_title_content_match` - Title-content alignment
 - `slide_title_slide_quality` - Title quality (only for title slides)
+- Type-specific criteria (examples, depends on `--presentation-type`):
+  - `slide_track_justification_*`
+  - `slide_novelty_*`
+  - `slide_related_works_review_*`
+  - `slide_industrial_applicability`
+  - `slide_key_results_*`
 
 ### Deck-Level Criteria
 
@@ -259,7 +270,7 @@ asyncio.run(evaluate())
 ### Core Components
 
 - **SlideGuardEvaluator**: High-level interface using LangGraph workflows
-- **Criteria System**: Modular evaluation criteria with type and category support
+- **Criteria System**: Config/registry-driven criteria with applicability filtering and type-aware prompts
 - **LangGraph StateGraph**: Workflow orchestration for parallel and sequential tasks
 - **ControlledLLM**: LangChain-based LLM wrapper with structured output and language control
 - **File Manager**: PDF processing and slide extraction
