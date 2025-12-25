@@ -6,7 +6,7 @@ It allows for type-specific criteria evaluation and slide type filtering.
 """
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 
 class PresentationType(str, Enum):

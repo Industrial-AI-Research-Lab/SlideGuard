@@ -28,6 +28,9 @@ TRANSLATIONS = {
         "slide_criteria_label": "Slide criteria",
         "deck_criteria_label": "Deck criteria",
         "criteria_validation_error": "Please select at least one criteria.",
+        "criteria_language_label": "Criteria language",
+        "criteria_language_en": "English",
+        "criteria_language_ru": "Russian",
         
         # Buttons
         "start_evaluation": "🚀 Start Evaluation",
@@ -45,15 +48,15 @@ TRANSLATIONS = {
         "current_slide_label": "Current Slide",
         
         # Tab names
-        "tab_viewer": "🖼️ Interactive Presentation Viewer",
-        "tab_deck": "📋 Deck-Level Results",
+        "tab_viewer": "🖼️ Viewer",
+        "tab_deck": "📋 Deck Results",
         "tab_admin": "🔒 Admin Panel",
         "slide_preview_label": "Slide Preview",
         
         # Admin panel
-        "admin_tab_users": "Users",
-        "admin_tab_create": "Create User",
-        "admin_tab_manage": "Manage User",
+        "admin_tab_users": "👥 Users",
+        "admin_tab_create": "➕ Create",
+        "admin_tab_manage": "🛠 Manage",
         "admin_username": "Username",
         "admin_password": "Password",
         "admin_role": "Role",
@@ -112,6 +115,7 @@ TRANSLATIONS = {
         "overall_score_label": "🏆 Overall Score:",
         "assessment_label": "Assessment:",
         "excellent": "Excellent",
+        "pretty_good": "Pretty Good",
         "good": "Good",
         "fair": "Fair",
         "needs_improvement": "Needs Improvement",
@@ -171,6 +175,9 @@ TRANSLATIONS = {
         "slide_criteria_label": "Критерии слайдов",
         "deck_criteria_label": "Критерии презентации",
         "criteria_validation_error": "Пожалуйста, выберите хотя бы один критерий.",
+        "criteria_language_label": "Язык критериев",
+        "criteria_language_en": "Английский",
+        "criteria_language_ru": "Русский",
         
         # Buttons
         "start_evaluation": "🚀 Начать оценку",
@@ -188,15 +195,15 @@ TRANSLATIONS = {
         "current_slide_label": "Текущий слайд",
         
         # Tab names
-        "tab_viewer": "🖼️ Интерактивный просмотр презентации",
-        "tab_deck": "📋 Результаты по презентации",
+        "tab_viewer": "🖼️ Просмотр",
+        "tab_deck": "📋 Результаты",
         "tab_admin": "🔒 Панель администратора",
         "slide_preview_label": "Предпросмотр слайда",
         
         # Admin panel
-        "admin_tab_users": "Пользователи",
-        "admin_tab_create": "Создать пользователя",
-        "admin_tab_manage": "Управление пользователями",
+        "admin_tab_users": "👥 Пользователи",
+        "admin_tab_create": "➕ Создать",
+        "admin_tab_manage": "🛠 Управление",
         "admin_username": "Имя пользователя",
         "admin_password": "Пароль",
         "admin_role": "Роль",
@@ -255,6 +262,7 @@ TRANSLATIONS = {
         "overall_score_label": "🏆 Общая оценка:",
         "assessment_label": "Заключение:",
         "excellent": "Отлично",
+        "pretty_good": "Довольно хорошо",
         "good": "Хорошо",
         "fair": "Удовлетворительно",
         "needs_improvement": "Требует улучшения",
@@ -334,11 +342,13 @@ class Translator:
     
     def get_score_text(self, score_percentage: float) -> str:
         """Get assessment text based on score percentage."""
-        if score_percentage >= 80:
+        if score_percentage >= 90:
             return self.t("excellent")
-        elif score_percentage >= 60:
+        elif score_percentage >= 70:
+            return self.t("pretty_good")
+        elif score_percentage >= 50:
             return self.t("good")
-        elif score_percentage >= 40:
+        elif score_percentage >= 30:
             return self.t("fair")
         else:
             return self.t("needs_improvement")

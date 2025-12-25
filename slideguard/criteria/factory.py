@@ -98,20 +98,12 @@ class CriteriaRegistry(BaseModel):
         return self.by_id[crit]
 
     def _is_applicable_to_presentation_type(self, info: CriterionInfo, presentation_type: Optional[PresentationType]) -> bool:
-        """Check if criterion is applicable to the given presentation type"""
         if presentation_type is None:
             return True
-        
-        # Check exclude list first
-        if info.exclude_presentation_types:
-            if presentation_type in info.exclude_presentation_types:
-                return False
-        
-        # Check include list
-        if info.applicable_presentation_types:
+        if info.exclude_presentation_types and presentation_type in info.exclude_presentation_types:
+            return False
+        if info.applicable_presentation_types is not None:
             return presentation_type in info.applicable_presentation_types
-        
-        # If no restrictions, applicable to all
         return True
 
     def get_slide_ids(self, include_service: bool = False, presentation_type: Optional[PresentationType] = None) -> List[Criteria]:

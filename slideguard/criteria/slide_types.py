@@ -18,22 +18,24 @@ class SlideType(Enum):
     TITLE_SLIDE = "Title slide"
     SEPARATOR = "Separator"
     MOTIVATION = "Motivation"
+    PROBLEM_STATEMENT = "Problem Statement"
     GOAL = "Goal"
     TASKS = "Tasks"
     CURRENT_STATE = "Current State"
     PROPOSED_SOLUTION = "Proposed Solution"
+    SCIENTIFIC_NOVELTY = "Scientific Novelty"
+    TECHNOLOGICAL_NOVELTY = "Technological Novelty"
     EXPERIMENT_SETTINGS = "Experiment Settings"
     EXPERIMENTAL_RESULTS = "Experimental Results"
     CONCLUSION = "Conclusion"
     END_SLIDE = "End slide"
     Q_AND_A = "Q&A"
-    # Ppt type-specific slide types 
-    SCIENTIFIC_NOVELTY = "Scientific Novelty"
     PUBLICATION_READINESS = "Publication Readiness"
-    TECHNOLOGICAL_NOVELTY = "Technological Novelty"
     TECHNOLOGICAL_REALIZATION_LEVEL = "Technological Realization Level"
     INDUSTRIAL_POTENTIAL = "Industrial Potential"
     COLLABORATIVE_PROGRESS = "Collaborative Progress"
+    INDUSTRIAL_APPLICABILITY = "Industrial Applicability"
+    KEY_RESULTS = "Key Results"
 
 @dataclass
 class SlideTypeInfo:
@@ -70,6 +72,11 @@ class SlideTypeManager:
                 description="this is a slide that contains information about the motivation for the project.",
                 category="content"
             ),
+            SlideType.PROBLEM_STATEMENT.value: SlideTypeInfo(
+                name=SlideType.PROBLEM_STATEMENT.value,
+                description="this is a slide that defines the main problem being solved by the project. It usually contains a clear statement of the problem, often titled 'Statement of the Problem' or 'Problem Definition'. The slide should justify the relevance of the problem and explain why it is important to solve.",
+                category="content"
+            ),
             SlideType.CURRENT_STATE.value: SlideTypeInfo(
                 name=SlideType.CURRENT_STATE.value,
                 description="this is a slide that contains information about the current state of the field and existing products / methods / solutions.",
@@ -89,6 +96,18 @@ class SlideTypeManager:
                 name=SlideType.PROPOSED_SOLUTION.value,
                 description="this is a slide that contains information about the proposed solution to the problem. Can be shown as a workflow or a diagram with description.",
                 category="content"
+            ),
+            SlideType.SCIENTIFIC_NOVELTY.value: SlideTypeInfo(
+                name=SlideType.SCIENTIFIC_NOVELTY.value,
+                description="this is a slide that describes the scientific novelty of the work. Usually titled 'Scientific Novelty'. It should reflect what makes the project unique and significant in the context of existing research, how the approach differs from existing solutions, what new data/methods/models are proposed, what gaps in the scientific field the work addresses, and potential scientific or practical implications.",
+                category="content",
+                presentation_type=PresentationType.SCIENTIFIC
+            ),
+            SlideType.TECHNOLOGICAL_NOVELTY.value: SlideTypeInfo(
+                name=SlideType.TECHNOLOGICAL_NOVELTY.value,
+                description="this is a slide that describes the technological novelty of the work. Usually titled 'Technological Novelty'. It should explain how the project differs from existing solutions, what new technological principles or approaches are implemented, and what practical advantages the development provides.",
+                category="content",
+                presentation_type=PresentationType.TECHNOLOGICAL
             ),
             SlideType.EXPERIMENT_SETTINGS.value: SlideTypeInfo(
                 name=SlideType.EXPERIMENT_SETTINGS.value,
@@ -115,24 +134,11 @@ class SlideTypeManager:
                 description="this is a slide that contains the question and answer session.",
                 category="interactive"
             ),
-            # New slide types 
-            SlideType.SCIENTIFIC_NOVELTY.value: SlideTypeInfo(
-                name=SlideType.SCIENTIFIC_NOVELTY.value,
-                description="this is a slide that explains what makes the project unique by detailing how its approach differs from known solutions, outlining the proposed new data, methods, or models, specifying which gaps in the field it closes, and stating its potential scientific or practical consequences.",
-                category="content",
-                presentation_type=PresentationType.SCIENTIFIC  
-            ),
             SlideType.PUBLICATION_READINESS.value: SlideTypeInfo(
                 name=SlideType.PUBLICATION_READINESS.value,
                 description="this is a slide that demonstrates readiness for academic publication, indicating the status of preprints, drafts, or abstracts; identifying target journals or conferences; and noting any preliminary reviews or revised manuscript versions.",
                 category="content",
-                presentation_type=PresentationType.SCIENTIFIC  
-            ),
-            SlideType.TECHNOLOGICAL_NOVELTY.value: SlideTypeInfo(
-                name=SlideType.TECHNOLOGICAL_NOVELTY.value,
-                description="this is a slide that describes how the project differs from existing solutions, highlighting the new technological principles or approaches it implements and the concrete practical advantage this provides.",
-                category="content",
-                presentation_type=PresentationType.TECHNOLOGICAL
+                presentation_type=PresentationType.SCIENTIFIC
             ),
             SlideType.TECHNOLOGICAL_REALIZATION_LEVEL.value: SlideTypeInfo(
                 name=SlideType.TECHNOLOGICAL_REALIZATION_LEVEL.value,
@@ -151,6 +157,17 @@ class SlideTypeManager:
                 description="this is a slide that summarizes team progress, listing completed stages, current ongoing work, and describing the communication flow within the team and with any external clients or partners.",
                 category="content",
                 presentation_type=PresentationType.COLLABORATIVE
+            ),
+            SlideType.INDUSTRIAL_APPLICABILITY.value: SlideTypeInfo(
+                name=SlideType.INDUSTRIAL_APPLICABILITY.value,
+                description="this is a slide that shows potential impact of the project on industry. It usually has title 'Potential for using the obtained results in industry' and contains information about where and how the project can be implemented, economic and technological impact, application areas, and links to industrial project descriptions.",
+                category="content",
+                presentation_type=PresentationType.INDUSTRIAL
+            ),
+            SlideType.KEY_RESULTS.value: SlideTypeInfo(
+                name=SlideType.KEY_RESULTS.value,
+                description="this is a slide that describes the main results and achievements of the project. It usually has title 'Key Results' or 'Main Results' and contains information about achieved metrics, practical effects, and outcomes of the research or development work.",
+                category="content"
             ),
         }
         

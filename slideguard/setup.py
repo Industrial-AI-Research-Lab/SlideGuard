@@ -156,7 +156,7 @@ def test_installation():
             print(f"  Server: {config.api_base}")
             return
         
-        evaluator = SlideGuardEvaluator(
+        SlideGuardEvaluator(
             file_manager=FileManager(config.file_cache_dir),
             cache_manager=CacheManager(config.evaluations_cache_dir),
             llm=llm,

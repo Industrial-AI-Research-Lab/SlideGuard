@@ -11,6 +11,10 @@ class CriteriaTarget(str, Enum):
     deck = "deck"
 
 
+ALL_PRESENTATION_TYPES: List[PresentationType] = list(PresentationType)
+DEFAULT_PRESENTATION_TYPE: str = PresentationType.SCIENTIFIC.value
+
+
 class OutputKind(str, Enum):
     scored_list = "scored_list"
     custom = "custom"
@@ -47,15 +51,16 @@ class Applicability(BaseModel):
     @field_validator('applicable_slide_types', 'exclude_slide_types', mode='before')
     @classmethod
     def convert_enum_to_string(cls, v: Optional[List[Union[str, Enum]]]) -> Optional[List[str]]:
-        """Convert enum values to their string representations."""
         if v is None:
             return None
         out: List[str] = []
         for item in v:
-            try:
+            if isinstance(item, str):
+                out.append(item)
+            elif isinstance(item, Enum):
                 out.append(item.value)
-            except AttributeError:
-                logging.warning(f"Wrong slide type passed in config: {item}. Converting to string directly, which could lead to unexpected behavior")
+            else:
+                logging.warning(f"Unexpected type passed in config: {item} (type: {type(item)}). Converting to string directly.")
                 out.append(str(item))
         return out
 

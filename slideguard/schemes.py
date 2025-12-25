@@ -4,7 +4,6 @@ import json
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
-from slideguard.criteria.presentation_types import PresentationType
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -31,6 +30,21 @@ class Criteria(str, Enum):
     slide_orphography_correctness = "slide_orphography_correctness"
     slide_title_content_match = "slide_title_content_match"
     slide_title_slide_quality = "slide_title_slide_quality"
+    slide_track_justification_scientific = "slide_track_justification_scientific"
+    slide_track_justification_collaborative = "slide_track_justification_collaborative"
+    slide_track_justification_industrial = "slide_track_justification_industrial"
+    slide_track_justification_technological = "slide_track_justification_technological"
+    slide_novelty_scientific = "slide_novelty_scientific"
+    slide_novelty_technological = "slide_novelty_technological"
+    slide_related_works_review_scientific = "slide_related_works_review_scientific"
+    slide_related_works_review_technological = "slide_related_works_review_technological"
+    slide_related_works_review_collaborative = "slide_related_works_review_collaborative"
+    slide_related_works_review_industrial = "slide_related_works_review_industrial"
+    slide_industrial_applicability = "slide_industrial_applicability"
+    slide_key_results_scientific = "slide_key_results_scientific"
+    slide_key_results_technological = "slide_key_results_technological"
+    slide_key_results_collaborative = "slide_key_results_collaborative"
+    slide_key_results_industrial = "slide_key_results_industrial"
 
     # deck criteria
     deck_storytelling = "deck_storytelling"
