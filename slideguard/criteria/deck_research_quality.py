@@ -28,7 +28,6 @@ Your task is to assess whether the presentation demonstrates a strong research f
 - Statistical or analytical techniques are used appropriately (e.g., significance testing, error margins)
 - Are the experiments, datasets, or analyses adequate in number and depth for the research question?
 - Future research directions (if available) are suggested and logically flow from the findings
-
 {presentation_type_specific_content}
 
 ## Common Problems to Identify:
