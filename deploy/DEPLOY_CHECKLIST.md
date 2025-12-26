@@ -14,6 +14,8 @@
     - `SLIDEGUARD_MAX_CONCURRENCY` (default `8`)
     - `UI_HOST` (default `0.0.0.0`)
     - `UI_PORT` (default `7860`)
+    - `SLIDEGUARD_REPORT_FONT_REGULAR` (absolute path to a `.ttf` file for PDF reports)
+    - `SLIDEGUARD_REPORT_FONT_BOLD` (absolute path to a `.ttf` file for PDF reports)
   - **Langfuse tracing (optional)**
     - Set `SLIDEGUARD_USE_LANGFUSE=1` to enable tracing in the container.
     - Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`.
@@ -57,6 +59,9 @@
       - From `deploy/`: `docker compose -f docker-compose.yml exec ui poetry run slideguard admin create -u admin -r admin`
   - **Eval**
     - Upload a small PDF and run an evaluation (expect a result JSON and rendered slide outputs).
+  - **Russian PDF reports**
+    - If Russian text renders as squares in the PDF report, ensure the runtime has a Cyrillic-capable font installed (the Docker image includes DejaVu fonts).
+    - If you need to force a specific font, set `SLIDEGUARD_REPORT_FONT_REGULAR` / `SLIDEGUARD_REPORT_FONT_BOLD` in `deploy/.env`.
   - **Langfuse**
     - Open your Langfuse project and confirm traces are arriving.
 

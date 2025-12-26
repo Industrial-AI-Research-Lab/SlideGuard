@@ -56,11 +56,21 @@ class SlideGuardReportGenerator:
 
     def _register_fonts(self):
         try:
-            base_dir = str(Path(__file__).resolve().parent.parent)
-            # Candidates for fonts that support Unicode (including Cyrillic/Russian)
+            file_path = Path(__file__).resolve()
+            pkg_dir = file_path.parents[1]
+            repo_root = file_path.parents[2]
+
+            env_regular = os.getenv("SLIDEGUARD_REPORT_FONT_REGULAR", "").strip()
+            env_bold = os.getenv("SLIDEGUARD_REPORT_FONT_BOLD", "").strip()
+
             regular_candidates = [
-                os.path.join(base_dir, "resources", "fonts", "DejaVuSans.ttf"),
-                os.path.join(base_dir, "resources", "fonts", "DejaVuSansCondensed.ttf"),
+                env_regular,
+                str(repo_root / "resources" / "fonts" / "DejaVuSans.ttf"),
+                str(repo_root / "resources" / "fonts" / "DejaVuSansCondensed.ttf"),
+                "/app/resources/fonts/DejaVuSans.ttf",
+                "/app/resources/fonts/DejaVuSansCondensed.ttf",
+                str(pkg_dir / "resources" / "fonts" / "DejaVuSans.ttf"),
+                str(pkg_dir / "resources" / "fonts" / "DejaVuSansCondensed.ttf"),
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux (Debian/Ubuntu)
                 "/usr/share/fonts/dejavu/DejaVuSans.ttf",  # Linux (Red Hat/Fedora)
                 "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",  # macOS
@@ -69,7 +79,10 @@ class SlideGuardReportGenerator:
                 "C:\\Windows\\Fonts\\DejaVuSans.ttf",
             ]
             bold_candidates = [
-                os.path.join(base_dir, "resources", "fonts", "DejaVuSans-Bold.ttf"),
+                env_bold,
+                str(repo_root / "resources" / "fonts" / "DejaVuSans-Bold.ttf"),
+                "/app/resources/fonts/DejaVuSans-Bold.ttf",
+                str(pkg_dir / "resources" / "fonts" / "DejaVuSans-Bold.ttf"),
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Linux (Debian/Ubuntu)
                 "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",  # Linux (Red Hat/Fedora)
                 "/System/Library/Fonts/Supplemental/Arial Bold.ttf",  # macOS
@@ -80,12 +93,12 @@ class SlideGuardReportGenerator:
             chosen_bold = None
             
             for p in regular_candidates:
-                if os.path.exists(p):
+                if p and os.path.exists(p):
                     chosen_regular = p
                     break
             
             for p in bold_candidates:
-                if os.path.exists(p):
+                if p and os.path.exists(p):
                     chosen_bold = p
                     break
             
