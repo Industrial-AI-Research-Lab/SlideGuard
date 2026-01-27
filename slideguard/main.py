@@ -23,6 +23,13 @@ import typer
 from tqdm.asyncio import tqdm
 
 from slideguard.criteria import get_registry_provider
+from slideguard.metrics import (
+    EvalPairsManager,
+    EvaluationMetrics,
+    FeedbackHandler,
+    load_normalized_yaml,
+    YAMLFormatError,
+)
 from slideguard.utils.config import SlideGuardConfig, load_config
 from slideguard.crew.controlled_llm import create_llm_from_config
 from slideguard.crew.evaluator import SlideGuardEvaluator
@@ -202,9 +209,11 @@ app = typer.Typer(help="SlideGuard - Evaluate slide decks with AI")
 eval_app = typer.Typer(help="Run evaluations")
 ui_app = typer.Typer(help="Run Gradio UI")
 admin_app = typer.Typer(help="Run Admin CLI: manage user accounts and roles")
+metrics_app = typer.Typer(help="Evaluation metrics and feedback management")
 app.add_typer(eval_app, name="eval")
 app.add_typer(ui_app, name="ui")
 app.add_typer(admin_app, name="admin")
+app.add_typer(metrics_app, name="metrics")
 
 
 @app.callback()
@@ -668,6 +677,128 @@ def admin_list() -> None:
     for uname, role in users:
         typer.echo(f"{uname}\t{role}")
     raise typer.Exit(code=0)
+
+
+@metrics_app.command("batch")
+def metrics_batch(
+    pairs_path: str = typer.Option("resources/eval_pairs.json", "--pairs", "-p", help="Path to eval_pairs.json"),
+    run_id: Optional[str] = typer.Option(None, "--run-id", help="Explicit run ID"),
+    resume_from: Optional[str] = typer.Option(None, "--resume", help="Resume from existing run ID"),
+    filter_tag: Optional[List[str]] = typer.Option(None, "--filter-tag", help="Include only pairs with these tags"),
+    exclude_tag: Optional[List[str]] = typer.Option(None, "--exclude-tag", help="Exclude pairs with these tags"),
+    exclude_disabled: bool = typer.Option(True, "--exclude-disabled/--include-disabled"),
+    max_parallel: Optional[int] = typer.Option(None, "--max-parallel", help="Override metrics parallelism"),
+    use_langfuse: bool = typer.Option(False, "--use-langfuse"),
+    eval_debug: bool = typer.Option(False, "--eval-debug"),
+) -> None:
+    typer.echo("Loading settings...")
+    config = load_config()
+    langfuse_client = load_langfuse_client(use_langfuse)
+    llm = create_llm_from_config(config)
+    if llm is None:
+        _print_config_help(config)
+        raise typer.Exit(code=1)
+    registry_provider = get_registry_provider()
+    registry = registry_provider.get_for_user()
+    evaluator = SlideGuardEvaluator(
+        file_manager=FileManager(config.file_cache_dir),
+        cache_manager=CacheManager(config.evaluations_cache_dir),
+        llm=llm,
+        max_concurrency=config.max_concurrency,
+        debug=eval_debug,
+        registry_provider=registry_provider,
+    )
+    manager = EvalPairsManager(Path(pairs_path))
+    pairs = manager.load_pairs(
+        filter_tags=filter_tag,
+        exclude_tags=exclude_tag,
+        exclude_disabled=exclude_disabled,
+    )
+    if not pairs:
+        typer.echo("No evaluation pairs found after filtering.")
+        raise typer.Exit(code=1)
+    engine = EvaluationMetrics(
+        evaluator=evaluator,
+        yaml_loader=load_normalized_yaml,
+        cache_dir=Path(config.cache_dir),
+        max_retries=2,
+        max_parallel=max_parallel if max_parallel is not None else config.max_concurrency,
+        llm=llm,
+    )
+    typer.echo(f"Running metrics batch with {len(pairs)} pairs...")
+    report = asyncio.run(
+        engine.evaluate_batch(
+            eval_pairs=pairs,
+            run_id=run_id,
+            resume_from=resume_from,
+            langfuse_client=langfuse_client,
+        )
+    )
+    run_dir = engine.metrics_dir / report.run_id
+    typer.echo(f"Metrics run {report.run_id} completed: {report.successful} success, {report.failed} failed.")
+    typer.echo(f"Report: {run_dir / 'report.json'}")
+
+
+@metrics_app.command("feedback")
+def metrics_feedback(
+    feedback_text: str = typer.Option(..., "--text", "-t", help="Free-form feedback text"),
+    presentation_path: str = typer.Option(..., "--presentation-path", "-p", help="Presentation file path"),
+    user_id: Optional[str] = typer.Option(None, "--user-id", help="Feedback author identifier"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Skip writing feedback logs"),
+    use_langfuse: bool = typer.Option(False, "--use-langfuse"),
+) -> None:
+    config = load_config()
+    langfuse_client = load_langfuse_client(use_langfuse)
+    llm = create_llm_from_config(config)
+    if llm is None:
+        _print_config_help(config)
+        raise typer.Exit(code=1)
+    registry = get_registry_provider().get_for_user()
+    handler = FeedbackHandler(llm=llm, criteria_registry=registry)
+    issues = asyncio.run(
+        handler.process_presentation_feedback(
+            feedback_text=feedback_text,
+            presentation_path=presentation_path,
+            user_id=user_id,
+            persist=not dry_run,
+            langfuse_client=langfuse_client,
+        )
+    )
+    if not issues:
+        typer.echo("No actionable issues extracted.")
+        return
+    typer.echo("Extracted issues:")
+    for issue in issues:
+        scope = issue.slide_ids if issue.slide_ids else ["deck"]
+        typer.echo(f"- {issue.criterion.value} {scope}: {issue.issue.issue}")
+
+
+@metrics_app.command("list-tags")
+def metrics_list_tags(
+    pairs_path: str = typer.Option("resources/eval_pairs.json", "--pairs", "-p", help="Path to eval_pairs.json"),
+) -> None:
+    manager = EvalPairsManager(Path(pairs_path))
+    tags = manager.get_all_tags()
+    if not tags:
+        typer.echo("No tags defined.")
+        return
+    typer.echo("Available tags:")
+    for tag in tags:
+        typer.echo(f"- {tag}")
+
+
+@metrics_app.command("validate-yaml")
+def metrics_validate_yaml(
+    yaml_path: str = typer.Argument(..., help="Path to golden YAML file"),
+) -> None:
+    try:
+        result = load_normalized_yaml(Path(yaml_path))
+    except YAMLFormatError as exc:
+        typer.echo(f"Validation failed: {exc}")
+        raise typer.Exit(code=1)
+    typer.echo(f"Deck criteria entries: {len(result.deck)}")
+    typer.echo(f"Slide entries: {len(result.slides)}")
+    typer.echo("Validation completed successfully.")
 
 
 def main() -> None:  # Console entrypoint

@@ -136,6 +136,32 @@ slideguard admin role -u username -r admin
 slideguard admin delete -u username
 ```
 
+### Metrics & Feedback Commands
+
+```bash
+# Run metrics batch using eval_pairs.json (filters optional)
+slideguard metrics batch --pairs resources/eval_pairs.json --filter-tag demo
+
+# Capture free-form reviewer feedback and map to YAML-ready issues
+slideguard metrics feedback --presentation-path path/to.pdf --text "Slide 3 title mismatched"
+
+# Explore tags defined in eval_pairs.json
+slideguard metrics list-tags --pairs resources/eval_pairs.json
+
+# Validate existing golden YAML before running a batch
+slideguard metrics validate-yaml resources/golden/1_EN_Kataeva_Thesis.yaml
+```
+
+The default `resources/eval_pairs.json` file points to sample decks under `resources/slidedecks/` matched with golden annotations from `resources/golden/`. Use `--run-id` to label individual metrics batches and `--resume` to continue an interrupted run.
+
+Use the conversion utility to migrate older YAMLs once before running batches:
+
+```bash
+python scripts/convert_legacy_yaml.py --source resources/golden --in-place
+```
+
+The script rewrites each legacy file into the normalized schema (deck and slide sections expressed via `criteria` values from `slideguard.schemes.Criteria`) and can optionally write converted files to another directory via `--destination`.
+
 ## Web UI
 
 ### Launch
