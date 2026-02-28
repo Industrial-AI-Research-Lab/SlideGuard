@@ -21,6 +21,7 @@ from langchain_core.prompt_values import ChatPromptValue, PromptValue
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain.output_parsers import RetryWithErrorOutputParser
 from langchain_openai.chat_models.base import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 from slideguard.utils.config import SlideGuardConfig, load_config
 
@@ -258,20 +259,47 @@ class OpenAIModel(str, Enum):
     GPT_4O = "gpt-4o"
 
 
-def create_llm_from_config(config: SlideGuardConfig, language: AppLanguage = AppLanguage.EN) -> Optional[ControlledLLM]:
-    if not config.is_configured():
-        try:
-            config = load_config()
-        except Exception as e:
-            logger.error(f"Failed to load config: {e}")
-            return None
-        
-        # Re-check if config is valid after loading
-        if not config.is_configured():
-            return None
+class AnthropicModel(str, Enum):
+    CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_4O = "claude-4o-latest"
+    CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
+    CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
 
+
+ANTHROPIC_MODEL_NAMES = {m.value for m in AnthropicModel}
+
+
+def create_llm_from_config(config: SlideGuardConfig, language: AppLanguage = AppLanguage.EN) -> Optional[ControlledLLM]:
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
-    if openai_key:
+
+    if not anthropic_key and not openai_key:
+        if not config.is_configured():
+            try:
+                config = load_config()
+            except Exception as e:
+                logger.error(f"Failed to load config: {e}")
+                return None
+
+            if not config.is_configured():
+                return None
+
+    if anthropic_key:
+        model_name = os.getenv("ANTHROPIC_MODEL", AnthropicModel.CLAUDE_3_5_SONNET.value)
+        if model_name not in ANTHROPIC_MODEL_NAMES:
+            logger.warning(
+                f"Anthropic model '{model_name}' not in known models. "
+                f"Proceeding anyway — it may be a valid model ID."
+            )
+        logger.info(f"Using Anthropic model: {model_name}")
+        chat = ChatAnthropic(
+            api_key=anthropic_key,
+            model_name=model_name,
+            temperature=0.01,
+            max_tokens=5000,
+        )
+    elif openai_key:
         model_name = os.getenv("OPENAI_MODEL", OpenAIModel.GPT_4O.value)
         try:
             selected = OpenAIModel(model_name)

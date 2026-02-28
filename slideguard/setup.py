@@ -55,7 +55,11 @@ SLIDEGUARD_MAX_CONCURRENCY=8
 # Legacy compatibility flag (optional)
 # SLIDEGUARD_FORCE_LEGACY_CHAT_COMPLETIONS=false
 
-# OpenAI Configuration (optional)
+# Anthropic Configuration (optional, takes priority over OpenAI and local model)
+# ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_MODEL=claude-3-5-sonnet-latest
+
+# OpenAI Configuration (optional, takes priority over local model)
 # OPENAI_API_KEY=sk-...
 # OPENAI_MODEL=gpt-4o
 

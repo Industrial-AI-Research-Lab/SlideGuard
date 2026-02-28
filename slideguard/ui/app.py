@@ -494,9 +494,9 @@ class SlideGuardUI:
             deck_summary = self._format_deck_results(evaluation)
             tldr_text = evaluation.tldr or ""
             tldr_html = (
-                f"<div style='background-color: #fffde7; padding: 8px; border-radius: 8px; margin: 4px 0 4px 0; border-left: 4px solid #fbc02d; color: #333333;'>"
-                f"<h3 style='color: #333333; margin-top: 0; margin-bottom: 4px;'><strong>{self.translator.t('tldr')}</strong></h3>"
-                f"<p style='color: #333333; margin: 4px 0;'>{escape(tldr_text)}</p>"
+                f"<div style='background: linear-gradient(135deg, #FFFBEB, #FEF3C7); padding: 16px 20px; border-radius: 14px; margin: 8px 0; border-left: 4px solid #F59E0B; color: #92400E;'>"
+                f"<h3 style='color: #92400E; margin-top: 0; margin-bottom: 8px; font-size: 1.1em;'><strong>{self.translator.t('tldr')}</strong></h3>"
+                f"<p style='color: #78350F; margin: 4px 0; font-size: 15px; line-height: 1.6;'>{escape(tldr_text)}</p>"
                 f"</div>"
             ) if tldr_text else ""
 
@@ -505,18 +505,18 @@ class SlideGuardUI:
                 s = evaluation.overall_score
                 s_percentage = (s / 5.0) * 100
                 if s_percentage >= 90:
-                    icon, bg, brd, col = "🟢", "#e8f5e8", "#4caf50", "#2e7d32"
+                    icon, bg, brd, col = "🟢", "#ECFDF5", "#10B981", "#065F46"
                 elif s_percentage >= 70:
-                    icon, bg, brd, col = "🟢", "#e8f5e8", "#66bb6a", "#388e3c"
+                    icon, bg, brd, col = "🟢", "#ECFDF5", "#22C55E", "#166534"
                 elif s_percentage >= 50:
-                    icon, bg, brd, col = "🟡", "#fffde7", "#fbc02d", "#8d6e63"
+                    icon, bg, brd, col = "🟡", "#FFFBEB", "#EAB308", "#854D0E"
                 elif s_percentage >= 30:
-                    icon, bg, brd, col = "🟠", "#fff3e0", "#ff9800", "#e65100"
+                    icon, bg, brd, col = "🟠", "#FFF7ED", "#F59E0B", "#9A3412"
                 else:
-                    icon, bg, brd, col = "🔴", "#ffebee", "#f44336", "#b71c1c"
+                    icon, bg, brd, col = "🔴", "#FEF2F2", "#EF4444", "#991B1B"
                 score_html = (
-                    f"<div style='margin: 2px 0 2px 0;'>"
-                    f"<span style='display:inline-block;padding:5px 10px;border-radius:14px;background:{bg};border:1px solid {brd};color:{col};font-weight:600;'>"
+                    f"<div style='margin: 4px 0;'>"
+                    f"<span style='display:inline-block;padding:8px 16px;border-radius:20px;background:{bg};border:1.5px solid {brd};color:{col};font-weight:600;font-size:15px;box-shadow:0 1px 4px rgba(0,0,0,0.06);'>"
                     f"{icon} {self.translator.t('overall_score_label')} {s}/5"
                     f"</span>"
                     f"</div>"
@@ -536,93 +536,67 @@ class SlideGuardUI:
         if not evaluation or not evaluation.deck_evaluations:
             return self.translator.t("no_deck_evaluations")
         
-        result = f"<h2 style='color: #333333;'>{self.translator.t('deck_results_title')}</h2>\n\n"
+        result = f"<h2 style='color: #312E81; margin-bottom: 12px;'>{self.translator.t('deck_results_title')}</h2>\n\n"
         
         for criteria, eval_result in evaluation.deck_evaluations.evaluations.items():
             criteria_name = self._get_criteria_display_name(criteria)
-            result += "<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #333333;'>\n"
-            result += f"<h3 style='color: #333333; margin-top: 0;'>🎯 {criteria_name}</h3>\n"
+            result += "<div style='background: linear-gradient(135deg, #EEF2FF, #E8E4F8); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #6366F1; box-shadow: 0 2px 8px rgba(99,102,241,0.08); color: #334155;'>\n"
+            result += f"<h3 style='color: #312E81; margin-top: 0; font-size: 1.1em;'>🎯 {criteria_name}</h3>\n"
             
-            # Handle both Pydantic objects and dictionaries
             if hasattr(eval_result, 'evaluation_results'):
-                # Handle Pydantic objects with evaluation_results (like SlideTitleContentMatch)
                 result += self._format_structured_evaluation(eval_result.evaluation_results)
                 if hasattr(eval_result, 'score'):
                     score = eval_result.score
                     score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                     
-                    # Score indicator
                     if score_percentage >= 90:
-                        score_icon = "🟢"
-                        score_text = self.translator.t("excellent")
-                        score_color = "#4caf50"
+                        score_icon, score_text, score_color = "🟢", self.translator.t("excellent"), "#4caf50"
                     elif score_percentage >= 70:
-                        score_icon = "🟢"
-                        score_text = self.translator.t("pretty_good")
-                        score_color = "#66bb6a"
+                        score_icon, score_text, score_color = "🟢", self.translator.t("pretty_good"), "#66bb6a"
                     elif score_percentage >= 50:
-                        score_icon = "🟡"
-                        score_text = self.translator.t("good")
-                        score_color = "#ff9800"
+                        score_icon, score_text, score_color = "🟡", self.translator.t("good"), "#ff9800"
                     elif score_percentage >= 30:
-                        score_icon = "🟠"
-                        score_text = self.translator.t("fair")
-                        score_color = "#ff9800"
+                        score_icon, score_text, score_color = "🟠", self.translator.t("fair"), "#ff9800"
                     else:
-                        score_icon = "🔴"
-                        score_text = self.translator.t("needs_improvement")
-                        score_color = "#f44336"
+                        score_icon, score_text, score_color = "🔴", self.translator.t("needs_improvement"), "#f44336"
                     
-                    result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid {score_color}; color: #333333;'>\n"
-                    result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
-                    result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
+                    result += f"<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {score_color}; color: #334155;'>\n"
+                    result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
+                    result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                     result += "</div>\n"
             elif isinstance(eval_result, dict):
-                # Handle dictionary format
                 if 'evaluation_results' in eval_result:
                     result += self._format_structured_evaluation(eval_result['evaluation_results'])
                 elif 'score' in eval_result:
                     score = eval_result['score']
                     score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                     
-                    # Score indicator
                     if score_percentage >= 90:
-                        score_icon = "🟢"
-                        score_text = self.translator.t("excellent")
-                        score_color = "#4caf50"
+                        score_icon, score_text, score_color = "🟢", self.translator.t("excellent"), "#4caf50"
                     elif score_percentage >= 70:
-                        score_icon = "🟢"
-                        score_text = self.translator.t("pretty_good")
-                        score_color = "#66bb6a"
+                        score_icon, score_text, score_color = "🟢", self.translator.t("pretty_good"), "#66bb6a"
                     elif score_percentage >= 50:
-                        score_icon = "🟡"
-                        score_text = self.translator.t("good")
-                        score_color = "#ff9800"
+                        score_icon, score_text, score_color = "🟡", self.translator.t("good"), "#ff9800"
                     elif score_percentage >= 30:
-                        score_icon = "🟠"
-                        score_text = self.translator.t("fair")
-                        score_color = "#ff9800"
+                        score_icon, score_text, score_color = "🟠", self.translator.t("fair"), "#ff9800"
                     else:
-                        score_icon = "🔴"
-                        score_text = self.translator.t("needs_improvement")
-                        score_color = "#f44336"
+                        score_icon, score_text, score_color = "🔴", self.translator.t("needs_improvement"), "#f44336"
                     
-                    result += f"<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid {score_color}; color: #333333;'>\n"
-                    result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
-                    result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
+                    result += f"<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {score_color}; color: #334155;'>\n"
+                    result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
+                    result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                     
                     if 'comments' in eval_result:
-                        result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('comments')}</strong><br>{eval_result['comments']}</p>\n"
+                        result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('comments')}</strong><br>{eval_result['comments']}</p>\n"
                     if 'recommendations' in eval_result:
-                        result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('recommendations')}</strong><br>{eval_result['recommendations']}</p>\n"
+                        result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('recommendations')}</strong><br>{eval_result['recommendations']}</p>\n"
                     result += "</div>\n"
                 else:
-                    result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                    result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                     result += f"{eval_result}\n"
                     result += "</div>\n"
             else:
-                # Fallback for other formats
-                result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                 result += f"{eval_result}\n"
                 result += "</div>\n"
             
@@ -631,30 +605,25 @@ class SlideGuardUI:
         if evaluation.overall_score:
             overall_percentage = (evaluation.overall_score / 5.0) * 100
             if overall_percentage >= 90:
-                overall_icon = "🟢"
-                overall_text = self.translator.t("excellent")
+                overall_icon, overall_text = "🟢", self.translator.t("excellent")
             elif overall_percentage >= 70:
-                overall_icon = "🟢"
-                overall_text = self.translator.t("pretty_good")
+                overall_icon, overall_text = "🟢", self.translator.t("pretty_good")
             elif overall_percentage >= 50:
-                overall_icon = "🟡"
-                overall_text = self.translator.t("good")
+                overall_icon, overall_text = "🟡", self.translator.t("good")
             elif overall_percentage >= 30:
-                overall_icon = "🟠"
-                overall_text = self.translator.t("fair")
+                overall_icon, overall_text = "🟠", self.translator.t("fair")
             else:
-                overall_icon = "🔴"
-                overall_text = self.translator.t("needs_improvement")
+                overall_icon, overall_text = "🔴", self.translator.t("needs_improvement")
             
-            result += "<div style='background-color: #e3f2fd; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; color: #333333;'>\n"
-            result += f"<h3 style='color: #333333; margin-top: 0;'><strong>{self.translator.t('overall_score_label')} {overall_icon} {evaluation.overall_score:.2f}/5.0 ({overall_percentage:.0f}%)</strong></h3>\n"
-            result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('overall_assessment')}</strong> {overall_text}</p>\n"
+            result += "<div style='background: linear-gradient(135deg, #EEF2FF, #DBEAFE); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #6366F1; color: #312E81;'>\n"
+            result += f"<h3 style='color: #312E81; margin-top: 0;'><strong>{self.translator.t('overall_score_label')} {overall_icon} {evaluation.overall_score:.2f}/5.0 ({overall_percentage:.0f}%)</strong></h3>\n"
+            result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'><strong>{self.translator.t('overall_assessment')}</strong> {overall_text}</p>\n"
             result += "</div>\n\n"
         
         if evaluation.summary:
-            result += "<div style='background-color: #f3e5f5; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #9c27b0; color: #333333;'>\n"
-            result += f"<h3 style='color: #333333; margin-top: 0;'><strong>{self.translator.t('summary')}</strong></h3>\n"
-            result += f"<p style='color: #333333; margin: 8px 0;'>{evaluation.summary}</p>\n"
+            result += "<div style='background: linear-gradient(135deg, #F5F3FF, #EDE9FE); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #8B5CF6; color: #334155;'>\n"
+            result += f"<h3 style='color: #5B21B6; margin-top: 0;'><strong>{self.translator.t('summary')}</strong></h3>\n"
+            result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'>{evaluation.summary}</p>\n"
             result += "</div>\n\n"
         
         return result
@@ -664,36 +633,33 @@ class SlideGuardUI:
         if not evaluation or not evaluation.slide_evaluations:
             return self.translator.t("no_slide_evaluations")
         
-        result = f"<h2 style='color: #333333;'>{self.translator.t('slide_results_title')}</h2>\n\n"
+        result = f"<h2 style='color: #312E81; margin-bottom: 12px;'>{self.translator.t('slide_results_title')}</h2>\n\n"
         
         for slide_eval in evaluation.slide_evaluations:
-            result += f"<h3 style='color: #333333;'>📊 Slide {slide_eval.slide_id + 1}</h3>\n"
+            result += f"<h3 style='color: #3730A3;'>📊 Slide {slide_eval.slide_id + 1}</h3>\n"
             
             if slide_eval.evaluations:
                 for criteria, eval_result in slide_eval.evaluations.items():
-                    result += f"<h4 style='color: #333333;'>🎯 {self._get_criteria_display_name(criteria)}</h4>\n"
-                    # Handle both Pydantic objects and dictionaries
+                    result += f"<h4 style='color: #4338CA; font-size: 1.05em;'>🎯 {self._get_criteria_display_name(criteria)}</h4>\n"
                     if hasattr(eval_result, 'evaluation_results'):
-                        # Handle Pydantic objects with evaluation_results (like SlideTitleContentMatch)
                         result += self._format_structured_evaluation(eval_result.evaluation_results)
                         if hasattr(eval_result, 'score'):
-                            result += f"<p style='color: #333333;'><strong>Score:</strong> {eval_result.score}</p>\n\n"
+                            result += f"<p style='color: #334155; font-size: 15px;'><strong>Score:</strong> {eval_result.score}</p>\n\n"
                     elif isinstance(eval_result, dict):
-                        # Handle dictionary format
                         if 'evaluation_results' in eval_result:
                             result += self._format_structured_evaluation(eval_result['evaluation_results'])
                         elif 'score' in eval_result:
-                            result += f"<p style='color: #333333;'><strong>Score:</strong> {eval_result['score']}</p>\n\n"
+                            result += f"<p style='color: #334155; font-size: 15px;'><strong>Score:</strong> {eval_result['score']}</p>\n\n"
                             if 'comments' in eval_result:
-                                result += f"<p style='color: #333333;'><strong>Comments:</strong> {eval_result['comments']}</p>\n\n"
+                                result += f"<p style='color: #334155; font-size: 15px;'><strong>Comments:</strong> {eval_result['comments']}</p>\n\n"
                             if 'recommendations' in eval_result:
-                                result += f"<p style='color: #333333;'><strong>Recommendations:</strong> {eval_result['recommendations']}</p>\n\n"
+                                result += f"<p style='color: #334155; font-size: 15px;'><strong>Recommendations:</strong> {eval_result['recommendations']}</p>\n\n"
                         else:
                             result += f"{eval_result}\n\n"
                     else:
                         result += f"{eval_result}\n\n"
             
-            result += "<hr/>\n\n"
+            result += "<hr style='border: none; border-top: 1px solid #D5D0EA; margin: 20px 0;'/>\n\n"
         
         return result
     
@@ -709,91 +675,75 @@ class SlideGuardUI:
             return self.translator.t("upload_prompt_slides")
         
         slide_eval = self.current_evaluation.slide_evaluations[slide_index]
-        result = f"<h2 style='color: #333333;'>{self.translator.t('slide_evaluation_title', number=slide_index + 1)}</h2>\n\n"
+        result = f"<h2 style='color: #312E81; margin-bottom: 12px;'>{self.translator.t('slide_evaluation_title', number=slide_index + 1)}</h2>\n\n"
         
         if slide_eval.evaluations:
             for criteria, eval_result in slide_eval.evaluations.items():
                 criteria_name = self._get_criteria_display_name(criteria)
-                result += "<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #2196f3; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>\n"
-                result += f"<h3 style='color: #333333; margin-top: 0;'>🎯 {criteria_name}</h3>\n"
+                result += "<div style='background: linear-gradient(135deg, #EEF2FF, #E8E4F8); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #6366F1; box-shadow: 0 2px 8px rgba(99,102,241,0.08);'>\n"
+                result += f"<h3 style='color: #312E81; margin-top: 0; font-size: 1.1em;'>🎯 {criteria_name}</h3>\n"
                 
-                # Handle both Pydantic objects and dictionaries
                 if hasattr(eval_result, 'evaluation_results'):
-                    # Handle Pydantic objects with evaluation_results (like SlideTitleContentMatch)
                     result += self._format_structured_evaluation(eval_result.evaluation_results)
                     if hasattr(eval_result, 'score'):
                         score = eval_result.score
                         score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                         
-                        # Score indicator
                         if score_percentage >= 90:
-                            score_icon = "🟢"
-                            score_text = self.translator.t("excellent")
+                            score_icon, score_text = "🟢", self.translator.t("excellent")
                         elif score_percentage >= 70:
-                            score_icon = "🟢"
-                            score_text = self.translator.t("pretty_good")
+                            score_icon, score_text = "🟢", self.translator.t("pretty_good")
                         elif score_percentage >= 50:
-                            score_icon = "🟡"
-                            score_text = self.translator.t("good")
+                            score_icon, score_text = "🟡", self.translator.t("good")
                         elif score_percentage >= 30:
-                            score_icon = "🟠"
-                            score_text = self.translator.t("fair")
+                            score_icon, score_text = "🟠", self.translator.t("fair")
                         else:
-                            score_icon = "🔴"
-                            score_text = self.translator.t("needs_improvement")
+                            score_icon, score_text = "🔴", self.translator.t("needs_improvement")
                         
-                        result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
-                        result += f"<p><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
-                        result += f"<p><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
+                        result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                        result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
+                        result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                         result += "</div>\n"
                 elif isinstance(eval_result, dict):
-                    # Handle dictionary format
                     if 'evaluation_results' in eval_result:
                         result += self._format_structured_evaluation(eval_result['evaluation_results'])
                     elif 'score' in eval_result:
                         score = eval_result['score']
                         score_percentage = (score / 5.0) * 100 if score <= 5 else (score / 10.0) * 100
                         
-                        # Score indicator
                         if score_percentage >= 90:
-                            score_icon = "🟢"
-                            score_text = self.translator.t("excellent")
+                            score_icon, score_text = "🟢", self.translator.t("excellent")
                         elif score_percentage >= 70:
-                            score_icon = "🟢"
-                            score_text = self.translator.t("pretty_good")
+                            score_icon, score_text = "🟢", self.translator.t("pretty_good")
                         elif score_percentage >= 50:
-                            score_icon = "🟡"
-                            score_text = self.translator.t("good")
+                            score_icon, score_text = "🟡", self.translator.t("good")
                         elif score_percentage >= 30:
-                            score_icon = "🟠"
-                            score_text = self.translator.t("fair")
+                            score_icon, score_text = "🟠", self.translator.t("fair")
                         else:
-                            score_icon = "🔴"
-                            score_text = self.translator.t("needs_improvement")
+                            score_icon, score_text = "🔴", self.translator.t("needs_improvement")
                         
-                        result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
-                        result += f"<p><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
-                        result += f"<p><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
+                        result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                        result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
+                        result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                         
                         if 'comments' in eval_result:
-                            result += f"<p><strong>{self.translator.t('comments')}</strong><br>{eval_result['comments']}</p>\n"
+                            result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('comments')}</strong><br>{eval_result['comments']}</p>\n"
                         if 'recommendations' in eval_result:
-                            result += f"<p><strong>{self.translator.t('recommendations')}</strong><br>{eval_result['recommendations']}</p>\n"
+                            result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('recommendations')}</strong><br>{eval_result['recommendations']}</p>\n"
                         result += "</div>\n"
                     else:
-                        result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                        result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                         result += f"{eval_result}\n"
                         result += "</div>\n"
                 else:
-                    # Fallback for other formats
-                    result += "<div style='background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0;'>\n"
+                    result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                     result += f"{eval_result}\n"
                     result += "</div>\n"
                 
                 result += "</div>\n\n"
         else:
-            result += "<div style='background-color: #fff3e0; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #ff9800; color: #333333;'>\n"
-            result += f"<p style='color: #333333;'><strong>{self.translator.t('no_slide_evaluation_single')}</strong></p>\n"
+            result += "<div style='background: linear-gradient(135deg, #FFF7ED, #FFEDD5); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #F59E0B; color: #92400E;'>\n"
+            result += f"<p style='color: #92400E; font-size: 15px;'><strong>{self.translator.t('no_slide_evaluation_single')}</strong></p>\n"
             result += "</div>\n\n"
         
         return result
@@ -806,22 +756,18 @@ class SlideGuardUI:
         result = ""
         total_severity = 0
         
-        # Handle both list of dicts and list of Pydantic objects
         if hasattr(evaluation_results, '__iter__') and not isinstance(evaluation_results, str):
             items = list(evaluation_results)
         else:
             return f"Unexpected evaluation results format: {type(evaluation_results)}\n\n"
         
         for i, eval_item in enumerate(items, 1):
-            # Handle both dict and Pydantic object
             if hasattr(eval_item, 'severity') and hasattr(eval_item, 'evaluation_element'):
-                # Handle Pydantic objects with severity (most criteria results)
                 severity = eval_item.severity
                 element = eval_item.evaluation_element
                 suggestion = eval_item.evaluation_suggestion
             elif hasattr(eval_item, 'evaluation_element'):
-                # Handle Pydantic objects without severity (fallback)
-                severity = 1  # Default to low priority for items without explicit severity
+                severity = 1
                 element = eval_item.evaluation_element
                 suggestion = eval_item.evaluation_suggestion
             elif isinstance(eval_item, dict):
@@ -829,12 +775,9 @@ class SlideGuardUI:
                 element = eval_item.get('evaluation_element', 'Unknown Element')
                 suggestion = eval_item.get('evaluation_suggestion', 'No suggestion provided')
             else:
-                # Fallback for unexpected format - try to extract useful information
                 try:
-                    # Try to convert to string and extract meaningful parts
                     item_str = str(eval_item)
                     if "evaluation_element" in item_str and "evaluation_suggestion" in item_str:
-                        # Try to parse the string representation
                         import re
                         element_match = re.search(r"evaluation_element='([^']*)'", item_str)
                         suggestion_match = re.search(r"evaluation_suggestion='([^']*)'", item_str)
@@ -844,80 +787,58 @@ class SlideGuardUI:
                         suggestion = suggestion_match.group(1) if suggestion_match else "No specific suggestion"
                         severity = int(severity_match.group(1)) if severity_match else 1
                     else:
-                        # Fallback for completely unexpected format
-                        result += "<div style='background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #666;'>\n"
+                        result += "<div style='background-color: #EDE9FE; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #94A3B8;'>\n"
                         result += "### ⚠️ **Unexpected Result Format**\n"
                         result += f"**Raw Data:** {str(eval_item)[:200]}...\n"
                         result += "</div>\n\n"
                         continue
                 except Exception as e:
-                    # Final fallback
-                    result += "<div style='background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #666;'>\n"
+                    result += "<div style='background-color: #EDE9FE; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #94A3B8;'>\n"
                     result += "### ⚠️ **Error Processing Result**\n"
                     result += f"**Error:** {str(e)}\n"
                     result += f"**Raw Data:** {str(eval_item)[:200]}...\n"
                     result += "</div>\n\n"
                     continue
             
-            # Update max severity and score
             total_severity += severity
             
-            # Severity indicator with better styling and dark theme compatibility
             if severity == 1:
-                severity_icon = "🟢"
-                severity_text = self.translator.t("low_priority")
-                bg_color = "#e8f5e8"
-                border_color = "#4caf50"
+                severity_icon, severity_text = "🟢", self.translator.t("low_priority")
+                bg_color, border_color = "#ECFDF5", "#10B981"
             elif severity == 2:
-                severity_icon = "🟡"
-                severity_text = self.translator.t("medium_priority")
-                bg_color = "#fff3e0"
-                border_color = "#ff9800"
+                severity_icon, severity_text = "🟡", self.translator.t("medium_priority")
+                bg_color, border_color = "#FFFBEB", "#F59E0B"
             elif severity == 3:
-                severity_icon = "🔴"
-                severity_text = self.translator.t("high_priority")
-                bg_color = "#ffebee"
-                border_color = "#f44336"
+                severity_icon, severity_text = "🔴", self.translator.t("high_priority")
+                bg_color, border_color = "#FEF2F2", "#EF4444"
             else:
-                severity_icon = "⚪"
-                severity_text = self.translator.t("info")
-                bg_color = "#f5f5f5"
-                border_color = "#9e9e9e"
+                severity_icon, severity_text = "⚪", self.translator.t("info")
+                bg_color, border_color = "#F0EDFF", "#94A3B8"
             
-            result += f"<div style='background-color: {bg_color}; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid {border_color}; color: #333333;'>\n"
-            result += f"<h3 style='color: #333333; margin-top: 0;'>{severity_icon} <strong>{self.translator.t('analysis')}</strong></h3>\n"
-            result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('priority_label')}</strong> {severity_text} ({self.translator.t('severity_label')} {severity}/3)</p>\n"
-            result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('evaluation_label')}</strong> {element}</p>\n"
-            result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('suggestion_label')}</strong> {suggestion}</p>\n"
+            result += f"<div style='background-color: {bg_color}; padding: 18px; border-radius: 12px; margin: 12px 0; border-left: 4px solid {border_color}; color: #334155;'>\n"
+            result += f"<h3 style='color: #1E293B; margin-top: 0; font-size: 1.05em;'>{severity_icon} <strong>{self.translator.t('analysis')}</strong></h3>\n"
+            result += f"<p style='color: #475569; margin: 8px 0; font-size: 15px;'><strong>{self.translator.t('priority_label')}</strong> {severity_text} ({self.translator.t('severity_label')} {severity}/3)</p>\n"
+            result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'><strong>{self.translator.t('evaluation_label')}</strong> {element}</p>\n"
+            result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'><strong>{self.translator.t('suggestion_label')}</strong> {suggestion}</p>\n"
             result += "</div>\n\n"
         
         severity_score = total_severity / len(items) if items else 0
         severity_percentage = (severity_score / 3.0) * 100
 
         if severity_percentage >= 80:
-            score_icon = "🔴"
-            score_text = self.translator.t("needs_improvement")
-            score_color = "#f44336"
+            score_icon, score_text, score_color = "🔴", self.translator.t("needs_improvement"), "#EF4444"
         elif severity_percentage >= 60:
-            score_icon = "🟠"
-            score_text = self.translator.t("fair")
-            score_color = "#ff9800"
+            score_icon, score_text, score_color = "🟠", self.translator.t("fair"), "#F59E0B"
         elif severity_percentage >= 40:
-            score_icon = "🟡"
-            score_text = self.translator.t("good")
-            score_color = "#ffeb3b"
+            score_icon, score_text, score_color = "🟡", self.translator.t("good"), "#EAB308"
         elif severity_percentage >= 20:
-            score_icon = "🟢"
-            score_text = self.translator.t("pretty_good")
-            score_color = "#66bb6a"
+            score_icon, score_text, score_color = "🟢", self.translator.t("pretty_good"), "#22C55E"
         else:
-            score_icon = "🟢"
-            score_text = self.translator.t("excellent")
-            score_color = "#4caf50"
+            score_icon, score_text, score_color = "🟢", self.translator.t("excellent"), "#10B981"
 
-        result += f"<div style='background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid {score_color}; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: #333333;'>\n"
-        result += f"<h3 style='color: #333333; margin-top: 0;'><strong>{self.translator.t('total_severity')} {score_icon} {severity_score:.1f}/3.0 ({severity_percentage:.0f}%)</strong></h3>\n"
-        result += f"<p style='color: #333333; margin: 8px 0;'><strong>{self.translator.t('overall_assessment')}</strong> {score_text}</p>\n"
+        result += f"<div style='background-color: #F5F3FF; padding: 18px; border-radius: 12px; margin: 16px 0; border-left: 4px solid {score_color}; box-shadow: 0 2px 8px rgba(99,102,241,0.08); color: #312E81;'>\n"
+        result += f"<h3 style='color: #312E81; margin-top: 0;'><strong>{self.translator.t('total_severity')} {score_icon} {severity_score:.1f}/3.0 ({severity_percentage:.0f}%)</strong></h3>\n"
+        result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'><strong>{self.translator.t('overall_assessment')}</strong> {score_text}</p>\n"
         result += "</div>\n\n"
         
         return result
@@ -970,10 +891,10 @@ class SlideGuardUI:
         logout_text = self.translator.t("logout")
         html = dedent("""
                 <div id='sgProfileContainer' style='position:fixed;top:12px;right:12px;z-index:2147483647;'>
-                <div id='sgProfileIcon' style='width:36px;height:36px;border-radius:50%;background:#1f6feb;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:600;' onclick="event.stopPropagation();var d=document.getElementById('sgProfileDropdown');if(d){d.style.display=(d.style.display==='block')?'none':'block';}">__INITIAL__</div>
-                <div id='sgProfileDropdown' style='display:none;position:absolute;right:0;top:44px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:2147483647;max-height:none;overflow:visible;'>
-                    <div style='padding:12px 16px;font-weight:600;border-bottom:1px solid #eee;' id='sgProfileName'>__SAFE_NAME__</div>
-                    <a href='/logout' id='sgLogoutLink' style='padding:10px 16px;display:block;text-decoration:none;color:#333;' onclick="(function(){var p=new URLSearchParams(window.location.search);var t=p.get('__theme')||localStorage.getItem('sg_theme')||'';if(t){localStorage.setItem('sg_theme',t);}fetch('/logout',{method:'GET',credentials:'include'}).finally(function(){window.top.location.href='/?__theme='+encodeURIComponent(t);});return false;})()">__LOGOUT_TEXT__</a>
+                <div id='sgProfileIcon' style='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#818CF8);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:600;font-size:15px;box-shadow:0 2px 8px rgba(99,102,241,0.25);transition:all 0.2s ease;' onclick="event.stopPropagation();var d=document.getElementById('sgProfileDropdown');if(d){d.style.display=(d.style.display==='block')?'none':'block';}">__INITIAL__</div>
+                <div id='sgProfileDropdown' style='display:none;position:absolute;right:0;top:48px;background:#F5F3FF;border:1px solid #D5D0EA;border-radius:14px;min-width:210px;box-shadow:0 8px 30px rgba(99,102,241,0.15);z-index:2147483647;max-height:none;overflow:visible;'>
+                    <div style='padding:14px 18px;font-weight:600;font-size:15px;border-bottom:1px solid #D5D0EA;color:#312E81;' id='sgProfileName'>__SAFE_NAME__</div>
+                    <a href='/logout' id='sgLogoutLink' style='padding:12px 18px;display:block;text-decoration:none;color:#4338CA;font-size:14px;border-radius:0 0 14px 14px;transition:background 0.15s ease;' onmouseover="this.style.background='#EDE9FE'" onmouseout="this.style.background='transparent'" onclick="(function(){var p=new URLSearchParams(window.location.search);var t=p.get('__theme')||localStorage.getItem('sg_theme')||'';if(t){localStorage.setItem('sg_theme',t);}fetch('/logout',{method:'GET',credentials:'include'}).finally(function(){window.top.location.href='/?__theme='+encodeURIComponent(t);});return false;})()">__LOGOUT_TEXT__</a>
                 </div>
                 </div>""")
         return html.replace("__INITIAL__", initial).replace("__SAFE_NAME__", safe_name).replace("__LOGOUT_TEXT__", logout_text)
@@ -994,38 +915,111 @@ class SlideGuardUI:
 
         with gr.Blocks(
             title="SlideGuard - Presentation Evaluation",
-            theme=gr.themes.Default(),
+            theme=gr.themes.Soft(
+                primary_hue=gr.themes.colors.indigo,
+                secondary_hue=gr.themes.colors.violet,
+                neutral_hue=gr.themes.colors.slate,
+                font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"],
+                font_mono=[gr.themes.GoogleFont("JetBrains Mono"), "monospace"],
+                text_size=gr.themes.sizes.text_lg,
+                spacing_size=gr.themes.sizes.spacing_lg,
+                radius_size=gr.themes.sizes.radius_lg,
+            ).set(
+                body_background_fill="#F0EDFF",
+                block_background_fill="#E8E4F8",
+                block_border_color="#D5D0EA",
+                block_border_width="1px",
+                block_label_background_fill="#DDD8F0",
+                block_label_text_color="#4338CA",
+                block_shadow="0 2px 8px rgba(99,102,241,0.07)",
+                block_title_text_color="#312E81",
+                button_primary_background_fill="linear-gradient(135deg, #6366F1, #818CF8)",
+                button_primary_background_fill_hover="linear-gradient(135deg, #4F46E5, #6366F1)",
+                button_primary_text_color="white",
+                button_primary_border_color="transparent",
+                button_secondary_background_fill="#E0DBFA",
+                button_secondary_background_fill_hover="#D1CBEF",
+                button_secondary_text_color="#4338CA",
+                input_background_fill="#F5F3FF",
+                input_border_color="#D5D0EA",
+                checkbox_background_color="#F5F3FF",
+                border_color_primary="#A5B4FC",
+                color_accent_soft="#EEF2FF",
+            ),
             css="""
+            /* ── Language toggle ── */
             #sgLangButton {
-                position: fixed;
-                top: 12px;
-                right: 60px;
-                z-index: 2147483646;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 2px 9px;
-                border-radius: 14px;
-                font-size: 11px;
-                line-height: 1.1;
-                min-height: 24px;
-                min-width: 42px;
-                width: auto !important;
-                max-width: fit-content;
-                background-color: #1f6feb;
-                color: #ffffff;
-                border: 1px solid #1f6feb;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-                cursor: pointer;
+                position: fixed; top: 12px; right: 60px; z-index: 2147483646;
+                display: inline-flex; align-items: center; justify-content: center;
+                padding: 3px 12px; border-radius: 20px;
+                font-size: 12px; font-weight: 600; line-height: 1.2;
+                min-height: 28px; min-width: 46px;
+                width: auto !important; max-width: fit-content;
+                background: linear-gradient(135deg, #6366F1, #818CF8);
+                color: #fff; border: none;
+                box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+                cursor: pointer; transition: all 0.2s ease;
             }
             #sgLangButton:hover {
-                background-color: #1554b0;
-                border-color: #1554b0;
+                background: linear-gradient(135deg, #4F46E5, #6366F1);
+                box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+                transform: translateY(-1px);
             }
             #sgLangButton:focus-visible {
-                outline: 2px solid rgba(21, 84, 176, 0.6);
+                outline: 2px solid rgba(99,102,241,0.5);
                 outline-offset: 2px;
             }
+
+            /* ── Typography boost ── */
+            .gradio-container { font-size: 16px !important; line-height: 1.65 !important; }
+            .gradio-container h1 { font-size: 2em !important; font-weight: 700 !important; letter-spacing: -0.025em !important; color: #312E81 !important; }
+            .gradio-container h2 { font-size: 1.4em !important; font-weight: 600 !important; color: #3730A3 !important; }
+            .gradio-container h3 { font-size: 1.15em !important; font-weight: 600 !important; }
+            .prose * { font-size: inherit !important; }
+            .prose p, .prose li { font-size: 15.5px !important; line-height: 1.7 !important; }
+            label > span { font-size: 15px !important; }
+            textarea, input[type="text"] { font-size: 15px !important; }
+
+            /* ── Tabs ── */
+            .tab-nav { border-bottom: 2px solid #D5D0EA !important; }
+            .tab-nav button { font-size: 15px !important; font-weight: 500 !important; padding: 10px 22px !important; border-radius: 12px 12px 0 0 !important; transition: all 0.2s ease !important; }
+            .tab-nav button.selected { background: #E8E4F8 !important; border-bottom: 3px solid #6366F1 !important; color: #4338CA !important; font-weight: 600 !important; }
+
+            /* ── Buttons ── */
+            .gradio-container button { border-radius: 12px !important; font-weight: 500 !important; transition: all 0.2s ease !important; }
+            .gradio-container button:hover { transform: translateY(-1px) !important; }
+            .gradio-container button.primary { box-shadow: 0 3px 12px rgba(99,102,241,0.3) !important; }
+            .gradio-container button.primary:hover { box-shadow: 0 6px 20px rgba(99,102,241,0.35) !important; }
+
+            /* ── Inputs and dropdowns ── */
+            .gradio-container input, .gradio-container select, .gradio-container textarea { border-radius: 10px !important; }
+
+            /* ── File upload ── */
+            .upload-container { border: 2px dashed #C4B5FD !important; border-radius: 14px !important; background: #F5F3FF !important; }
+
+            /* ── Checkbox groups ── */
+            .gr-check-radio { accent-color: #6366F1 !important; }
+
+            /* ── HTML output areas ── */
+            .html-container { font-size: 15px !important; line-height: 1.65 !important; }
+
+            /* ── Scrollbar styling ── */
+            ::-webkit-scrollbar { width: 8px; height: 8px; }
+            ::-webkit-scrollbar-track { background: #F0EDFF; border-radius: 4px; }
+            ::-webkit-scrollbar-thumb { background: #C4B5FD; border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: #A5B4FC; }
+
+            /* ── Smooth transitions for blocks ── */
+            .gr-panel, .gr-box, .gr-group, .gr-block { border-radius: 14px !important; transition: box-shadow 0.2s ease, transform 0.15s ease !important; }
+
+            /* ── Status textbox ── */
+            .gradio-container .gr-text-output { font-size: 15px !important; }
+
+            /* ── Description text ── */
+            .gradio-container .markdown-text { font-size: 16px !important; color: #475569 !important; }
+
+            /* ── Image preview ── */
+            .gradio-container .image-container { border-radius: 12px !important; overflow: hidden !important; box-shadow: 0 2px 12px rgba(99,102,241,0.1) !important; }
             """,
         ) as interface:
             title_md = gr.Markdown(texts["title_md"])

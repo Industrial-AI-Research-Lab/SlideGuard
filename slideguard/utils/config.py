@@ -31,7 +31,10 @@ class SlideGuardConfig:
     
     def is_configured(self) -> bool:
         """Check if required environment variables are set"""
-        return bool(self.api_key and self.api_base)
+        has_cloud_provider = bool(
+            os.getenv('ANTHROPIC_API_KEY') or os.getenv('OPENAI_API_KEY')
+        )
+        return has_cloud_provider or bool(self.api_key and self.api_base)
     
     def get_llm_config(self) -> Dict[str, Any]:
         """Get LLM configuration dictionary"""
@@ -90,8 +93,11 @@ SLIDEGUARD_MAX_CONCURRENCY=8
 # Set to 1, true, yes, or on to force legacy chat completions API parameters
 # SLIDEGUARD_FORCE_LEGACY_CHAT_COMPLETIONS=false
 
-# OpenAI Configuration (optional)
-# If set, OpenAI will be used instead of local model
+# Anthropic Configuration (optional, takes priority over OpenAI and local model)
+# ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_MODEL=claude-3-5-sonnet-latest
+
+# OpenAI Configuration (optional, takes priority over local model)
 # OPENAI_API_KEY=sk-...
 # OPENAI_MODEL=gpt-4o
 
