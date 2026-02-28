@@ -536,12 +536,12 @@ class SlideGuardUI:
         if not evaluation or not evaluation.deck_evaluations:
             return self.translator.t("no_deck_evaluations")
         
-        result = f"<h2 style='color: #312E81; margin-bottom: 12px;'>{self.translator.t('deck_results_title')}</h2>\n\n"
+        result = f"<h2 style='color: #3D4663; margin-bottom: 12px;'>{self.translator.t('deck_results_title')}</h2>\n\n"
         
         for criteria, eval_result in evaluation.deck_evaluations.evaluations.items():
             criteria_name = self._get_criteria_display_name(criteria)
-            result += "<div style='background: linear-gradient(135deg, #EEF2FF, #E8E4F8); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #6366F1; box-shadow: 0 2px 8px rgba(99,102,241,0.08); color: #334155;'>\n"
-            result += f"<h3 style='color: #312E81; margin-top: 0; font-size: 1.1em;'>🎯 {criteria_name}</h3>\n"
+            result += "<div style='background: linear-gradient(135deg, #F0F2F7, #EEF0F5); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #7C8BB8; box-shadow: 0 2px 8px rgba(100,110,140,0.08); color: #334155;'>\n"
+            result += f"<h3 style='color: #3D4663; margin-top: 0; font-size: 1.1em;'>🎯 {criteria_name}</h3>\n"
             
             if hasattr(eval_result, 'evaluation_results'):
                 result += self._format_structured_evaluation(eval_result.evaluation_results)
@@ -560,7 +560,7 @@ class SlideGuardUI:
                     else:
                         score_icon, score_text, score_color = "🔴", self.translator.t("needs_improvement"), "#f44336"
                     
-                    result += f"<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {score_color}; color: #334155;'>\n"
+                    result += f"<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {score_color}; color: #334155;'>\n"
                     result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
                     result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                     result += "</div>\n"
@@ -582,7 +582,7 @@ class SlideGuardUI:
                     else:
                         score_icon, score_text, score_color = "🔴", self.translator.t("needs_improvement"), "#f44336"
                     
-                    result += f"<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {score_color}; color: #334155;'>\n"
+                    result += f"<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid {score_color}; color: #334155;'>\n"
                     result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
                     result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                     
@@ -592,11 +592,11 @@ class SlideGuardUI:
                         result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('recommendations')}</strong><br>{eval_result['recommendations']}</p>\n"
                     result += "</div>\n"
                 else:
-                    result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                    result += "<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                     result += f"{eval_result}\n"
                     result += "</div>\n"
             else:
-                result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                result += "<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                 result += f"{eval_result}\n"
                 result += "</div>\n"
             
@@ -615,14 +615,14 @@ class SlideGuardUI:
             else:
                 overall_icon, overall_text = "🔴", self.translator.t("needs_improvement")
             
-            result += "<div style='background: linear-gradient(135deg, #EEF2FF, #DBEAFE); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #6366F1; color: #312E81;'>\n"
-            result += f"<h3 style='color: #312E81; margin-top: 0;'><strong>{self.translator.t('overall_score_label')} {overall_icon} {evaluation.overall_score:.2f}/5.0 ({overall_percentage:.0f}%)</strong></h3>\n"
+            result += "<div style='background: linear-gradient(135deg, #F0F2F7, #E8EBF2); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #7C8BB8; color: #3D4663;'>\n"
+            result += f"<h3 style='color: #3D4663; margin-top: 0;'><strong>{self.translator.t('overall_score_label')} {overall_icon} {evaluation.overall_score:.2f}/5.0 ({overall_percentage:.0f}%)</strong></h3>\n"
             result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'><strong>{self.translator.t('overall_assessment')}</strong> {overall_text}</p>\n"
             result += "</div>\n\n"
         
         if evaluation.summary:
-            result += "<div style='background: linear-gradient(135deg, #F5F3FF, #EDE9FE); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #8B5CF6; color: #334155;'>\n"
-            result += f"<h3 style='color: #5B21B6; margin-top: 0;'><strong>{self.translator.t('summary')}</strong></h3>\n"
+            result += "<div style='background: linear-gradient(135deg, #FAFAFC, #EEF0F5); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #8D96B5; color: #334155;'>\n"
+            result += f"<h3 style='color: #4A5272; margin-top: 0;'><strong>{self.translator.t('summary')}</strong></h3>\n"
             result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'>{evaluation.summary}</p>\n"
             result += "</div>\n\n"
         
@@ -633,14 +633,14 @@ class SlideGuardUI:
         if not evaluation or not evaluation.slide_evaluations:
             return self.translator.t("no_slide_evaluations")
         
-        result = f"<h2 style='color: #312E81; margin-bottom: 12px;'>{self.translator.t('slide_results_title')}</h2>\n\n"
+        result = f"<h2 style='color: #3D4663; margin-bottom: 12px;'>{self.translator.t('slide_results_title')}</h2>\n\n"
         
         for slide_eval in evaluation.slide_evaluations:
-            result += f"<h3 style='color: #3730A3;'>📊 Slide {slide_eval.slide_id + 1}</h3>\n"
+            result += f"<h3 style='color: #4A5272;'>📊 Slide {slide_eval.slide_id + 1}</h3>\n"
             
             if slide_eval.evaluations:
                 for criteria, eval_result in slide_eval.evaluations.items():
-                    result += f"<h4 style='color: #4338CA; font-size: 1.05em;'>🎯 {self._get_criteria_display_name(criteria)}</h4>\n"
+                    result += f"<h4 style='color: #5A6382; font-size: 1.05em;'>🎯 {self._get_criteria_display_name(criteria)}</h4>\n"
                     if hasattr(eval_result, 'evaluation_results'):
                         result += self._format_structured_evaluation(eval_result.evaluation_results)
                         if hasattr(eval_result, 'score'):
@@ -659,7 +659,7 @@ class SlideGuardUI:
                     else:
                         result += f"{eval_result}\n\n"
             
-            result += "<hr style='border: none; border-top: 1px solid #D5D0EA; margin: 20px 0;'/>\n\n"
+            result += "<hr style='border: none; border-top: 1px solid #E2E5EB; margin: 20px 0;'/>\n\n"
         
         return result
     
@@ -675,13 +675,13 @@ class SlideGuardUI:
             return self.translator.t("upload_prompt_slides")
         
         slide_eval = self.current_evaluation.slide_evaluations[slide_index]
-        result = f"<h2 style='color: #312E81; margin-bottom: 12px;'>{self.translator.t('slide_evaluation_title', number=slide_index + 1)}</h2>\n\n"
+        result = f"<h2 style='color: #3D4663; margin-bottom: 12px;'>{self.translator.t('slide_evaluation_title', number=slide_index + 1)}</h2>\n\n"
         
         if slide_eval.evaluations:
             for criteria, eval_result in slide_eval.evaluations.items():
                 criteria_name = self._get_criteria_display_name(criteria)
-                result += "<div style='background: linear-gradient(135deg, #EEF2FF, #E8E4F8); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #6366F1; box-shadow: 0 2px 8px rgba(99,102,241,0.08);'>\n"
-                result += f"<h3 style='color: #312E81; margin-top: 0; font-size: 1.1em;'>🎯 {criteria_name}</h3>\n"
+                result += "<div style='background: linear-gradient(135deg, #F0F2F7, #EEF0F5); padding: 20px; border-radius: 14px; margin: 16px 0; border-left: 4px solid #7C8BB8; box-shadow: 0 2px 8px rgba(100,110,140,0.08);'>\n"
+                result += f"<h3 style='color: #3D4663; margin-top: 0; font-size: 1.1em;'>🎯 {criteria_name}</h3>\n"
                 
                 if hasattr(eval_result, 'evaluation_results'):
                     result += self._format_structured_evaluation(eval_result.evaluation_results)
@@ -700,7 +700,7 @@ class SlideGuardUI:
                         else:
                             score_icon, score_text = "🔴", self.translator.t("needs_improvement")
                         
-                        result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                        result += "<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                         result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
                         result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                         result += "</div>\n"
@@ -722,7 +722,7 @@ class SlideGuardUI:
                         else:
                             score_icon, score_text = "🔴", self.translator.t("needs_improvement")
                         
-                        result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                        result += "<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                         result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('score_label')} {score_icon} {score:.1f}/5.0 ({score_percentage:.0f}%)</strong></p>\n"
                         result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('assessment_label')}</strong> {score_text}</p>\n"
                         
@@ -732,11 +732,11 @@ class SlideGuardUI:
                             result += f"<p style='color: #334155; margin: 6px 0; font-size: 15px;'><strong>{self.translator.t('recommendations')}</strong><br>{eval_result['recommendations']}</p>\n"
                         result += "</div>\n"
                     else:
-                        result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                        result += "<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                         result += f"{eval_result}\n"
                         result += "</div>\n"
                 else:
-                    result += "<div style='background-color: #F5F3FF; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
+                    result += "<div style='background-color: #FAFAFC; padding: 14px; border-radius: 10px; margin: 10px 0;'>\n"
                     result += f"{eval_result}\n"
                     result += "</div>\n"
                 
@@ -787,13 +787,13 @@ class SlideGuardUI:
                         suggestion = suggestion_match.group(1) if suggestion_match else "No specific suggestion"
                         severity = int(severity_match.group(1)) if severity_match else 1
                     else:
-                        result += "<div style='background-color: #EDE9FE; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #94A3B8;'>\n"
+                        result += "<div style='background-color: #EEF0F5; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #94A3B8;'>\n"
                         result += "### ⚠️ **Unexpected Result Format**\n"
                         result += f"**Raw Data:** {str(eval_item)[:200]}...\n"
                         result += "</div>\n\n"
                         continue
                 except Exception as e:
-                    result += "<div style='background-color: #EDE9FE; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #94A3B8;'>\n"
+                    result += "<div style='background-color: #EEF0F5; padding: 14px; border-radius: 10px; margin: 10px 0; border-left: 4px solid #94A3B8;'>\n"
                     result += "### ⚠️ **Error Processing Result**\n"
                     result += f"**Error:** {str(e)}\n"
                     result += f"**Raw Data:** {str(eval_item)[:200]}...\n"
@@ -813,7 +813,7 @@ class SlideGuardUI:
                 bg_color, border_color = "#FEF2F2", "#EF4444"
             else:
                 severity_icon, severity_text = "⚪", self.translator.t("info")
-                bg_color, border_color = "#F0EDFF", "#94A3B8"
+                bg_color, border_color = "#F5F6F9", "#94A3B8"
             
             result += f"<div style='background-color: {bg_color}; padding: 18px; border-radius: 12px; margin: 12px 0; border-left: 4px solid {border_color}; color: #334155;'>\n"
             result += f"<h3 style='color: #1E293B; margin-top: 0; font-size: 1.05em;'>{severity_icon} <strong>{self.translator.t('analysis')}</strong></h3>\n"
@@ -836,8 +836,8 @@ class SlideGuardUI:
         else:
             score_icon, score_text, score_color = "🟢", self.translator.t("excellent"), "#10B981"
 
-        result += f"<div style='background-color: #F5F3FF; padding: 18px; border-radius: 12px; margin: 16px 0; border-left: 4px solid {score_color}; box-shadow: 0 2px 8px rgba(99,102,241,0.08); color: #312E81;'>\n"
-        result += f"<h3 style='color: #312E81; margin-top: 0;'><strong>{self.translator.t('total_severity')} {score_icon} {severity_score:.1f}/3.0 ({severity_percentage:.0f}%)</strong></h3>\n"
+        result += f"<div style='background-color: #FAFAFC; padding: 18px; border-radius: 12px; margin: 16px 0; border-left: 4px solid {score_color}; box-shadow: 0 2px 8px rgba(100,110,140,0.08); color: #3D4663;'>\n"
+        result += f"<h3 style='color: #3D4663; margin-top: 0;'><strong>{self.translator.t('total_severity')} {score_icon} {severity_score:.1f}/3.0 ({severity_percentage:.0f}%)</strong></h3>\n"
         result += f"<p style='color: #334155; margin: 8px 0; font-size: 15px;'><strong>{self.translator.t('overall_assessment')}</strong> {score_text}</p>\n"
         result += "</div>\n\n"
         
@@ -891,10 +891,10 @@ class SlideGuardUI:
         logout_text = self.translator.t("logout")
         html = dedent("""
                 <div id='sgProfileContainer' style='position:fixed;top:12px;right:12px;z-index:2147483647;'>
-                <div id='sgProfileIcon' style='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#818CF8);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:600;font-size:15px;box-shadow:0 2px 8px rgba(99,102,241,0.25);transition:all 0.2s ease;' onclick="event.stopPropagation();var d=document.getElementById('sgProfileDropdown');if(d){d.style.display=(d.style.display==='block')?'none':'block';}">__INITIAL__</div>
-                <div id='sgProfileDropdown' style='display:none;position:absolute;right:0;top:48px;background:#F5F3FF;border:1px solid #D5D0EA;border-radius:14px;min-width:210px;box-shadow:0 8px 30px rgba(99,102,241,0.15);z-index:2147483647;max-height:none;overflow:visible;'>
-                    <div style='padding:14px 18px;font-weight:600;font-size:15px;border-bottom:1px solid #D5D0EA;color:#312E81;' id='sgProfileName'>__SAFE_NAME__</div>
-                    <a href='/logout' id='sgLogoutLink' style='padding:12px 18px;display:block;text-decoration:none;color:#4338CA;font-size:14px;border-radius:0 0 14px 14px;transition:background 0.15s ease;' onmouseover="this.style.background='#EDE9FE'" onmouseout="this.style.background='transparent'" onclick="(function(){var p=new URLSearchParams(window.location.search);var t=p.get('__theme')||localStorage.getItem('sg_theme')||'';if(t){localStorage.setItem('sg_theme',t);}fetch('/logout',{method:'GET',credentials:'include'}).finally(function(){window.top.location.href='/?__theme='+encodeURIComponent(t);});return false;})()">__LOGOUT_TEXT__</a>
+                <div id='sgProfileIcon' style='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7C8BB8,#95A2CC);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:600;font-size:15px;box-shadow:0 2px 8px rgba(100,110,140,0.20);transition:all 0.2s ease;' onclick="event.stopPropagation();var d=document.getElementById('sgProfileDropdown');if(d){d.style.display=(d.style.display==='block')?'none':'block';}">__INITIAL__</div>
+                <div id='sgProfileDropdown' style='display:none;position:absolute;right:0;top:48px;background:#FAFAFC;border:1px solid #E2E5EB;border-radius:14px;min-width:210px;box-shadow:0 8px 30px rgba(100,110,140,0.12);z-index:2147483647;max-height:none;overflow:visible;'>
+                    <div style='padding:14px 18px;font-weight:600;font-size:15px;border-bottom:1px solid #E2E5EB;color:#3D4663;' id='sgProfileName'>__SAFE_NAME__</div>
+                    <a href='/logout' id='sgLogoutLink' style='padding:12px 18px;display:block;text-decoration:none;color:#5A6382;font-size:14px;border-radius:0 0 14px 14px;transition:background 0.15s ease;' onmouseover="this.style.background='#EEF0F5'" onmouseout="this.style.background='transparent'" onclick="(function(){var p=new URLSearchParams(window.location.search);var t=p.get('__theme')||localStorage.getItem('sg_theme')||'';if(t){localStorage.setItem('sg_theme',t);}fetch('/logout',{method:'GET',credentials:'include'}).finally(function(){window.top.location.href='/?__theme='+encodeURIComponent(t);});return false;})()">__LOGOUT_TEXT__</a>
                 </div>
                 </div>""")
         return html.replace("__INITIAL__", initial).replace("__SAFE_NAME__", safe_name).replace("__LOGOUT_TEXT__", logout_text)
@@ -916,35 +916,35 @@ class SlideGuardUI:
         with gr.Blocks(
             title="SlideGuard - Presentation Evaluation",
             theme=gr.themes.Soft(
-                primary_hue=gr.themes.colors.indigo,
-                secondary_hue=gr.themes.colors.violet,
-                neutral_hue=gr.themes.colors.slate,
+                primary_hue=gr.themes.colors.slate,
+                secondary_hue=gr.themes.colors.slate,
+                neutral_hue=gr.themes.colors.gray,
                 font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"],
                 font_mono=[gr.themes.GoogleFont("JetBrains Mono"), "monospace"],
                 text_size=gr.themes.sizes.text_lg,
                 spacing_size=gr.themes.sizes.spacing_lg,
                 radius_size=gr.themes.sizes.radius_lg,
             ).set(
-                body_background_fill="#F0EDFF",
-                block_background_fill="#E8E4F8",
-                block_border_color="#D5D0EA",
+                body_background_fill="#F5F6F9",
+                block_background_fill="#FFFFFF",
+                block_border_color="#E2E5EB",
                 block_border_width="1px",
-                block_label_background_fill="#DDD8F0",
-                block_label_text_color="#4338CA",
-                block_shadow="0 2px 8px rgba(99,102,241,0.07)",
-                block_title_text_color="#312E81",
-                button_primary_background_fill="linear-gradient(135deg, #6366F1, #818CF8)",
-                button_primary_background_fill_hover="linear-gradient(135deg, #4F46E5, #6366F1)",
+                block_label_background_fill="#EEF0F5",
+                block_label_text_color="#5A6382",
+                block_shadow="0 2px 8px rgba(100,110,140,0.06)",
+                block_title_text_color="#3D4663",
+                button_primary_background_fill="linear-gradient(135deg, #7C8BB8, #95A2CC)",
+                button_primary_background_fill_hover="linear-gradient(135deg, #6A79A8, #7C8BB8)",
                 button_primary_text_color="white",
                 button_primary_border_color="transparent",
-                button_secondary_background_fill="#E0DBFA",
-                button_secondary_background_fill_hover="#D1CBEF",
-                button_secondary_text_color="#4338CA",
-                input_background_fill="#F5F3FF",
-                input_border_color="#D5D0EA",
-                checkbox_background_color="#F5F3FF",
-                border_color_primary="#A5B4FC",
-                color_accent_soft="#EEF2FF",
+                button_secondary_background_fill="#EEF0F5",
+                button_secondary_background_fill_hover="#E2E5EB",
+                button_secondary_text_color="#5A6382",
+                input_background_fill="#FAFAFC",
+                input_border_color="#E2E5EB",
+                checkbox_background_color="#FAFAFC",
+                border_color_primary="#B0B8CE",
+                color_accent_soft="#F0F2F7",
             ),
             css="""
             /* ── Language toggle ── */
@@ -955,25 +955,25 @@ class SlideGuardUI:
                 font-size: 12px; font-weight: 600; line-height: 1.2;
                 min-height: 28px; min-width: 46px;
                 width: auto !important; max-width: fit-content;
-                background: linear-gradient(135deg, #6366F1, #818CF8);
+                background: linear-gradient(135deg, #7C8BB8, #95A2CC);
                 color: #fff; border: none;
-                box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+                box-shadow: 0 2px 8px rgba(100,110,140,0.20);
                 cursor: pointer; transition: all 0.2s ease;
             }
             #sgLangButton:hover {
-                background: linear-gradient(135deg, #4F46E5, #6366F1);
-                box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+                background: linear-gradient(135deg, #6A79A8, #7C8BB8);
+                box-shadow: 0 4px 14px rgba(100,110,140,0.28);
                 transform: translateY(-1px);
             }
             #sgLangButton:focus-visible {
-                outline: 2px solid rgba(99,102,241,0.5);
+                outline: 2px solid rgba(100,110,140,0.4);
                 outline-offset: 2px;
             }
 
             /* ── Typography boost ── */
             .gradio-container { font-size: 16px !important; line-height: 1.65 !important; }
-            .gradio-container h1 { font-size: 2em !important; font-weight: 700 !important; letter-spacing: -0.025em !important; color: #312E81 !important; }
-            .gradio-container h2 { font-size: 1.4em !important; font-weight: 600 !important; color: #3730A3 !important; }
+            .gradio-container h1 { font-size: 2em !important; font-weight: 700 !important; letter-spacing: -0.025em !important; color: #3D4663 !important; }
+            .gradio-container h2 { font-size: 1.4em !important; font-weight: 600 !important; color: #4A5272 !important; }
             .gradio-container h3 { font-size: 1.15em !important; font-weight: 600 !important; }
             .prose * { font-size: inherit !important; }
             .prose p, .prose li { font-size: 15.5px !important; line-height: 1.7 !important; }
@@ -981,33 +981,33 @@ class SlideGuardUI:
             textarea, input[type="text"] { font-size: 15px !important; }
 
             /* ── Tabs ── */
-            .tab-nav { border-bottom: 2px solid #D5D0EA !important; }
+            .tab-nav { border-bottom: 2px solid #E2E5EB !important; }
             .tab-nav button { font-size: 15px !important; font-weight: 500 !important; padding: 10px 22px !important; border-radius: 12px 12px 0 0 !important; transition: all 0.2s ease !important; }
-            .tab-nav button.selected { background: #E8E4F8 !important; border-bottom: 3px solid #6366F1 !important; color: #4338CA !important; font-weight: 600 !important; }
+            .tab-nav button.selected { background: #EEF0F5 !important; border-bottom: 3px solid #7C8BB8 !important; color: #5A6382 !important; font-weight: 600 !important; }
 
             /* ── Buttons ── */
             .gradio-container button { border-radius: 12px !important; font-weight: 500 !important; transition: all 0.2s ease !important; }
             .gradio-container button:hover { transform: translateY(-1px) !important; }
-            .gradio-container button.primary { box-shadow: 0 3px 12px rgba(99,102,241,0.3) !important; }
-            .gradio-container button.primary:hover { box-shadow: 0 6px 20px rgba(99,102,241,0.35) !important; }
+            .gradio-container button.primary { box-shadow: 0 3px 12px rgba(100,110,140,0.20) !important; }
+            .gradio-container button.primary:hover { box-shadow: 0 6px 20px rgba(100,110,140,0.25) !important; }
 
             /* ── Inputs and dropdowns ── */
             .gradio-container input, .gradio-container select, .gradio-container textarea { border-radius: 10px !important; }
 
             /* ── File upload ── */
-            .upload-container { border: 2px dashed #C4B5FD !important; border-radius: 14px !important; background: #F5F3FF !important; }
+            .upload-container { border: 2px dashed #C5CAD9 !important; border-radius: 14px !important; background: #FAFAFC !important; }
 
             /* ── Checkbox groups ── */
-            .gr-check-radio { accent-color: #6366F1 !important; }
+            .gr-check-radio { accent-color: #7C8BB8 !important; }
 
             /* ── HTML output areas ── */
             .html-container { font-size: 15px !important; line-height: 1.65 !important; }
 
             /* ── Scrollbar styling ── */
             ::-webkit-scrollbar { width: 8px; height: 8px; }
-            ::-webkit-scrollbar-track { background: #F0EDFF; border-radius: 4px; }
-            ::-webkit-scrollbar-thumb { background: #C4B5FD; border-radius: 4px; }
-            ::-webkit-scrollbar-thumb:hover { background: #A5B4FC; }
+            ::-webkit-scrollbar-track { background: #F5F6F9; border-radius: 4px; }
+            ::-webkit-scrollbar-thumb { background: #C5CAD9; border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: #B0B8CE; }
 
             /* ── Smooth transitions for blocks ── */
             .gr-panel, .gr-box, .gr-group, .gr-block { border-radius: 14px !important; transition: box-shadow 0.2s ease, transform 0.15s ease !important; }
@@ -1016,10 +1016,10 @@ class SlideGuardUI:
             .gradio-container .gr-text-output { font-size: 15px !important; }
 
             /* ── Description text ── */
-            .gradio-container .markdown-text { font-size: 16px !important; color: #475569 !important; }
+            .gradio-container .markdown-text { font-size: 16px !important; color: #5A6382 !important; }
 
             /* ── Image preview ── */
-            .gradio-container .image-container { border-radius: 12px !important; overflow: hidden !important; box-shadow: 0 2px 12px rgba(99,102,241,0.1) !important; }
+            .gradio-container .image-container { border-radius: 12px !important; overflow: hidden !important; box-shadow: 0 2px 12px rgba(100,110,140,0.08) !important; }
             """,
         ) as interface:
             title_md = gr.Markdown(texts["title_md"])

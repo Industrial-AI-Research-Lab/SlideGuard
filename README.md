@@ -81,6 +81,27 @@ slideguard eval multirun --folder-path /path/to/pdfs
 slideguard ui run --host 127.0.0.1 --port 7860
 ```
 
+## Quick Start (Web UI)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/your-org/SlideGuard.git
+cd SlideGuard
+poetry install
+
+# 2. Configure your LLM provider
+cp .env.example .env
+# Edit .env and fill in your API keys / endpoint
+
+# 3. Create an admin user
+poetry run slideguard admin create -u admin -r admin
+
+# 4. Launch the UI
+poetry run slideguard ui run --host 127.0.0.1 --port 7860
+```
+
+Open `http://localhost:7860` and log in with the admin credentials you just created.
+
 ## Configuration
 
 ### Environment Variables
