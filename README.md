@@ -16,7 +16,7 @@ A comprehensive slide deck evaluation system using LangGraph and LangChain that 
 - **Async Support**: Synchronous and asynchronous evaluation workflows
 - **Intelligent Caching**: Caching keyed by criterion + presentation type + criteria language for safe reuse
 - **PDF Report Generation**: Export evaluation results as professional PDF reports
-- **vLLM Support**: Compatible with vLLM servers and OpenAI-compatible APIs
+- **Multi-Provider LLM Support**: Anthropic (Claude), OpenAI, vLLM, and any OpenAI-compatible API
 - **Langfuse Integration**: Optional observability and tracing support
 
 ## Quick Start
@@ -28,14 +28,23 @@ A comprehensive slide deck evaluation system using LangGraph and LangChain that 
 poetry install
 
 # Or using pip 
-pip install pydantic python-dotenv typer langfuse langchain langchain-openai langgraph gradio PyMuPDF reportlab bcrypt
+pip install pydantic python-dotenv typer langfuse langchain langchain-openai langchain-anthropic langgraph gradio PyMuPDF reportlab bcrypt
 ```
 
 ### Configuration
 
-Set up your environment variables:
+Set up your environment variables for one of the supported providers:
 
 ```bash
+# Option 1: Anthropic (Claude)
+export ANTHROPIC_API_KEY="sk-ant-..."
+export ANTHROPIC_MODEL="claude-3-5-sonnet-latest"  # optional, defaults to claude-3-5-sonnet-latest
+
+# Option 2: OpenAI
+export OPENAI_API_KEY="sk-..."
+export OPENAI_MODEL="gpt-4o"  # optional, defaults to gpt-4o
+
+# Option 3: Local / OpenAI-compatible endpoint (vLLM, LiteLLM, etc.)
 export SLIDEGUARD_LLM_API_KEY="your-api-key"
 export SLIDEGUARD_LLM_API_BASE="http://localhost:8000/v1"
 export SLIDEGUARD_LLM_MODEL="/model"
@@ -47,6 +56,8 @@ export SLIDEGUARD_FILE_CACHE_DIR=".file_cache"
 # Or use interactive setup
 python3 -m slideguard.setup setup
 ```
+
+> **Provider priority**: If multiple keys are set, Anthropic takes priority over OpenAI, which takes priority over the local endpoint.
 
 ### Basic Usage
 
@@ -76,11 +87,17 @@ slideguard ui run --host 127.0.0.1 --port 7860
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SLIDEGUARD_LLM_API_KEY` | API key for LLM service | Required |
-| `SLIDEGUARD_LLM_API_BASE` | Base URL for LLM API | Required |
-| `SLIDEGUARD_LLM_MODEL` | Model name | `/model` |
+| `ANTHROPIC_API_KEY` | Anthropic API key (enables Claude models) | — |
+| `ANTHROPIC_MODEL` | Anthropic model name | `claude-3-5-sonnet-latest` |
+| `OPENAI_API_KEY` | OpenAI API key (enables OpenAI models) | — |
+| `OPENAI_MODEL` | OpenAI model name | `gpt-4o` |
+| `SLIDEGUARD_LLM_API_KEY` | API key for local/custom LLM endpoint | Required* |
+| `SLIDEGUARD_LLM_API_BASE` | Base URL for local/custom LLM API | Required* |
+| `SLIDEGUARD_LLM_MODEL` | Model name for local endpoint | `/model` |
 | `SLIDEGUARD_CACHE_DIR` | Cache directory | `.slideguard_cache` |
 | `SLIDEGUARD_FILE_CACHE_DIR` | File cache directory | `.file_cache` |
+
+\* Required only when not using Anthropic or OpenAI keys.
 
 ### Setup Scripts
 
