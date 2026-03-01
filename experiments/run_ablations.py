@@ -13,7 +13,6 @@ Results are saved as JSON files under <output-dir>/<ablation>/<pdf_stem>.json.
 
 import argparse
 import asyncio
-import json
 import logging
 import os
 import sys
