@@ -89,7 +89,7 @@ git clone https://github.com/your-org/SlideGuard.git
 cd SlideGuard
 poetry install
 
-# 2. Configure your LLM provider
+# 2. Configure your VLM provider
 cp .env.example .env
 # Edit .env and fill in your API keys / endpoint
 
