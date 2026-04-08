@@ -112,15 +112,52 @@ def default_text_cleaner(s: str) -> str:
         s = s.replace("\x00", "").replace("\r", "\n")
         s = s.replace("\u201c", '"').replace("\u201d", '"')
         s = s.replace("\u2018", "'").replace("\u2019", "'")
-        s = re.sub(r"\\+\(", "(", s)
-        s = re.sub(r"\\+\)", ")", s)
-        s = re.sub(r"\\+\[", "[", s)
-        s = re.sub(r"\\+\]", "]", s)
-        s = re.sub(r"\\(?![\"\\/bfnrtu])", "", s)
-        return s
+        cleaned_chars: list[str] = []
+        idx = 0
+        while idx < len(s):
+            char = s[idx]
+            if char != "\\":
+                cleaned_chars.append(char)
+                idx += 1
+                continue
+
+            slash_end = idx
+            while slash_end < len(s) and s[slash_end] == "\\":
+                slash_end += 1
+
+            if slash_end < len(s) and s[slash_end] in "()[]":
+                cleaned_chars.append(s[slash_end])
+                idx = slash_end + 1
+                continue
+
+            next_char = s[idx + 1] if idx + 1 < len(s) else ""
+            if next_char in '"\\/bfnrtu':
+                cleaned_chars.append("\\")
+            idx += 1
+
+        return "".join(cleaned_chars)
     except Exception as e:
         logger.warning(f"Failed to clean output: {s} - {e}", exc_info=True)
         return s
+
+
+def extract_json_payload(s: str) -> str:
+    """Extract the first complete JSON object/array from LLM text output."""
+    stripped = s.strip()
+    if not stripped:
+        return stripped
+
+    decoder = json.JSONDecoder()
+    for idx, char in enumerate(stripped):
+        if char not in "[{":
+            continue
+        try:
+            _, end = decoder.raw_decode(stripped[idx:])
+            return stripped[idx : idx + end]
+        except json.JSONDecodeError:
+            continue
+
+    return stripped
 
 
 @dataclass
@@ -162,7 +199,7 @@ class ControlledLLM:
         self.chat_model = chat_model
         self.max_retries = max_retries
         self.retry_temperature = retry_temperature
-        self.preprocessors = preprocessors or [default_text_cleaner]
+        self.preprocessors = preprocessors or [default_text_cleaner, extract_json_payload]
         self.language: AppLanguage = language
 
     def with_tools(self, tools: List[Any]) -> "ControlledLLM":
@@ -220,6 +257,12 @@ class ControlledLLM:
                     parsed_obj = await parser.aparse(current_text) # initial parse
                     raw_out = current_text
                 except Exception as e:
+                    try:
+                        parsed_obj = output_model.model_validate_json(current_text)
+                        raw_out = current_text
+                        continue
+                    except Exception:
+                        pass
                     if attempt < self.max_retries: # retry parse
                         logger.info(f"({attempt + 1}/{self.max_retries + 1}) Failed to parse output: {e}")
                         try:
@@ -232,13 +275,13 @@ class ControlledLLM:
             # Final fallback attempt
             if not parsed_obj:
                 try:
-                    data = json.loads(default_text_cleaner(current_text))
-                    parsed_obj = output_model.model_validate(data)
-                    raw_out = current_text
+                    candidate = extract_json_payload(default_text_cleaner(raw_out))
+                    parsed_obj = output_model.model_validate_json(candidate)
+                    raw_out = candidate
                 except Exception as e:
                     logger.warning(f"Failed to parse output after {self.max_retries + 1} attempts: {e}. Returning only raw output.")
                     parsed_obj = None
-                    raw_out = current_text
+                    raw_out = raw_out
 
             return ControlledOutput(raw=raw_out, json=parsed_obj.model_dump() if parsed_obj else None, pydantic=parsed_obj)
 
